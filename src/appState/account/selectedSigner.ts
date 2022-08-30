@@ -1,5 +1,5 @@
 import {catchError, combineLatest, distinctUntilChanged, map, Observable, of, shareReplay, startWith, take} from "rxjs";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefSigner} from "../../account/ReefAccount";
 import {signers$} from "./signers";
 import {currentAddressSubj, setCurrentAddress} from "./setAccounts";
 
@@ -13,7 +13,7 @@ export const currentAddress$: Observable<string | undefined> = currentAddressSub
 // setting default signer (when signers exist) if no selected address exists
 combineLatest([signers$, currentAddress$])
     .pipe(take(1))
-    .subscribe(([signers, address]: [ReefAccount[] | null, string]): any => {
+    .subscribe(([signers, address]: [ReefSigner[] | null, string | undefined]) => {
         let saved: string | undefined = address;
         try {
             if (!saved) {
@@ -37,16 +37,16 @@ export const selectedSigner$ = combineLatest([
     signers$,
 ])
     .pipe(
-        map(([selectedAddress, signers]: [string | undefined, ReefAccount[]|null]) => {
+        map(([selectedAddress, signers]: [string | undefined, ReefSigner[] | null]) => {
             if (!selectedAddress || !signers || !signers.length) {
                 return undefined;
             }
 
             let foundSigner = signers.find(
-                (signer: ReefAccount) => signer?.address === selectedAddress,
+                (signer: ReefSigner) => signer?.address === selectedAddress,
             );
             if (!foundSigner) {
-                foundSigner = signers ? signers[0] as ReefAccount : undefined;
+                foundSigner = signers ? signers[0] as ReefSigner : undefined;
             }
             try {
                 if (foundSigner) {
@@ -59,11 +59,11 @@ export const selectedSigner$ = combineLatest([
                 // getting error in Flutter: 'The operation is insecure'
                 // console.log('Flutter error=',e.message);
             }
-            return foundSigner ? { ...foundSigner } as ReefAccount : undefined;
+            return foundSigner ? {...foundSigner} as ReefSigner : undefined;
         }),
         catchError((err) => {
             console.log('selectedSigner$ ERROR=', err.message);
             return of(null);
         }),
         shareReplay(1),
-    ) as Observable<ReefAccount | undefined | null>;
+    ) as Observable<ReefSigner | undefined | null>;

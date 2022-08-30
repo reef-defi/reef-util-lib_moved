@@ -24,6 +24,13 @@ import {
 import { Network } from '../../network/network';
 import {ReefSigner} from "../../account/ReefAccount";
 import {selectedSigner$} from "../account/selectedSigner"
+import {getExtrinsicUrl, getIconUrl} from "../../utils";
+import {resolveNftImageLinks} from "../../utils/nftUtil";
+import {Pool} from "../../token/pool";
+import {retrieveReefCoingeckoPrice} from "../../token/prices";
+import {getReefCoinBalance} from "../../account/accounts";
+import {loadPools} from "../../pools/pools";
+import {Provider} from "@reef-defi/evm-provider";
 
 // TODO replace with our own from lib and remove
 const toPlainString = (num: number): string => `${+num}`.replace(
@@ -223,9 +230,9 @@ export const selectedSignerTokenBalances$: Observable<Token[]|null> = combineLat
 );
 
 export const selectedSignerAddressUpdate$ = selectedSigner$.pipe(
-  filter((v) => !!v),
+  filter((v): v is ReefSigner => !!v),
   distinctUntilChanged((s1, s2) => s1?.address === s2?.address),
-);
+) as Observable<ReefSigner>;
 
 const parseTokenHolderArray = (resArr: any[]): TokenNFT[] => resArr.map((res) => ({
   address: res.token_address,
@@ -243,7 +250,7 @@ export const selectedSignerNFTs$: Observable<TokenNFT[]> = combineLatest([
   currentProvider$,
 ])
   .pipe(
-    switchMap(([apollo, signer]) => (!signer
+    switchMap(([apollo, signer, provider]:[ApolloClient<any>, ReefSigner, Provider]) => (!signer
       ? []
       : zenToRx(
         apollo.subscribe({
@@ -272,9 +279,9 @@ export const allAvailableSignerTokens$: Observable<Token[]> = combineLatest([
 export const pools$: Observable<Pool[]> = combineLatest([
   allAvailableSignerTokens$,
   currentNetwork$,
-  selectedSigner$,
+  selectedSignerAddressUpdate$,
 ]).pipe(
-  switchMap(([tkns, network, signer]) => (signer ? loadPools(tkns, signer.signer, network.factoryAddress) : [])),
+  switchMap(([tkns, network, signer]:[Token[], Network, ReefSigner]) => (signer ? loadPools(tkns, signer.signer, network.factoryAddress) : [])),
   shareReplay(1),
 );
 
@@ -374,7 +381,7 @@ const toTokenTransfers = (resTransferData: any[], signer, network: Network): Tok
   extrinsic: { blockId: transferData.extrinsic.block_id, hash: transferData.extrinsic.hash, index: transferData.extrinsic.index },
 }));
 
-export const transferHistory$: Observable<null  | TokenTransfer[]> = combineLatest([apolloClientInstance$, selectedSigner$, currentNetwork$]).pipe(
+export const transferHistory$: Observable<null  | TokenTransfer[]> = combineLatest([apolloClientInstance$, selectedSignerAddressUpdate$, currentNetwork$]).pipe(
   switchMap(([apollo, signer, network]:[ApolloClient<any>, ReefSigner, Network]) => (!signer
     ? []
     : zenToRx(

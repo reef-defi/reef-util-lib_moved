@@ -1,6 +1,6 @@
 import { Provider } from '@reef-defi/evm-provider';
-import { ReefSigner } from '../state';
 import { handleErr, TxStatusHandler, TxStatusUpdate } from './transactionUtil';
+import {ReefSigner} from "../account/ReefAccount";
 
 export const bindEvmAddress = (
   signer: ReefSigner,

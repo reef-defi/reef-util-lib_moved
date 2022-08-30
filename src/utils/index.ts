@@ -7,3 +7,4 @@ export * from './tokenUtil';
 export * from './transactionUtil';
 export * from './bindUtil';
 export * from './providerUtil';
+export {getIconUrl} from "./getIconUrl";

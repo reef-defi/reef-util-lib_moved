@@ -21,7 +21,7 @@ import {
 import { ERC20 } from '../../token/abi/ERC20';
 import { ERC721Uri } from '../../token/abi/ERC721Uri';
 import { ERC1155Uri } from '../../token/abi/ERC1155Uri';
-import { initProvider } from '../../utils';
+import {disconnectProvider, initProvider} from '../../utils';
 import { currentNetwork$, setCurrentNetwork, setCurrentProvider } from '../providerState';
 import { apolloClientSubj, setApolloUrls } from '../../graphql';
 import { ipfsUrlResolverFn } from '../../utils/nftUtil';
@@ -38,9 +38,12 @@ export const setNftIpfsResolverFn = (val?: ipfsUrlResolverFn) => {
 };
 
 export const combineTokensDistinct = ([tokens1, tokens2]: [
-  Token[],
+  Token[]|null,
   Token[]
 ]): Token[] => {
+  if(!tokens1){
+    tokens1 = [];
+  }
   const combinedT = [...tokens1];
   // console.log('COMBINED=', combinedT);
   tokens2.forEach((vT: Token) => (!combinedT.some((cT) => cT.address === vT.address)
@@ -141,12 +144,12 @@ export const initReefState = (
         provider,
         network,
       }))),
-    scan((state: { provider: Provider }, newVal: { provider: Provider, network }) => {
+    scan((state: { provider: Provider|undefined }, newVal: { provider: Provider, network }) => {
       if (state.provider) {
         disconnectProvider(state.provider);
       }
       return { provider: newVal.provider, network: newVal.network };
-    }, {}),
+    }, {provider: undefined}),
     tap((p_n: { provider: Provider, network: Network }) => {
       setCurrentProvider(p_n.provider);
     }),

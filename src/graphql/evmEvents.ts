@@ -81,7 +81,7 @@ export function getEvmEvents$(contractAddress: string, methodSignature?: string,
   if (!fromBlockId) {
     return apolloClientInstance$.pipe(
       switchMap((apolloClient: ApolloClient<any>) => zenToRx(apolloClient.subscribe(getGqlLastFinalizedBlock())).pipe(
-        scan((state, res: any) => {
+        scan((state: { prevBlockId: number, fromBlockId: number, toBlockId: number }, res: any) => {
           const block = res?.data?.block?.length ? res.data.block[0] : null;
           if (!block) {
             console.warn('getEvmEvents$ NO FINALISED BLOCK RESULT', res);
@@ -96,7 +96,7 @@ export function getEvmEvents$(contractAddress: string, methodSignature?: string,
             fromBlockId = state.prevBlockId + 1;
           }
           return { prevBlockId: newBlockId, fromBlockId, toBlockId };
-        }, { prevBlockId: undefined, fromBlockId: undefined, toBlockId: undefined }),
+        }, { prevBlockId: 0, fromBlockId: 0, toBlockId: 0 }),
         switchMap((res: { fromBlockId: number, toBlockId: number | undefined }) => from(apolloClient?.query(
           getGqlContractEventsQuery(contractAddress, methodSignature, res.fromBlockId, res.toBlockId),
         )).pipe(

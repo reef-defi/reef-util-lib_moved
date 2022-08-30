@@ -1,5 +1,5 @@
 import { DocumentNode, gql } from '@apollo/client';
-import { ERC20ContractData, PoolData, ReservedData } from '../state';
+import {ERC20ContractData} from "../token/token";
 
 // Data interfaces
 export type BasePoolTransactionTypes = 'Swap' | 'Mint' | 'Burn';
@@ -257,11 +257,11 @@ export type Pool24HVolume = {
   }[];
 }
 
-export interface PoolDataQuery extends PoolData {
+/*export interface PoolDataQuery extends PoolData {
   previousReserved: ReservedData[];
   previousCandlestick1: LastClose[];
   previousCandlestick2: LastClose[];
-}
+}*/
 
 export type PoolsTotalSupply = {
   pool_event: AllPool[];

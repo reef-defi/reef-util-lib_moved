@@ -3,8 +3,9 @@ import {catchError, combineLatest, map, of, scan, shareReplay, startWith, switch
 import {apolloClientInstance$, zenToRx} from "../../graphql";
 import {filter} from "rxjs/operators";
 import {signersWithUpdatedChainDataBalances$} from "./signersWithUpdatedChainDataBalances";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefSigner} from "../../account/ReefAccount";
 import {signersRegistered$} from "./setAccounts";
+import {signersLocallyUpdatedData$} from "./signersLocallyUpdatedData";
 
 const EVM_ADDRESS_UPDATE_GQL = gql`
   subscription query($accountIds: [String!]!) {
@@ -36,7 +37,7 @@ const indexedAccountValues$ = combineLatest([
             : zenToRx(
                 apollo.subscribe({
                     query: EVM_ADDRESS_UPDATE_GQL,
-                    variables: { accountIds: signers.map((s: any) => s.address) },
+                    variables: {accountIds: signers.map((s: any) => s.address)},
                     fetchPolicy: 'network-only',
                 }),
             ))),
@@ -54,10 +55,10 @@ export const signersWithUpdatedIndexedData$ = combineLatest([
         scan(
             (
                 state: {
-                    lastlocallyUpdated: ReefAccount[];
+                    lastlocallyUpdated: ReefSigner[];
                     lastIndexed: AccountEvmAddrData[];
-                    lastSigners: ReefAccount[];
-                    signers: ReefAccount[];
+                    lastSigners: ReefSigner[];
+                    signers: ReefSigner[];
                 },
                 [signers, locallyUpdated, indexed],
             ) => {
@@ -98,7 +99,7 @@ export const signersWithUpdatedIndexedData$ = combineLatest([
                 lastSigners: [],
             },
         ),
-        map(({ signers }) => signers),
+        map(({signers}) => signers),
         shareReplay(1),
         catchError((err) => {
             console.log('signersWithUpdatedData$ ERROR=', err.message);

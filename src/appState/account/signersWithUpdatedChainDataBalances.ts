@@ -3,7 +3,7 @@ import {
     combineLatest,
     distinctUntilChanged,
     map,
-    mergeScan, of,
+    mergeScan, Observable, of,
     ReplaySubject,
     shareReplay,
     Subject,
@@ -11,7 +11,7 @@ import {
 } from "rxjs";
 import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefSigner} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
 import {signersRegistered$} from "./setAccounts";
 
@@ -23,7 +23,7 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
         mergeScan(
             (
                 state: { unsub: any; balancesByAddressSubj: ReplaySubject<any> },
-                [provider, signers]: [Provider, ReefAccount[]],
+                [provider, signers]: [Provider, ReefSigner[]],
             ) => {
                 if (state.unsub) {
                     state.unsub();
@@ -64,10 +64,10 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
         ),
         switchMap(
             (v: {
-                balancesByAddressSubj: Subject<{ balances: any; signers: ReefAccount[] }>;
+                balancesByAddressSubj: Subject<{ balances: any; signers: ReefSigner[] }>;
             }) => v.balancesByAddressSubj,
         ),
-        map((balancesAndSigners: { balances: any; signers: ReefAccount[] }) => (!balancesAndSigners.signers
+        map((balancesAndSigners: { balances: any; signers: ReefSigner[] }) => (!balancesAndSigners.signers
             ? []
             : balancesAndSigners.signers.map((sig) => {
                 const bal = balancesAndSigners.balances.find(
@@ -87,4 +87,4 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
             console.log('signersWithUpdatedBalances$ ERROR=', err.message);
             return of([]);
         }),
-    );
+    ) as Observable<ReefSigner[]>;

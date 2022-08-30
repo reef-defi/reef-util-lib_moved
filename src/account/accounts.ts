@@ -149,7 +149,7 @@ export const accountToSigner = async (
   );
 };
 
-export function accountJsonToMeta(acc: AccountJson, source = ''): InjectedAccountWithMeta {
+export function accountJsonToMeta(acc: AccountJson, source: string): InjectedAccountWithMeta {
   return {
     address: acc.address,
     meta: {

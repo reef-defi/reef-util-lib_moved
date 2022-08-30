@@ -1,5 +1,5 @@
 {
-  "name": "reef-util",
+  "name": "@reef-chain/util-lib",
   "version": "0.0.1",
   "description": "",
   "main": "lib/index.js",
@@ -11,7 +11,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "esbuild": "*",
     "rimraf": "^3.0.2",
@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
-    "@polkadot/api": "^9.2.4",
     "@polkadot/extension-inject": "^0.44.6",
     "@reef-defi/evm-provider": "^1.0.9",
     "@reef-defi/extension-base": "^1.0.10",
