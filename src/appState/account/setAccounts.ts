@@ -19,3 +19,5 @@ export const signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, 
     map((signrs) => (signrs && signrs.length ? signrs : [])),
     shareReplay(1),
 );
+
+signersRegistered$.subscribe(v=>console.log('rrresss',v))
