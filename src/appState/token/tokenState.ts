@@ -1,27 +1,24 @@
 import {
-  catchError,
-  combineLatest,
-  distinctUntilChanged,
-  map,
-  mergeScan,
-  Observable,
-  of,
-  shareReplay,
-  startWith,
-  switchMap,
-  timer,
+    catchError,
+    combineLatest,
+    distinctUntilChanged,
+    map,
+    mergeScan,
+    Observable,
+    of,
+    shareReplay,
+    startWith,
+    switchMap,
+    timer,
 } from 'rxjs';
-import { BigNumber, FixedNumber, utils } from 'ethers';
+import {BigNumber, FixedNumber, utils} from 'ethers';
 import {ApolloClient, gql} from '@apollo/client';
-import { filter } from 'rxjs/operators';
-import { combineTokensDistinct, _NFT_IPFS_RESOLVER_FN, toTokensWithPrice } from '../util/util';
-import { currentProvider$, currentNetwork$ } from '../providerState';
-import { apolloClientInstance$, zenToRx } from '../../graphql/apollo';
-import {
-  ContractType,
-  reefTokenWithAmount, Token, TokenNFT, TokenTransfer, TokenWithAmount,
-} from '../../token/token';
-import { Network } from '../../network/network';
+import {filter} from 'rxjs/operators';
+import {_NFT_IPFS_RESOLVER_FN, combineTokensDistinct, toTokensWithPrice} from '../util/util';
+import {currentNetwork$, currentProvider$} from '../providerState';
+import {apolloClientInstance$, zenToRx} from '../../graphql/apollo';
+import {ContractType, reefTokenWithAmount, Token, TokenTransfer, TokenWithAmount,} from '../../token/token';
+import {Network} from '../../network/network';
 import {ReefSigner} from "../../account/ReefAccount";
 import {selectedSigner$} from "../account/selectedSigner"
 import {getExtrinsicUrl, getIconUrl} from "../../utils";
@@ -30,7 +27,7 @@ import {Pool} from "../../token/pool";
 import {retrieveReefCoingeckoPrice} from "../../token/prices";
 import {getReefCoinBalance} from "../../account/accounts";
 import {loadPools} from "../../pools/pools";
-import {Provider} from "@reef-defi/evm-provider";
+import {NFT} from "../../token/nft";
 
 // TODO replace with our own from lib and remove
 const toPlainString = (num: number): string => `${+num}`.replace(
@@ -69,31 +66,6 @@ const SIGNER_TOKENS_GQL = gql`
   }
 `;
 
-const SIGNER_NFTS_GQL = gql`
-  subscription query($accountId: String) {
-    token_holder(
-      order_by: { balance: desc }
-      where: {
-        _and: [{ nft_id: { _is_null: false } }, { signer: { _eq: $accountId } }]
-      }
-    ) {
-      nft_id
-      balance
-      info
-      type
-      evm_address
-      token_address
-      signer
-      contract{
-        verified_contract{
-          name
-          type
-          contract_data
-        }
-      }
-    }
-  }
-`;
 
 const CONTRACT_DATA_GQL = gql`
   query contract_data_query($addresses: [String!]!) {
@@ -234,42 +206,6 @@ export const selectedSignerAddressUpdate$ = selectedSigner$.pipe(
   distinctUntilChanged((s1, s2) => s1?.address === s2?.address),
 ) as Observable<ReefSigner>;
 
-const parseTokenHolderArray = (resArr: any[]): TokenNFT[] => resArr.map((res) => ({
-  address: res.token_address,
-  balance: res.balance,
-  symbol: res.info.symbol,
-  name: res.info.name,
-  nftId: res.nft_id,
-  contractType: res.contract.verified_contract.type,
-  iconUrl: '',
-} as TokenNFT));
-
-export const selectedSignerNFTs$: Observable<TokenNFT[]> = combineLatest([
-  apolloClientInstance$,
-  selectedSignerAddressUpdate$,
-  currentProvider$,
-])
-  .pipe(
-    switchMap(([apollo, signer, provider]:[ApolloClient<any>, ReefSigner, Provider]) => (!signer
-      ? []
-      : zenToRx(
-        apollo.subscribe({
-          query: SIGNER_NFTS_GQL,
-          variables: {
-            accountId: signer.address,
-          },
-          fetchPolicy: 'network-only',
-        }),
-      )
-        .pipe(
-          map((res: any) => (res.data && res.data.token_holder
-            ? res.data.token_holder
-            : undefined)),
-          map(parseTokenHolderArray),
-          switchMap((nfts: TokenNFT[]) => (resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN) as Observable<TokenNFT[]>)),
-        ))),
-  );
-
 export const allAvailableSignerTokens$: Observable<Token[]> = combineLatest([
   selectedSignerTokenBalances$,
   validatedTokens$,
@@ -329,16 +265,16 @@ const TRANSFER_HISTORY_GQL = gql`
   }
 `;
 
-const resolveTransferHistoryNfts = (tokens: (Token | TokenNFT)[], signer: ReefSigner): Observable<(Token | TokenNFT)[]> => {
-  const nftOrNull: (TokenNFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
+const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: ReefSigner): Observable<(Token | NFT)[]> => {
+  const nftOrNull: (NFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
   if (!nftOrNull.filter((v) => !!v).length) {
     return of(tokens);
   }
   return of(nftOrNull)
     .pipe(
       switchMap((nfts) => resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
-      map((nftOrNullResolved: (TokenNFT | null)[]) => {
-        const resolvedNftTransfers: (Token | TokenNFT)[] = [];
+      map((nftOrNullResolved: (NFT | null)[]) => {
+        const resolvedNftTransfers: (Token | NFT)[] = [];
         nftOrNullResolved.forEach((nftOrN, i) => {
           resolvedNftTransfers.push(nftOrN || tokens[i]);
         });
@@ -347,7 +283,7 @@ const resolveTransferHistoryNfts = (tokens: (Token | TokenNFT)[], signer: ReefSi
     );
 };
 
-const toTransferToken = (transfer): Token|TokenNFT => (transfer.token.verified_contract.type === ContractType.ERC20 ? {
+const toTransferToken = (transfer): Token|NFT => (transfer.token.verified_contract.type === ContractType.ERC20 ? {
   address: transfer.token_address,
   balance: BigNumber.from(toPlainString(transfer.amount)),
   name: transfer.token.verified_contract.contract_data.name,
@@ -367,7 +303,7 @@ const toTransferToken = (transfer): Token|TokenNFT => (transfer.token.verified_c
     iconUrl: '',
     nftId: transfer.nft_id,
     contractType: transfer.token.verified_contract.type,
-  } as TokenNFT);
+  } as NFT);
 
 const toTokenTransfers = (resTransferData: any[], signer, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
   from: transferData.from_address,
@@ -398,7 +334,7 @@ export const transferHistory$: Observable<null  | TokenTransfer[]> = combineLate
           const tokens = transfers.map((tr: TokenTransfer) => tr.token);
           return resolveTransferHistoryNfts(tokens, signer)
             .pipe(
-              map((resolvedTokens: (Token | TokenNFT)[]) => resolvedTokens.map((resToken: Token | TokenNFT, i) => ({
+              map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
                 ...transfers[i],
                 token: resToken,
               }))),
