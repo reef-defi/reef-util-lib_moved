@@ -13,3 +13,4 @@ export * as reefState from './appState/util/util';
 export {selectedSignerTokenBalances$} from './appState/token/tokenState'
 export { selectedSigner$ } from './appState/account/selectedSigner'
 export * from './network/network';
+export * from './utils/providerUtil'
