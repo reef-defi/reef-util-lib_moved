@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
+    "module": "esnext",
     "declaration": true,
     "target": "esnext",
     "lib": [
@@ -10,7 +12,6 @@
     "noImplicitAny": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "outDir": "lib",
     "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
