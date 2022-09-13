@@ -11,7 +11,12 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "outDir": "lib",
-    "skipLibCheck": true
-  },
-  "baseUrl": "."
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "crypto": [
+        "node_modules/crypto-js"
+      ]
+    }
+  }
 }
