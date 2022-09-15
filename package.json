@@ -1,28 +1,24 @@
 {
   "name": "@reef-chain/util-lib",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "private": false,
-  "type": "module",
   "source": "src/index.ts",
-  "exports": {
-    "require": "./dist/index.cjs",
-    "default": "./dist/index.modern.js"
-  },
-  "main": "dist/index.cjs",
-  "module": "dist/index.module.js",
-  "unpkg": "dist/index.umd.js",
+  "main": "lib/index",
+  "module": "lib/index.js",
   "scripts": {
-    "build": "microbundle -f modern,esm,cjs",
-    "dev": "microbundle watch"
+    "ts-types": "tsc --emitDeclarationOnly --outDir lib",
+    "build": "rimraf lib && node ./esbuild.js && npm run ts-types",
+    "start": "rimraf lib && node ./esbuild.js watch=true && npm run ts-types",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "microbundle": "^0.15.1",
-    "typescript": "^4.7.4",
-    "crypto-js": "^4.1.1"
+    "esbuild": "*",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.7.4"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
@@ -33,6 +29,7 @@
     "@reef-defi/extension-inject": "^1.0.10",
     "axios": "^0.27.2",
     "bignumber.js": "^9.1.0",
+    "crypto-browserify": "^3.12.0",
     "graphql": "^16.6.0",
     "subscriptions-transport-ws": "^0.11.0"
   },
@@ -43,5 +40,8 @@
     "@polkadot/util-crypto": "~7.9.2",
     "@polkadot/api": "6.4.2",
     "@polkadot/keyring": "~7.9.2"
+  },
+  "browser": {
+    "crypto": false
   }
 }
