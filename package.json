@@ -8,8 +8,8 @@
   "module": "lib/index.js",
   "scripts": {
     "ts-types": "tsc --emitDeclarationOnly --outDir lib",
-    "build": "rimraf lib && node ./esbuild.js && npm run ts-types",
-    "start": "rimraf lib && node ./esbuild.js watch=true && npm run ts-types",
+    "build": "rimraf lib && node ./esbuild.js",
+    "start": "rimraf lib && node ./esbuild.js watch=true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
