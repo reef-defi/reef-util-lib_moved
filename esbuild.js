@@ -32,21 +32,23 @@ if (params.watch === 'true') {
     }
 }
 
+const options = {
+    entryPoints: entryPoints,
+    bundle: true,
+    sourcemap: true,
+    minify: true,
+    splitting: false,
+    format: 'esm',
+    target: ['esnext'],
+    define: { global: "window" },
+    external: ["react"],
+    watch: params.watch
+};
 esbuild
-    .build({
-        entryPoints: entryPoints,
-        outdir: 'lib',
-        bundle: true,
-        sourcemap: true,
-        minify: true,
-        splitting: true,
-        format: 'esm',
-        target: ['esnext'],
-        define: { global: "window" },
-        external: ["react"],
-        watch: params.watch
-    }).then(result => {
-    onBuild();
+    .build({ ...options, outfile:'lib/index.module.js' }).then(result => {
+    if (options.watch) {
+        onBuild();
+    }
     console.log(params.watch ? 'watching...' : '', result);
 })
     .catch(() => process.exit(1));
@@ -63,3 +65,9 @@ function onBuild() {
         console.log(`stderr: ${stderr}`);
     });
 }
+
+esbuild
+    .build({ ...options, format: "cjs", splitting: false, outfile:'lib/index.js' }).then(result => {
+    console.log('cjs built', result);
+})
+    .catch(() => process.exit(1));
