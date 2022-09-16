@@ -2,6 +2,7 @@ const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const {dependencies,peerDependencies}=require('./package.json');
 
 // Select all typescript files of src directory as entry points
 const entryPoints = fs.readdirSync(path.join(process.cwd(), "src"))
@@ -36,16 +37,16 @@ const options = {
     entryPoints: entryPoints,
     bundle: true,
     sourcemap: true,
-    minify: true,
+    minify: false,
     splitting: false,
     format: 'esm',
     target: ['esnext'],
     define: { global: "window" },
-    external: ["react"],
+    external: Object.keys(dependencies).concat(Object.keys(peerDependencies)),
     watch: params.watch
 };
 esbuild
-    .build({ ...options, outfile:'lib/index.module.js' }).then(result => {
+    .build({ ...options, outfile: 'lib/index.mjs.js' }).then(result => {
     if (options.watch) {
         onBuild();
     }
@@ -67,7 +68,7 @@ function onBuild() {
 }
 
 esbuild
-    .build({ ...options, format: "cjs", splitting: false, outfile:'lib/index.js' }).then(result => {
+    .build({ ...options, format: "cjs", splitting: false, outfile: 'lib/index.js' }).then(result => {
     console.log('cjs built', result);
 })
     .catch(() => process.exit(1));

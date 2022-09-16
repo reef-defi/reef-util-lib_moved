@@ -4,11 +4,18 @@
   "description": "",
   "private": false,
   "source": "src/index.ts",
-  "main": "lib/index",
-  "module": "lib/index.module.js",
+  "module": "lib/index.mjs.js",
+  "typings": "lib/index.d.ts",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "import": "./lib/index.mjs.js",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "ts-types": "tsc --emitDeclarationOnly --outDir ./lib",
-    "build": "rimraf lib && node ./esbuild.js && yarn run ts-types",
+    "build": "rimraf lib && node ./esbuild.cjs && yarn run ts-types",
     "start": "rimraf lib && node ./esbuild.js watch=true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -16,7 +16,7 @@
     "baseUrl": "./",
     "paths": {
       "crypto": [
-        "node_modules/crypto-js"
+        "node_modules/crypto-browserify"
       ]
     }
   }
