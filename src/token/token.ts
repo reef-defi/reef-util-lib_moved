@@ -32,10 +32,21 @@ export interface BasicToken {
   iconUrl: string;
 }
 
+enum TokenStatusCode {
+  LOADING_FINALIZED_NBALANCE
+}
+
+interface TokenStatus {
+  message: string;
+  statusCode: TokenStatusCode;
+  oldValue: Token;
+}
+
 export interface Token extends BasicToken {
   symbol: string;
   balance: BigNumber;
   decimals: number;
+  status?: TokenStatus;
 }
 
 export interface TokenWithAmount extends Token {

@@ -10,7 +10,7 @@ import type { InjectedAccountWithMeta as InjectedAccountWithMetaReef } from '@re
 import type {
   InjectedAccountWithMeta,
 } from '@polkadot/extension-inject/types';
-import { ContractType, Token, TokenWithAmount } from '../../token/token';
+import {ContractType, reefTokenWithAmount, Token, TokenWithAmount} from '../../token/token';
 import {
   accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj, reloadSignersSubj,
 } from '../account/setAccounts';
@@ -35,6 +35,24 @@ export let _NFT_IPFS_RESOLVER_FN: ipfsUrlResolverFn|undefined;
 
 export const setNftIpfsResolverFn = (val?: ipfsUrlResolverFn) => {
   _NFT_IPFS_RESOLVER_FN = val;
+};
+
+export const toPlainString = (num: number): string => `${+num}`.replace(
+    /(-?)(\d*)\.?(\d*)e([+-]\d+)/,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    (a, b, c, d, e) => (e < 0
+        ? `${b}0.${Array(1 - e - c.length).join('0')}${c}${d}`
+        : b + c + d + Array(e - d.length + 1).join('0')),
+);
+
+export const sortReefTokenFirst = (tokens): Token[] => {
+  const {address} = reefTokenWithAmount();
+  const reefTokenIndex = tokens.findIndex((t: Token) => t.address === address);
+  if (reefTokenIndex > 0) {
+    return [tokens[reefTokenIndex], ...tokens.slice(0, reefTokenIndex), ...tokens.slice(reefTokenIndex + 1, tokens.length)];
+  }
+  return tokens;
 };
 
 export const combineTokensDistinct = ([tokens1, tokens2]: [
