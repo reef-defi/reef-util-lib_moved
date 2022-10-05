@@ -1,10 +1,10 @@
+import {accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj} from "./setAccounts";
 import {AccountJson} from "@reef-defi/extension-base/background/types";
 import {InjectedAccountWithMeta} from "@reef-defi/extension-inject/types";
 import {Provider} from "@reef-defi/evm-provider";
 import {Signer as InjectedSigningKey} from "@polkadot/api/types";
 import {ReefSigner} from "../../account/ReefAccount";
-import {combineLatest, Observable, shareReplay, switchMap} from "rxjs";
-import {accountsJsonSigningKeySubj, accountsJsonSubj} from "./setAccounts";
+import {combineLatest, map, merge, Observable, shareReplay, switchMap} from "rxjs";
 import {currentProvider$} from "../providerState";
 import {accountJsonToMeta, metaAccountToSigner} from "../../account/accounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
@@ -22,5 +22,10 @@ let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(
 
 export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([accountsJsonSubj, currentProvider$, accountsJsonSigningKeySubj]).pipe(
     switchMap(convertJsonAccountsToReefSigners),
+    shareReplay(1),
+);
+
+export const signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, signersFromJson$).pipe(
+    map((signrs) => (signrs && signrs.length ? signrs : [])),
     shareReplay(1),
 );

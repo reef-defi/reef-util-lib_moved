@@ -2,7 +2,8 @@ import {catchError, map, mergeScan, Observable, of, shareReplay, startWith, swit
 import {ReefSigner} from "../../account/ReefAccount";
 import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
-import {reloadSignersSubj, signersRegistered$} from "./setAccounts";
+import {reloadSignersSubj} from "./setAccounts";
+import {signersRegistered$} from "./signersFromJson";
 
 export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),

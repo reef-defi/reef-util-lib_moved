@@ -17,7 +17,7 @@
     "ts-types": "tsc --emitDeclarationOnly --outDir ./lib",
     "build": "rimraf lib && node ./esbuild.cjs && yarn run ts-types",
     "start": "rimraf lib && node ./esbuild.js watch=true",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "esbuild test/test-app-state.ts --bundle --servedir=test/server --outdir=test/server/js --platform=browser --tsconfig=tsconfig.json --sourcemap"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +25,8 @@
   "devDependencies": {
     "esbuild": "*",
     "rimraf": "^3.0.2",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "react": "17.0.2"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",

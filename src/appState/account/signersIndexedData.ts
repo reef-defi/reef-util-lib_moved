@@ -4,8 +4,8 @@ import {apolloClientInstance$, zenToRx} from "../../graphql";
 import {filter} from "rxjs/operators";
 import {signersWithUpdatedChainDataBalances$} from "./signersWithUpdatedChainDataBalances";
 import {ReefSigner} from "../../account/ReefAccount";
-import {signersRegistered$} from "./setAccounts";
 import {signersLocallyUpdatedData$} from "./signersLocallyUpdatedData";
+import {signersRegistered$} from "./signersFromJson";
 
 const EVM_ADDRESS_UPDATE_GQL = gql`
   subscription query($accountIds: [String!]!) {
