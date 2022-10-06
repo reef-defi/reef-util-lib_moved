@@ -1,15 +1,12 @@
 import {toInjectedAccountsWithMeta} from '../src/appState/util/util'
-import {availableNetworks, selectedSigner$} from "../src";
+import {availableNetworks, selectedSignerTokenBalances$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
 import {setCurrentAddress} from "../src/appState/account/setAccounts";
-import {pools$} from "../src/appState/token/pools";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
-import {signers$} from "../src/appState/account/signers";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
-import {currentProvider$} from "../src/appState/providerState";
 import {initReefState} from "../src/appState/initReefState";
-import {tokenPrices$} from "../src/appState/token/tokenState";
+import {selectedSignerTokenPrices$} from "../src/appState/token/tokenState";
 
 async function initTest () {
 
@@ -26,7 +23,8 @@ async function initTest () {
 
     signersFromJson$.subscribe((res)=>console.log('curr',res))
 
-    tokenPrices$.subscribe((res)=>console.log('PRICESSS',res))
+    selectedSignerTokenBalances$.subscribe((res)=>console.log('BALANCES',res))
+    selectedSignerTokenPrices$.subscribe((res)=>console.log('PRICESSS',res))
 
 }
 
