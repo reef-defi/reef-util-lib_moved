@@ -4,7 +4,12 @@ import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
 import {reloadSignersSubj} from "./setAccounts";
 import {signersRegistered$} from "./signersFromJson";
+import {TxStatusUpdate} from "../../utils";
+import {UpdateAction} from "../model/updateStateModel";
 
+if(!reloadSignersSubj ){
+    debugger
+}
 export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
     withLatestFrom(signersRegistered$),
@@ -57,3 +62,13 @@ export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSigner
     }),
     shareReplay(1),
 );
+
+export const onTxUpdateResetSigners = (
+    txUpdateData: TxStatusUpdate,
+    updateActions: UpdateAction[],
+): void => {
+    if (txUpdateData?.isInBlock || txUpdateData?.error) {
+        const delay = txUpdateData.txTypeEvm ? 2000 : 0;
+        setTimeout(() => reloadSignersSubj.next({ updateActions }), delay);
+    }
+};

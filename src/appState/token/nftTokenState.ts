@@ -1,12 +1,13 @@
 import {combineLatest, map, Observable, switchMap} from "rxjs";
 import {gql} from "@apollo/client";
 import {BigNumber} from "ethers";
-import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/nft";
+import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/token";
 import {apolloClientInstance$, zenToRx} from "../../graphql";
 import {currentProvider$} from "../providerState";
 import {resolveNftImageLinks} from "../../utils/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "../util/util";
-import {selectedSignerAddressUpdate$} from "./selectedSignerTokenBalances";
+import {selectedSignerAddressUpdate$} from "../account/selectedSignerAddressUpdate";
+import {ReefSigner} from "../../account/ReefAccount";
 
 const SIGNER_NFTS_GQL = gql`
   subscription query($accountId: String) {
@@ -72,14 +73,14 @@ export const selectedSignerNFTs$: Observable<NFT[]> = combineLatest([
                 apollo.subscribe({
                     query: SIGNER_NFTS_GQL,
                     variables: {
-                        accountId: signer.address,
+                        accountId: (signer as ReefSigner).address,
                     },
                     fetchPolicy: 'network-only',
                 }),
             )
                 .pipe(
-                    map(({data}) => (data && data.token_holder
-                        ? data.token_holder as VerifiedNft[]
+                    map((res: any) => (res && res.data && res.data.token_holder
+                        ? res.data.token_holder as VerifiedNft[]
                         : undefined)),
                     map((res: VerifiedNft[]|undefined)=>parseTokenHolderArray(res||[])),
                     switchMap((nfts: NFT[]) => (resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN) as Observable<NFT[]>)),

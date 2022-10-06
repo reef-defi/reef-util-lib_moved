@@ -1,4 +1,4 @@
-import { ERC20ContractData, Token } from './token';
+import {ERC20ContractData, Token} from './token';
 
 export interface Pool {
   token1: Token;
@@ -32,5 +32,3 @@ export interface LastPoolReserves {
   token_data_2?: ERC20ContractData;
   address: string;
 }
-
-export type TokenPrices = {[tokenAddress: string]: number};

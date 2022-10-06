@@ -6,10 +6,10 @@ import {reefPrice$} from "./reefPrice";
 import {selectedSignerTokenBalances$} from "./selectedSignerTokenBalances";
 
 export const allAvailableSignerTokens$: Observable<Token[]|null> = selectedSignerTokenBalances$;
-
 // TODO pools and tokens emit events at same time - check how to make 1 event from it
 export const tokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
     allAvailableSignerTokens$,
     reefPrice$,
     pools$,
 ]).pipe(map(toTokensWithPrice), shareReplay(1));
+tokenPrices$.subscribe(v=>console.log('pppp',v))

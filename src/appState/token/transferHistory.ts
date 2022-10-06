@@ -1,6 +1,5 @@
 import {ApolloClient, gql} from "@apollo/client";
-import {ContractType, Token, TokenTransfer} from "../../token/token";
-import {NFT} from "../../token/nft";
+import {ContractType, NFT, Token, TokenTransfer} from "../../token/token";
 import {ReefSigner} from "../../account/ReefAccount";
 import {combineLatest, map, Observable, of, shareReplay, startWith, switchMap} from "rxjs";
 import {resolveNftImageLinks} from "../../utils/nftUtil";

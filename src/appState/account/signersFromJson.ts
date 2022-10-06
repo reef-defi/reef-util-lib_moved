@@ -14,6 +14,8 @@ let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(
     let accMeta: InjectedAccountWithMeta[]=[];
     if (accounts?.length && !accounts[0].meta) {
         accMeta = accounts.map((acc) => accountJsonToMeta(acc, REEF_EXTENSION_IDENT));
+    }else {
+        accMeta = accounts as InjectedAccountWithMeta[];
     }
     return Promise.all(
         accMeta.map((account) => metaAccountToSigner(account, provider as Provider, signingKey as InjectedSigningKey)),
@@ -25,6 +27,9 @@ export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([account
     shareReplay(1),
 );
 
+if(!accountsSubj || !accountsJsonSubj){
+    debugger
+}
 export const signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, signersFromJson$).pipe(
     map((signrs) => (signrs && signrs.length ? signrs : [])),
     shareReplay(1),
