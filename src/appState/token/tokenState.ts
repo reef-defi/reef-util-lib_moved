@@ -6,7 +6,7 @@ import {reefPrice$} from "./reefPrice";
 import {selectedSignerTokenBalances$} from "./selectedSignerTokenBalances";
 
 // TODO pools and tokens emit events at same time - check how to make 1 event from it
-export const signerTokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
+export const selectedSignerTokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
     selectedSignerTokenBalances$,
     reefPrice$,
     selectedSignerPools$,
