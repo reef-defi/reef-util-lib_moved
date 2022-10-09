@@ -14,7 +14,7 @@ const SIGNER_NFTS_GQL = gql`
     token_holder(
     order_by: { balance: desc }
     where: {
-      _and: [{ nft_id: { _is_null: false } }, { signer: { _eq: $accountId } }]
+      _and: [{ nft_id: { _is_null: false } }, { signer: { _eq: $accountId } }, {balance: {_gt: 0}}]
       type: { _eq: "Account" }
     }
   ) {

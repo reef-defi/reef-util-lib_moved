@@ -49,19 +49,23 @@ const resolveImageData = (metadata: NFTMetadata, nft: NFT, ipfsUrlResolver?: ipf
     };
 };
 
-export const getResolveNftPromise = (nft: NFT | null, signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Promise<NFT | null> => {
+export const getResolveNftPromise =  async(nft: NFT | null, signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Promise<NFT | null> => {
     if (!nft) {
         return Promise.resolve(null);
     }
     const contractTypeAbi = getContractTypeAbi(nft.contractType);
     const contract = new Contract(nft.address, contractTypeAbi, signer);
     const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
-        : contract.tokenURI(nft.nftId);
-    return uriPromise
-        .then((metadataUri) => resolveUriToUrl(metadataUri, nft, ipfsUrlResolver))
-        .then(axios.get)
-        .then((jsonStr) => resolveImageData(jsonStr.data, nft, ipfsUrlResolver))
-        .then((nftUri) => ({...nft, ...nftUri}));
+        : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
+    try {
+        return await uriPromise
+            .then((metadataUri) => resolveUriToUrl(metadataUri, nft, ipfsUrlResolver))
+            .then(axios.get)
+            .then((jsonStr) => resolveImageData(jsonStr.data, nft, ipfsUrlResolver))
+            .then((nftUri) => ({...nft, ...nftUri}));
+    }catch (e){
+        console.log("ERROR getResolveNftPromise=",e);
+    }
 };
 
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));

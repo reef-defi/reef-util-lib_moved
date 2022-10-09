@@ -120,7 +120,6 @@ export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineL
                     // eslint-disable-next-line camelcase
                     tokenBalances: { token_address: string; balance: number }[],
                 ) => {
-                    console.log("bbbb=",tokenBalances);
                     const reefTkn = reefTokenWithAmount();
                     const reefTokenResult = tokenBalances.find(
                         (tb) => tb.token_address === reefTkn.address,

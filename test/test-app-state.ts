@@ -8,6 +8,8 @@ import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {selectedSignerTokenPrices$} from "../src/appState/token/tokenState";
 import {firstValueFrom} from "rxjs";
+import {availableReefPools$} from "../src/appState/token/pools";
+import {selectedSignerNFTs$} from "../src/appState/token/nftTokenState";
 
 const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
@@ -17,16 +19,27 @@ async function testAppStateTokens(testAccount: string){
     setCurrentAddress(testAccount);
     const selSig = await firstValueFrom(selectedSigner$);
     console.assert(selSig?.address === testAccount, 'Selected signer not the same as current address.');
+    console.log(`signer ${selSig?.address}`);
 
-    const tkns = await firstValueFrom(selectedSignerTokenBalances$);
-    console.log("ttt=",tkns);
+    // const tkns = await firstValueFrom(selectedSignerTokenBalances$);
+    // console.log(` tokens=`,tkns);
+    //
+    // tkns?.forEach((tkn) => {
+    //     let sameAddressesLen = tkns?.filter(t => t.address === tkn.address).length;
+    //     console.assert( sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
+    // });
 
-    tkns?.forEach((tkn) => {
-        let sameAddressesLen = tkns?.filter(t => t.address === tkn.address).length;
-        console.assert( sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
-    });
+    const nfts = await firstValueFrom(selectedSignerNFTs$);
+    console.log(`nfts=`,nfts);
+
     console.log("END testAppStateTokens");
 
+}
+
+async function testAvailablePools() {
+    const availablePools = await firstValueFrom(availableReefPools$);
+    console.log("available pools=",availablePools);
+    console.log("END testAvailablePools");
 }
 
 async function testAppStateSigners(accounts: any){
@@ -69,8 +82,9 @@ async function initTest () {
     });
 
     // await testAppStateSigners(accounts);
-    await testAppStateTokens(accounts[0].address)
-    await testAppStateTokens(accounts[1].address)
+    await testAppStateTokens(accounts[0].address);
+    await testAppStateTokens(accounts[1].address);
+    await testAvailablePools();
 }
 
 window.addEventListener('load',initTest);
