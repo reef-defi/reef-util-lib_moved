@@ -1,15 +1,19 @@
 import {toInjectedAccountsWithMeta} from '../src/appState/util/util'
-import {availableNetworks, selectedSigner$, selectedSignerTokenBalances$} from "../src";
+import {availableNetworks, selectedSigner$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
 import {setCurrentAddress} from "../src/appState/account/setAccounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
-import {selectedSignerTokenPrices$} from "../src/appState/token/tokenState";
+import {
+    availableReefPools$,
+    selectedSignerNFTs$,
+    selectedSignerTokenBalances$,
+    selectedSignerTokenPrices$
+} from "../src/appState/tokenState.rx";
 import {firstValueFrom, skipWhile} from "rxjs";
-import {availableReefPools$} from "../src/appState/token/pools";
-import {selectedSignerNFTs$} from "../src/appState/token/nftTokenState";
+import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 
 const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
@@ -32,7 +36,10 @@ async function testAppStateTokens(testAccount: string){
         console.assert( sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
     });
 
-    const nfts = await firstValueFrom(selectedSignerNFTs$);
+    let nfts = await firstValueFrom(selectedSignerNFTs$);
+    console.assert(nfts.status?.code===FeedbackStatusCode.LOADING, 'Nfts not cleared when changing signer')
+    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skipWhile(v=>v.status?.code===FeedbackStatusCode.LOADING)));
+    console.assert(nfts.status?.code===FeedbackStatusCode.COMPLETE_DATA, 'Nft data not complete')
     console.log(`nfts=`,nfts);
 
     console.log("END testAppStateTokens");

@@ -15,7 +15,7 @@ import {ERC721Uri} from '../../token/abi/ERC721Uri';
 import {ERC1155Uri} from '../../token/abi/ERC1155Uri';
 import {calculateTokenPrice} from '../../utils';
 import {apolloClientSubj, setApolloUrls} from '../../graphql';
-import {ipfsUrlResolverFn} from '../../utils/nftUtil';
+import {ipfsUrlResolverFn} from '../../token/nftUtil';
 import {ReefSigner} from "../../account/ReefAccount";
 import {Pool} from "../../token/pool";
 

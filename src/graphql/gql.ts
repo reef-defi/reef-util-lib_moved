@@ -1,4 +1,4 @@
-export const CONTRACT_EVENTS_GQL = `
+/*export const CONTRACT_EVENTS_GQL = `
           subscription events(
             $blockNumber: bigint
             $perPage: Int!
@@ -73,3 +73,4 @@ export const TOKEN_BALANCES_GQL = `
             }
           }
         `;
+*/

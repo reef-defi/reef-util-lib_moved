@@ -10,34 +10,7 @@ import {getReefCoinBalance} from "../../account/accounts";
 import {getIconUrl} from "../../utils";
 import {sortReefTokenFirst, toPlainString} from "../util/util";
 import {Provider} from "@reef-defi/evm-provider";
-
-const SIGNER_TOKENS_GQL = gql`
-  subscription tokens_query($accountId: String!) {
-    token_holder(
-      order_by: { balance: desc }
-      where: {
-        _and: [
-          { nft_id: { _is_null: true } }
-          { token_address: { _is_null: false } }
-          { signer: { _eq: $accountId } }
-        ]
-      }
-    ) {
-      token_address
-      balance
-    }
-  }
-`;
-
-
-const CONTRACT_DATA_GQL = gql`
-  query contract_data_query($addresses: [String!]!) {
-    verified_contract(where: { address: { _in: $addresses } }) {
-      address
-      contract_data
-    }
-  }
-`;
+import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
 
 // eslint-disable-next-line camelcase
 const fetchTokensData = (
@@ -97,7 +70,7 @@ const tokenBalancesWithContractDataCache = (apollo: any) => (
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-const loadSignerTokens = ([apollo, signer, provider]): Token[] | null => (!signer
+export const loadSignerTokens = ([apollo, signer, provider]): Token[] | null => (!signer
     ? []
     : zenToRx(
         apollo.subscribe({
@@ -148,15 +121,4 @@ const loadSignerTokens = ([apollo, signer, provider]): Token[] | null => (!signe
         map(sortReefTokenFirst),
         startWith(null)
     ));
-export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineLatest([
-    apolloClientInstance$,
-    selectedSigner$,
-    currentProvider$,
-]).pipe(
-    switchMap(loadSignerTokens),
-    catchError(((err) => {
-        console.log('selectedSignerTokenBalances$ ERROR=', err.message);
-        return of(null);
-    })),
-    shareReplay(1)
-);
+
