@@ -21,7 +21,10 @@ export const selectedSignerTokenPrices$: Observable<TokenWithAmount[]> = combine
     selectedSignerTokenBalances$,
     reefPrice$,
     selectedSignerPools$,
-]).pipe(map(toTokensWithPrice), shareReplay(1));
+]).pipe(
+    map(toTokensWithPrice),
+    shareReplay(1)
+);
 
 export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineLatest([
     apolloClientInstance$,
@@ -45,6 +48,7 @@ export const selectedSignerPools$: Observable<Pool[]> = combineLatest([
     shareReplay(1),
 );
 
+
 export const availableReefPools$: Observable<AvailablePool[]> = combineLatest([
     apolloClientInstance$,
     currentProvider$,
@@ -55,13 +59,14 @@ export const availableReefPools$: Observable<AvailablePool[]> = combineLatest([
 );
 
 
-export const selectedSignerNFTs$: Observable<FeedbackDataModel<NFT[]>> = combineLatest([
+export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> = combineLatest([
     apolloClientInstance$,
     selectedSignerAddressUpdate$,
     currentProvider$,
 ])
     .pipe(
         switchMap(loadSignerNfts),
+        shareReplay(1)
     );
 
 

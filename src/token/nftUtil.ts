@@ -1,8 +1,9 @@
-import {forkJoin, Observable, of} from 'rxjs';
+import {combineLatest, forkJoin, map, Observable, of, startWith, switchMap, withLatestFrom} from 'rxjs';
 import {Contract} from 'ethers';
 import axios from 'axios';
 import {Signer} from '@reef-defi/evm-provider';
-import {NFTMetadata, NFT, getContractTypeAbi} from "./token";
+import {getContractTypeAbi, NFT, NFTMetadata} from "./token";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
 
 const extractIpfsHash = (ipfsUri: string): string | null => {
     const ipfsProtocol = 'ipfs://';
@@ -49,7 +50,7 @@ const resolveImageData = (metadata: NFTMetadata, nft: NFT, ipfsUrlResolver?: ipf
     };
 };
 
-export const getResolveNftPromise =  async(nft: NFT | null, signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Promise<NFT | null> => {
+export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Promise<NFT | null> => {
     if (!nft) {
         return Promise.resolve(null);
     }
@@ -63,11 +64,28 @@ export const getResolveNftPromise =  async(nft: NFT | null, signer: Signer, ipfs
             .then(axios.get)
             .then((jsonStr) => resolveImageData(jsonStr.data, nft, ipfsUrlResolver))
             .then((nftUri) => ({...nft, ...nftUri}));
-    }catch (e){
-        console.log("ERROR getResolveNftPromise=",e);
+    } catch (e) {
+        console.log("ERROR getResolveNftPromise=", e);
     }
 };
 
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));
+
+export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> => {
+    if (!nfts) {
+        return of([]);
+    }
+    const resolveObsArr: Observable<FeedbackDataModel<NFT | null>>[] = nfts.map(
+        (nft: NFT | null) => of(nft).pipe(
+            switchMap((nft: NFT | null) => getResolveNftPromise(nft, signer, ipfsUrlResolver)),
+            map((resNft: NFT | null) => toFeedbackDM(resNft, FeedbackStatusCode.COMPLETE_DATA, 'Url resolved')),
+            startWith(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL, 'Resolving url.'))
+        )
+    );
+    return combineLatest(
+        resolveObsArr
+    );
+};
+
 
 export type ipfsUrlResolverFn = (ipfsHash) => string;

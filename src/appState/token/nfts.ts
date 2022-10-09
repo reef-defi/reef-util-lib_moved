@@ -1,11 +1,11 @@
-import {map, Observable, of, startWith, switchMap} from "rxjs";
+import {catchError, map, Observable, of, startWith, switchMap} from "rxjs";
 import {BigNumber} from "ethers";
 import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/token";
 import {zenToRx} from "../../graphql";
-import {resolveNftImageLinks} from "../../token/nftUtil";
+import {resolveNftImageLinks$} from "../../token/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "../util/util";
 import {ReefSigner} from "../../account/ReefAccount";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
+import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 import {SIGNER_NFTS_GQL} from "../../graphql/signerNfts.gql";
 
 export interface VerifiedNft {
@@ -48,7 +48,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
     });
 
 export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<NFT[]>> => (!signer
-    ? of(toFeedbackDM([] as NFT[], FeedbackStatusCode.COMPLETE_DATA, 'Signer not set'))
+    ? of(toFeedbackDM([] as NFT[], FeedbackStatusCode.PARTIAL_DATA, 'Signer not set'))
     : zenToRx(
         apollo.subscribe({
             query: SIGNER_NFTS_GQL,
@@ -59,12 +59,25 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
         }),
     )
         .pipe(
-            map((res: any) => (res && res.data && res.data.token_holder
-                ? res.data.token_holder as VerifiedNft[]
-                : undefined)),
+            map((res: any) => {
+                    if (!res || !res.data || !res.data.token_holder) {
+                        throw new Error('Could not load data.');
+                    }
+                    return res.data.token_holder as VerifiedNft[];
+                }
+            ),
             map((res: VerifiedNft[] | undefined) => parseTokenHolderArray(res || [])),
-            switchMap((nfts: NFT[]) => (resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN) as Observable<NFT[]>)),
-            map(data => toFeedbackDM(data as NFT[])),
-            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING))
+            switchMap((nftArr: NFT[]) => of(nftArr).pipe(
+                switchMap(nfts => resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
+                map((feedbackNfts: FeedbackDataModel<NFT | null>[]) => {
+                    const code = (feedbackNfts.find(nftFDM => nftFDM.status?.code !== FeedbackStatusCode.COMPLETE_DATA)?.status.code) || FeedbackStatusCode.COMPLETE_DATA;
+                    const message = code === FeedbackStatusCode.RESOLVING_NFT_URL ? 'Resolving nft urls.' : '';
+                    return toFeedbackDM(feedbackNfts, code, message);
+                })
+                )
+            ),
+            map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
+            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
+            catchError(err => of(toFeedbackDM(null, FeedbackStatusCode.ERROR, err.message))),
         ));
 
