@@ -7,7 +7,7 @@ import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {selectedSignerTokenPrices$} from "../src/appState/token/tokenState";
-import {firstValueFrom} from "rxjs";
+import {firstValueFrom, skipWhile} from "rxjs";
 import {availableReefPools$} from "../src/appState/token/pools";
 import {selectedSignerNFTs$} from "../src/appState/token/nftTokenState";
 
@@ -21,13 +21,16 @@ async function testAppStateTokens(testAccount: string){
     console.assert(selSig?.address === testAccount, 'Selected signer not the same as current address.');
     console.log(`signer ${selSig?.address}`);
 
-    // const tkns = await firstValueFrom(selectedSignerTokenBalances$);
-    // console.log(` tokens=`,tkns);
-    //
-    // tkns?.forEach((tkn) => {
-    //     let sameAddressesLen = tkns?.filter(t => t.address === tkn.address).length;
-    //     console.assert( sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
-    // });
+    let tkns = await firstValueFrom(selectedSignerTokenBalances$);
+    console.assert(tkns===null, 'Tokens not cleared when changing signer')
+    tkns = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(v=>!v)));
+    console.log(` tokens=`,tkns);
+    console.assert(tkns!==null, 'Tokens should load')
+
+    tkns?.forEach((tkn) => {
+        let sameAddressesLen = tkns?.filter(t => t.address === tkn.address).length;
+        console.assert( sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
+    });
 
     const nfts = await firstValueFrom(selectedSignerNFTs$);
     console.log(`nfts=`,nfts);
