@@ -1,17 +1,9 @@
-import { BigNumber } from 'ethers';
-import { BigNumber as BN } from 'bignumber.js';
-import { parseEther } from 'ethers/lib/utils';
-import {
-  EMPTY_ADDRESS,
-  ensure,
-  MIN_EVM_TX_BALANCE,
-  MIN_NATIVE_TX_BALANCE,
-  REEF_ADDRESS,
-  toReefBalanceDisplay,
-} from '../utils/utils';
-import { assertAmount, calculateAmount } from '../utils/math';
-import { TokenPrices } from './pool';
-import {NFT} from "./nft";
+import {BigNumber, ContractInterface} from 'ethers';
+import {BigNumber as BN} from 'bignumber.js';
+import {EMPTY_ADDRESS, REEF_ADDRESS,} from '../utils/utils';
+import {ERC20} from "./abi/ERC20";
+import {ERC721Uri} from "./abi/ERC721Uri";
+import {ERC1155Uri} from "./abi/ERC1155Uri";
 
 export enum ContractType {
   ERC20 = 'ERC20',
@@ -61,6 +53,25 @@ export interface TokenState {
   price: number;
 }
 
+export interface ERC721ContractData {
+  type: ContractType.ERC721
+  name: string;
+  symbol: string;
+}
+
+export interface ERC1155ContractData {
+  type: ContractType.ERC1155
+}
+
+export interface NFT extends Token {
+  nftId: string;
+  data: ERC1155ContractData | ERC721ContractData;
+  contractType: ContractType;
+  mimetype?: string;
+}
+
+export type TokenPrices = {[tokenAddress: string]: number};
+
 export interface NFTMetadata{
   image?: string;
   iconUrl?:string;
@@ -79,6 +90,19 @@ export interface TokenTransfer {
   extrinsic: TransferExtrinsic;
   url: string;
 }
+
+export const getContractTypeAbi = (contractType: ContractType): ContractInterface => {
+  switch (contractType) {
+    case ContractType.ERC20:
+      return ERC20;
+    case ContractType.ERC721:
+      return ERC721Uri;
+    case ContractType.ERC1155:
+      return ERC1155Uri;
+    default:
+      return [] as ContractInterface;
+  }
+};
 
 export const defaultTokenState = (index = 0): TokenState => ({
   index,
@@ -114,36 +138,6 @@ export const toTokenAmount = (
 export function isNativeTransfer(token: Token) {
   return token.address === REEF_ADDRESS;
 }
-
-export const checkMinExistentialReefAmount = (token: TokenWithAmount, reefBalance: BigNumber): {valid: boolean, message?: string, maxTransfer: BigNumber} => {
-  const nativeReefTransfer = isNativeTransfer(token);
-  const FIXED_TX_FEE = nativeReefTransfer ? 2 : 3;
-  const minAmountBesidesTx = (nativeReefTransfer ? MIN_NATIVE_TX_BALANCE : MIN_EVM_TX_BALANCE);
-  const reservedTxMin = calculateAmount({ decimals: REEF_TOKEN.decimals, amount: (minAmountBesidesTx + FIXED_TX_FEE).toString() });
-  const transferAmt = BigNumber.from(parseEther(assertAmount(token.amount)));
-  const requiredReefMin = nativeReefTransfer ? BigNumber.from(reservedTxMin).add(transferAmt) : BigNumber.from(reservedTxMin);
-  const maxTransfer = reefBalance.sub(BigNumber.from(reservedTxMin));
-  const valid = reefBalance.gte(requiredReefMin);
-  let message = '';
-  if (!valid) {
-    message = `${toReefBalanceDisplay(BigNumber.from(reservedTxMin))} balance needed to call EVM transaction. Token transfer fee ~2.5 REEF.`;
-
-    if (nativeReefTransfer) {
-      const maxTransfer = reefBalance.sub(BigNumber.from(reservedTxMin));
-      message = `Maximum transfer amount is ~${toReefBalanceDisplay(maxTransfer)} to allow for fees.`;
-    }
-  }
-  return { valid, message, maxTransfer };
-};
-
-export const ensureTokenAmount = (token: TokenWithAmount): void => ensure(
-  BigNumber.from(calculateAmount(token)).lte(token.balance),
-  `Insufficient ${token.name} balance`,
-);
-
-export const ensureExistentialReefAmount = (token: TokenWithAmount, reefBalance: BigNumber): void => {
-  ensure(checkMinExistentialReefAmount(token, reefBalance).valid, 'Insufficient REEF balance.');
-};
 
 export const REEF_TOKEN: Token = {
   name: 'REEF',

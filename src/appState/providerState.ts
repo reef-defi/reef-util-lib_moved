@@ -3,7 +3,7 @@ import { Provider } from '@reef-defi/evm-provider';
 import {Network} from "../network/network";
 
 const providerSubj: ReplaySubject<Provider> = new ReplaySubject<Provider>(1);
-const selectedNetworkSubj: ReplaySubject<Network> = new ReplaySubject<Network>();
+const selectedNetworkSubj: ReplaySubject<Network> = new ReplaySubject<Network>(1);
 
 export const ACTIVE_NETWORK_LS_KEY = 'reef-app-active-network';
 export const currentProvider$ = providerSubj.asObservable().pipe(shareReplay(1));

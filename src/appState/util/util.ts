@@ -1,35 +1,23 @@
-import { ContractInterface } from 'ethers';
-import { Provider } from '@reef-defi/evm-provider';
-import { ApolloClient } from '@apollo/client';
-import {
-  defer, finalize, Observable, scan, switchMap, tap,
-} from 'rxjs';
-import type { Signer as InjectedSigningKey } from '@polkadot/api/types';
-import { AccountJson } from '@reef-defi/extension-base/background/types';
-import type { InjectedAccountWithMeta as InjectedAccountWithMetaReef } from '@reef-defi/extension-inject/types';
+import {ContractInterface} from 'ethers';
+import {Provider} from '@reef-defi/evm-provider';
+import {ApolloClient} from '@apollo/client';
+import type {Signer as InjectedSigningKey} from '@polkadot/api/types';
+import {AccountJson} from '@reef-defi/extension-base/background/types';
 import type {
-  InjectedAccountWithMeta,
-} from '@polkadot/extension-inject/types';
+  InjectedAccount as InjectedAccountReef,
+  InjectedAccountWithMeta as InjectedAccountWithMetaReef
+} from '@reef-defi/extension-inject/types';
+import type {InjectedAccount, InjectedAccountWithMeta,} from '@polkadot/extension-inject/types';
 import {ContractType, reefTokenWithAmount, Token, TokenWithAmount} from '../../token/token';
-import {
-  accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj, reloadSignersSubj,
-} from '../account/setAccounts';
-import { UpdateAction } from '../model/updateStateModel';
-import {
-  availableNetworks, Network,
-} from '../../network/network';
-import { ERC20 } from '../../token/abi/ERC20';
-import { ERC721Uri } from '../../token/abi/ERC721Uri';
-import { ERC1155Uri } from '../../token/abi/ERC1155Uri';
-import {disconnectProvider, initProvider} from '../../utils';
-import { currentNetwork$, setCurrentNetwork, setCurrentProvider } from '../providerState';
-import { apolloClientSubj, setApolloUrls } from '../../graphql';
-import { ipfsUrlResolverFn } from '../../utils/nftUtil';
+import {Network,} from '../../network/network';
+import {ERC20} from '../../token/abi/ERC20';
+import {ERC721Uri} from '../../token/abi/ERC721Uri';
+import {ERC1155Uri} from '../../token/abi/ERC1155Uri';
+import {calculateTokenPrice} from '../../utils';
+import {apolloClientSubj, setApolloUrls} from '../../graphql';
+import {ipfsUrlResolverFn} from '../../token/nftUtil';
 import {ReefSigner} from "../../account/ReefAccount";
 import {Pool} from "../../token/pool";
-import {calculateTokenPrice, TxStatusUpdate} from "../../utils";
-
-type destroyConnection = ()=>void;
 
 export let _NFT_IPFS_RESOLVER_FN: ipfsUrlResolverFn|undefined;
 
@@ -72,38 +60,15 @@ export const combineTokensDistinct = ([tokens1, tokens2]: [
 };
 
 export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
-  Token[],
+  Token[]|null,
   number,
   Pool[]
-]): TokenWithAmount[] => tokens.map(
+]): TokenWithAmount[] => tokens?tokens.map(
   (token) => ({
     ...token,
     price: calculateTokenPrice(token, pools, reefPrice),
   } as TokenWithAmount),
-);
-
-export const onTxUpdateResetSigners = (
-  txUpdateData: TxStatusUpdate,
-  updateActions: UpdateAction[],
-): void => {
-  if (txUpdateData?.isInBlock || txUpdateData?.error) {
-    const delay = txUpdateData.txTypeEvm ? 2000 : 0;
-    setTimeout(() => reloadSignersSubj.next({ updateActions }), delay);
-  }
-};
-
-export const getContractTypeAbi = (contractType: ContractType): ContractInterface => {
-  switch (contractType) {
-    case ContractType.ERC20:
-      return ERC20;
-    case ContractType.ERC721:
-      return ERC721Uri;
-    case ContractType.ERC1155:
-      return ERC1155Uri;
-    default:
-      return [] as ContractInterface;
-  }
-};
+):[];
 
 export const getGQLUrls = (network: Network): { ws: string; http: string }|undefined => {
   if (!network.graphqlUrl) {
@@ -147,58 +112,9 @@ export function initApolloClient(selectedNetwork?: Network, client?: ApolloClien
   }
 }
 
-export const initReefState = (
-  {
-    network,
-    client,
-    signers,
-    jsonAccounts,
-    ipfsHashResolverFn,
-  }: StateOptions,
-): destroyConnection => {
-  const subscription = currentNetwork$.pipe(
-    switchMap((network) => initProvider(network.rpcUrl)
-      .then((provider) => ({
-        provider,
-        network,
-      }))),
-    scan((state: { provider: Provider|undefined }, newVal: { provider: Provider, network }) => {
-      if (state.provider) {
-        disconnectProvider(state.provider);
-      }
-      return { provider: newVal.provider, network: newVal.network };
-    }, {provider: undefined}),
-    tap((p_n: { provider: Provider, network: Network }) => {
-      setCurrentProvider(p_n.provider);
-    }),
-    tap((p_n) => {
-      initApolloClient(p_n.network, client);
-    }),
-    finalizeWithValue(((p_n) => disconnectProvider(p_n.provider))),
-  )
-    .subscribe({
-      error: (e) => {
-        console.log('initReefState ERR=', e);
-      },
-    });
-  setCurrentNetwork(network || availableNetworks.mainnet);
-  setNftIpfsResolverFn(ipfsHashResolverFn);
-  if (signers) {
-    accountsSubj.next(signers || null);
-  }
-  if (jsonAccounts) {
-    accountsJsonSigningKeySubj.next(jsonAccounts.injectedSigner);
-    accountsJsonSubj.next(jsonAccounts.accounts);
-  }
-  return () => subscription.unsubscribe();
-};
-
-function finalizeWithValue<T>(callback: (value: T) => void) {
-  return (source: Observable<T>) => defer(() => {
-    let lastValue: T;
-    return source.pipe(
-      tap((value) => lastValue = value),
-      finalize(() => callback(lastValue)),
-    );
-  });
+export const toInjectedAccountsWithMeta = (injAccounts: InjectedAccount[] | InjectedAccountReef[], extensionSourceName: string): InjectedAccountWithMeta[] | InjectedAccountWithMetaReef[]=>{
+  return injAccounts.map(acc => ({
+    address: acc.address,
+    meta: {source: extensionSourceName}
+  } as InjectedAccountWithMeta | InjectedAccountWithMetaReef));
 }

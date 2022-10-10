@@ -13,7 +13,7 @@ import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {ReefSigner} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
-import {signersRegistered$} from "./setAccounts";
+import {signersRegistered$} from "./signersFromJson";
 
 export const signersWithUpdatedChainDataBalances$ = combineLatest([
     currentProvider$,
@@ -84,7 +84,7 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
             }))),
         shareReplay(1),
         catchError((err) => {
-            console.log('signersWithUpdatedBalances$ ERROR=', err.message);
+            console.log('signersWithUpdatedChainDataBalances$ ERROR=', err.message);
             return of([]);
         }),
     ) as Observable<ReefSigner[]>;

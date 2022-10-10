@@ -3,7 +3,7 @@ import { utils } from 'ethers';
 import {
   from, map, Observable, of, scan, shareReplay, switchMap,
 } from 'rxjs';
-import { apolloClientInstance$, zenToRx } from './apollo';
+import { apolloClientInstance$, zenToRx } from '../graphql/apollo';
 
 const getGqlContractEventsQuery = (
   contractAddress: string,

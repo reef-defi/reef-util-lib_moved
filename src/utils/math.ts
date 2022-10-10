@@ -1,7 +1,8 @@
-import { BigNumber, utils } from 'ethers';
-import { ensure } from './utils';
-import {Token, TokenWithAmount} from "../token/token";
+import {BigNumber, utils} from 'ethers';
+import {ensure, MIN_EVM_TX_BALANCE, MIN_NATIVE_TX_BALANCE, toReefBalanceDisplay} from './utils';
+import {isNativeTransfer, REEF_TOKEN, Token, TokenWithAmount} from "../token/token";
 import {Pool} from "../token/pool";
+import {parseEther} from "ethers/lib/utils";
 
 const findDecimalPoint = (amount: string): number => {
   const { length } = amount;
@@ -353,3 +354,33 @@ export const variance = (arr: number[]): number => {
   return mean(squareDiffs);
 };
 export const std = (arr: number[]): number => Math.sqrt(variance(arr));
+
+export const checkMinExistentialReefAmount = (token: TokenWithAmount, reefBalance: BigNumber): {valid: boolean, message?: string, maxTransfer: BigNumber} => {
+  const nativeReefTransfer = isNativeTransfer(token);
+  const FIXED_TX_FEE = nativeReefTransfer ? 2 : 3;
+  const minAmountBesidesTx = (nativeReefTransfer ? MIN_NATIVE_TX_BALANCE : MIN_EVM_TX_BALANCE);
+  const reservedTxMin = calculateAmount({ decimals: REEF_TOKEN.decimals, amount: (minAmountBesidesTx + FIXED_TX_FEE).toString() });
+  const transferAmt = BigNumber.from(parseEther(assertAmount(token.amount)));
+  const requiredReefMin = nativeReefTransfer ? BigNumber.from(reservedTxMin).add(transferAmt) : BigNumber.from(reservedTxMin);
+  const maxTransfer = reefBalance.sub(BigNumber.from(reservedTxMin));
+  const valid = reefBalance.gte(requiredReefMin);
+  let message = '';
+  if (!valid) {
+    message = `${toReefBalanceDisplay(BigNumber.from(reservedTxMin))} balance needed to call EVM transaction. Token transfer fee ~2.5 REEF.`;
+
+    if (nativeReefTransfer) {
+      const maxTransfer = reefBalance.sub(BigNumber.from(reservedTxMin));
+      message = `Maximum transfer amount is ~${toReefBalanceDisplay(maxTransfer)} to allow for fees.`;
+    }
+  }
+  return { valid, message, maxTransfer };
+};
+
+export const ensureTokenAmount = (token: TokenWithAmount): void => ensure(
+    BigNumber.from(calculateAmount(token)).lte(token.balance),
+    `Insufficient ${token.name} balance`,
+);
+
+export const ensureExistentialReefAmount = (token: TokenWithAmount, reefBalance: BigNumber): void => {
+  ensure(checkMinExistentialReefAmount(token, reefBalance).valid, 'Insufficient REEF balance.');
+};

@@ -7,10 +7,9 @@ export * from './appState/model/updateStateModel';
 export {signersRegistered$} from "./appState/account/setAccounts";
 */
 
-import {selectedSignerTokenBalances$} from "./appState/token/tokenState";
 
 export * as reefState from './appState/util/util';
-export {selectedSignerTokenBalances$} from './appState/token/tokenState'
+export {selectedSignerTokenBalances$} from './appState/token/selectedSignerTokenBalances'
 export { selectedSigner$ } from './appState/account/selectedSigner'
 export * from './network/network';
-export * from './utils/providerUtil'
+export * from './network/providerUtil'

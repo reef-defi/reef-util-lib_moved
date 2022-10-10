@@ -1,10 +1,16 @@
 import { Signer } from '@reef-defi/evm-provider';
 import { Contract } from 'ethers';
 import { ensure, uniqueCombinations } from '../utils';
-import {getReefswapFactory} from "../utils/rpc";
-import {Token} from "../token/token";
+import {getReefswapFactory} from "../network/rpc";
+import {reefTokenWithAmount, Token} from "../token/token";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
+import {combineLatest, map, switchMap} from "rxjs";
+import {apolloClientInstance$, zenToRx} from "../graphql";
+import {selectedSigner$} from "../appState/account/selectedSigner";
+import {currentProvider$} from "../appState/providerState";
+import {gql} from "@apollo/client";
+import {AVAILABLE_REEF_POOLS_GQL} from "../graphql/availablePools.gql";
 
 const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
