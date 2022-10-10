@@ -5,7 +5,7 @@ import {getReefswapFactory} from "../network/rpc";
 import {reefTokenWithAmount, Token} from "../token/token";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
-import {combineLatest, map, switchMap} from "rxjs";
+import {combineLatest, map, Observable, switchMap} from "rxjs";
 import {apolloClientInstance$, zenToRx} from "../graphql";
 import {selectedSigner$} from "../appState/account/selectedSigner";
 import {currentProvider$} from "../appState/providerState";
@@ -84,3 +84,7 @@ export const loadPools = async (
   }
   return pools;
 };
+
+export const fetchPools$ = (tokens: Token[]): Observable<Observable<Pool>[]> => {
+  return tokens
+}

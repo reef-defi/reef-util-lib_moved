@@ -16,16 +16,6 @@ import {FeedbackDataModel} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
 
-// TODO pools and tokens emit events at same time - check how to make 1 event from it
-export const selectedSignerTokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
-    selectedSignerTokenBalances$,
-    reefPrice$,
-    selectedSignerPools$,
-]).pipe(
-    map(toTokensWithPrice),
-    shareReplay(1)
-);
-
 export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineLatest([
     apolloClientInstance$,
     selectedSigner$,
@@ -48,6 +38,15 @@ export const selectedSignerPools$: Observable<Pool[]> = combineLatest([
     shareReplay(1),
 );
 
+// TODO pools and tokens emit events at same time - check how to make 1 event from it
+export const selectedSignerTokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
+    selectedSignerTokenBalances$,
+    reefPrice$,
+    selectedSignerPools$,
+]).pipe(
+    map(toTokensWithPrice),
+    shareReplay(1)
+);
 
 export const availableReefPools$: Observable<AvailablePool[]> = combineLatest([
     apolloClientInstance$,
