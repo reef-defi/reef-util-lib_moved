@@ -1,16 +1,12 @@
-import { Signer } from '@reef-defi/evm-provider';
-import { Contract } from 'ethers';
-import { ensure, uniqueCombinations } from '../utils';
+import {Signer} from '@reef-defi/evm-provider';
+import {Contract} from 'ethers';
+import {ensure, uniqueCombinations} from '../utils';
 import {getReefswapFactory} from "../network/rpc";
-import {reefTokenWithAmount, Token} from "../token/token";
+import {REEF_TOKEN, Token} from "../token/token";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
-import {combineLatest, map, Observable, switchMap} from "rxjs";
-import {apolloClientInstance$, zenToRx} from "../graphql";
-import {selectedSigner$} from "../appState/account/selectedSigner";
-import {currentProvider$} from "../appState/providerState";
-import {gql} from "@apollo/client";
-import {AVAILABLE_REEF_POOLS_GQL} from "../graphql/availablePools.gql";
+import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
 
 const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -85,6 +81,30 @@ export const loadPools = async (
   return pools;
 };
 
-export const fetchPools$ = (tokens: Token[]): Observable<Observable<Pool>[]> => {
-  return tokens
+const cachePool$: Map<string,Observable<FeedbackDataModel<Pool|null>>> = new Map<string, Observable<FeedbackDataModel<Pool|null>>>();
+// TODO listen to pool events and refresh then
+const poolsRefresh$ = timer(0,420000);
+
+function isPoolCached(token1: Token, token2: Token) {
+  return (cachePool$.has(`${token1.address}-${token2.address}`) || cachePool$.has(`${token1.address}-${token2.address}`));
 }
+
+const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool>> => {
+  const token2 = REEF_TOKEN;
+  if(!isPoolCached(token1, token2)){
+    const pool$ = poolsRefresh$.pipe(
+        switchMap(()=>loadPool(token1, token2, signer, factoryAddress)),
+        map(pool=>toFeedbackDM(pool, FeedbackStatusCode.COMPLETE_DATA)),
+        catchError((err) => {
+          console.log("ERROR loadPool=",err.message);
+          return of(toFeedbackDM(null, FeedbackStatusCode.COMPLETE_DATA, 'Loading pool error.'))
+        }),
+        shareReplay(1),
+        startWith(toFeedbackDM(null, FeedbackStatusCode.LOADING, 'Loading pool data.'))
+    );
+    cachePool$.set(`${token1.address}-${token2.address}`, pool$);
+  }
+  return cachePool$.get(`${token1.address}-${token2.address}`) || cachePool$.get(`${token2.address}-${token1.address}`)!;
+}
+
+export const fetchPools$ = (tokens: Token[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool|null>|undefined)[]> => combineLatest(tokens.map(tkn=>getPool$(tkn, signer, factoryAddress)));

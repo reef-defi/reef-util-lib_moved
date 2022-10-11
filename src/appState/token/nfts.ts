@@ -47,6 +47,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
         } as NFT)
     });
 
+
 export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<NFT[]>> => (!signer
     ? of(toFeedbackDM([] as NFT[], FeedbackStatusCode.PARTIAL_DATA, 'Signer not set'))
     : zenToRx(
@@ -77,7 +78,6 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
                 )
             ),
             map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
-            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
             catchError(err => of(toFeedbackDM(null, FeedbackStatusCode.ERROR, err.message))),
+            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
         ));
-

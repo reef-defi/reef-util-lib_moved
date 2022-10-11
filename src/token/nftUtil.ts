@@ -1,4 +1,15 @@
-import {combineLatest, forkJoin, map, Observable, of, startWith, switchMap, withLatestFrom} from 'rxjs';
+import {
+    catchError,
+    combineLatest,
+    forkJoin,
+    map,
+    Observable,
+    of,
+    startWith,
+    switchMap,
+    tap,
+    withLatestFrom
+} from 'rxjs';
 import {Contract} from 'ethers';
 import axios from 'axios';
 import {Signer} from '@reef-defi/evm-provider';
@@ -54,11 +65,13 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
     if (!nft) {
         return Promise.resolve(null);
     }
-    const contractTypeAbi = getContractTypeAbi(nft.contractType);
-    const contract = new Contract(nft.address, contractTypeAbi, signer);
-    const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
-        : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
     try {
+        throw new Error('Test234')
+        const contractTypeAbi = getContractTypeAbi(nft.contractType);
+        const contract = new Contract(nft.address, contractTypeAbi, signer);
+        const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
+            : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
+
         return await uriPromise
             .then((metadataUri) => resolveUriToUrl(metadataUri, nft, ipfsUrlResolver))
             .then(axios.get)
@@ -66,6 +79,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
             .then((nftUri) => ({...nft, ...nftUri}));
     } catch (e) {
         console.log("ERROR getResolveNftPromise=", e);
+        throw new Error(e.message);
     }
 };
 
@@ -79,12 +93,17 @@ export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfs
         (nft: NFT | null) => of(nft).pipe(
             switchMap((nft: NFT | null) => getResolveNftPromise(nft, signer, ipfsUrlResolver)),
             map((resNft: NFT | null) => toFeedbackDM(resNft, FeedbackStatusCode.COMPLETE_DATA, 'Url resolved')),
+            catchError(err => {
+                console.log("ERROR resolving nft img=", err);
+                return of(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL_ERROR, 'Url resolve error.'));
+            }),
             startWith(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL, 'Resolving url.'))
         )
     );
     return combineLatest(
         resolveObsArr
-    );
+    )
+    // .pipe(tap(v=>console.log('NFTS TAP', v)));
 };
 
 

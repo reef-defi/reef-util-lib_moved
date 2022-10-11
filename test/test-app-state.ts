@@ -1,5 +1,5 @@
 import {toInjectedAccountsWithMeta} from '../src/appState/util/util'
-import {availableNetworks, selectedSigner$} from "../src";
+import {availableNetworks, dexConfig, selectedSigner$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
 import {setCurrentAddress} from "../src/appState/account/setAccounts";
@@ -12,12 +12,28 @@ import {
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$
 } from "../src/appState/tokenState.rx";
-import {firstValueFrom, skip, skipWhile} from "rxjs";
+import {firstValueFrom, skip, skipWhile, tap} from "rxjs";
 import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
+import {fetchPools$} from "../src/pools/pools";
 
 const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
 ];
+
+async function testNfts() {
+    console.log('Testing nfts');
+    let nfts = await firstValueFrom(selectedSignerNFTs$);
+    console.assert(nfts.status?.code === FeedbackStatusCode.LOADING, 'Nfts not cleared when changing signer')
+    console.log("resolve url=",);
+    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
+    console.assert(nfts.status?.code === FeedbackStatusCode.RESOLVING_NFT_URL, 'Nft data not complete')
+
+    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(
+        tap(v=>console.log('Waiting for nft complete data')),
+        skipWhile(nfts => nfts.status?.code !== FeedbackStatusCode.COMPLETE_DATA)));
+    console.assert(!nfts.data.find(nft => nft.status?.code !== FeedbackStatusCode.COMPLETE_DATA), 'Nft data not complete')
+    console.log(`nfts=`, nfts);
+}
 
 async function testAppStateTokens(testAccount: string) {
     setCurrentAddress(testAccount);
@@ -36,21 +52,16 @@ async function testAppStateTokens(testAccount: string) {
         console.assert(sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
     });
 
-    let nfts = await firstValueFrom(selectedSignerNFTs$);
-    console.assert(nfts.status?.code === FeedbackStatusCode.LOADING, 'Nfts not cleared when changing signer')
-    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
-    console.assert(nfts.status?.code === FeedbackStatusCode.RESOLVING_NFT_URL, 'Nft data not complete')
-    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skipWhile(nfts => nfts.status?.code !== FeedbackStatusCode.COMPLETE_DATA)));
-    console.assert(!nfts.data.find(nft => nft.status?.code !== FeedbackStatusCode.COMPLETE_DATA), 'Nft data not complete')
-    console.log(`nfts=`, nfts);
-
     console.log("END testAppStateTokens");
 
 }
 
-async function testAvailablePools() {
-    const availablePools = await firstValueFrom(availableReefPools$);
-    console.log("available pools=", availablePools);
+async function testAvailablePools(tokens, signer, factoryAddr) {
+    // const availablePools = await firstValueFrom(availableReefPools$);
+    fetchPools$(tokens, signer?.signer, factoryAddr).subscribe(value => {
+        console.log("fetchPools$=", value);
+    })
+
     console.log("END testAvailablePools");
 }
 
@@ -95,8 +106,13 @@ async function initTest() {
 
     // await testAppStateSigners(accounts);
     await testAppStateTokens(accounts[0].address);
-    await testAppStateTokens(accounts[1].address);
-    await testAvailablePools();
+    // await testNfts();
+    // await testAppStateTokens(accounts[1].address);
+    // await testNfts();
+
+    const signer = await firstValueFrom(selectedSigner$);
+    const tokens = await firstValueFrom(selectedSignerTokenBalances$);
+    await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
 }
 
 window.addEventListener('load', initTest);

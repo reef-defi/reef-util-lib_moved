@@ -26,11 +26,3 @@ export const toAvailablePools = ({data: {verified_pool: pools}}) => pools.map(po
         totalSupply: (pool.supply[0])?.total_supply
     }
 ));
-/* TODO load tokens and cache
-export const availablePoolTokens$: Observable<Token[]> = availableReefPools$.pipe(
-    map((pool: AvailablePool) => ({
-        address: pool.token2===REEF_ADDRESS?pool.token1:pool.token2
-        balance:BigNumber.from('0'),
-        name: pool.
-    } as Token))
-)*/
