@@ -71,7 +71,7 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
             switchMap((nftArr: NFT[]) => of(nftArr).pipe(
                 switchMap(nfts => resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
                 map((feedbackNfts: FeedbackDataModel<NFT | null>[]) => {
-                    const code = (feedbackNfts.find(nftFDM => nftFDM.status?.code !== FeedbackStatusCode.COMPLETE_DATA)?.status.code) || FeedbackStatusCode.COMPLETE_DATA;
+                    const code = (feedbackNfts.find(nftFDM => nftFDM.getStatus()?.code !== FeedbackStatusCode.COMPLETE_DATA)?.getStatus().code) || FeedbackStatusCode.COMPLETE_DATA;
                     const message = code === FeedbackStatusCode.RESOLVING_NFT_URL ? 'Resolving nft urls.' : '';
                     return toFeedbackDM(feedbackNfts, code, message);
                 })

@@ -1,8 +1,8 @@
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap,} from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
 import {NFT, Token, TokenTransfer, TokenWithAmount} from "../token/token";
-import {toTokensWithPrice} from "./util/util";
-import {reefPrice$} from "../token/reefPrice.rx";
+import {toTokensWithPrice, toTokensWithPrice_fbk} from "./util/util";
+import {reefPrice$, reefPrice_fbk$} from "../token/reefPrice.rx";
 import {loadSignerTokens} from "./token/selectedSignerTokenBalances";
 import {apolloClientInstance$} from "../graphql";
 import {selectedSigner$} from "./account/selectedSigner";
@@ -11,7 +11,7 @@ import {AvailablePool, Pool} from "../token/pool";
 import {selectedSignerAddressUpdate$} from "./account/selectedSignerAddressUpdate";
 import {dexConfig, Network} from "../network/network";
 import {ReefSigner} from "../account/ReefAccount";
-import {loadPools} from "../pools/pools";
+import {fetchPools$, loadPools} from "../pools/pools";
 import {FeedbackDataModel} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
@@ -29,6 +29,16 @@ export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineL
     shareReplay(1)
 );
 
+export const selectedSignerPools$: Observable<FeedbackDataModel<Pool|null>[]> = combineLatest([
+    selectedSignerTokenBalances$,
+    currentNetwork$,
+    selectedSignerAddressUpdate$,
+]).pipe(
+    switchMap(([tkns, network, signer]: [Token[] | null, Network, ReefSigner]) => (signer && tkns?.length ?     fetchPools$(tkns as Token[], signer.signer, dexConfig[network.name].factoryAddress) : [])),
+    shareReplay(1),
+);
+/*
+
 export const selectedSignerPools$: Observable<Pool[]> = combineLatest([
     selectedSignerTokenBalances$,
     currentNetwork$,
@@ -37,14 +47,15 @@ export const selectedSignerPools$: Observable<Pool[]> = combineLatest([
     switchMap(([tkns, network, signer]: [Token[] | null, Network, ReefSigner]) => (signer && tkns?.length ? loadPools(tkns as Token[], signer.signer, dexConfig[network.name].factoryAddress) : [])),
     shareReplay(1),
 );
+*/
 
 // TODO pools and tokens emit events at same time - check how to make 1 event from it
-export const selectedSignerTokenPrices$: Observable<TokenWithAmount[]> = combineLatest([
+export const selectedSignerTokenPrices$: Observable<FeedbackDataModel<TokenWithAmount>[]> = combineLatest([
     selectedSignerTokenBalances$,
-    reefPrice$,
+    reefPrice_fbk$,
     selectedSignerPools$,
 ]).pipe(
-    map(toTokensWithPrice),
+    map(toTokensWithPrice_fbk),
     shareReplay(1)
 );
 

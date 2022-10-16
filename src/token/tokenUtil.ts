@@ -4,6 +4,7 @@ import {DataProgress, DataWithProgress, isDataSet} from '../utils/dataWithProgre
 import {reefTokenWithAmount, Token, TokenWithAmount,} from './token';
 import {toDecimalPlaces} from '../utils/math';
 import {Pool} from "./pool";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
 
 const { parseUnits, formatEther } = utils;
 
@@ -35,6 +36,23 @@ const findReefTokenPool = (
         && pool.token1.address.toLowerCase() === token.address.toLowerCase()),
 );
 
+const findReefTokenPool_fbk = (
+  pools: FeedbackDataModel<Pool|null>[],
+  reefAddress: string,
+  token: Token,
+): FeedbackDataModel<Pool|null> | undefined => pools.find(
+      (pool_fdm) => {
+        if (!pool_fdm.data) {
+          return false;
+        }
+        const pool: Pool = pool_fdm.data!;
+        return (pool.token1?.address.toLowerCase() === reefAddress.toLowerCase()
+            && pool.token2?.address.toLowerCase() === token.address.toLowerCase())
+        || (pool.token2?.address.toLowerCase() === reefAddress.toLowerCase()
+            && pool.token1?.address.toLowerCase() === token.address.toLowerCase());
+      }
+  ) as FeedbackDataModel<Pool|null>|undefined;
+
 export const calculateTokenPrice = (
   token: Token,
   pools: Pool[],
@@ -58,6 +76,31 @@ export const calculateTokenPrice = (
     return DataProgress.NO_DATA;
   }
   return reefPrice || DataProgress.NO_DATA;
+};
+
+export const calculateTokenPrice_fbk = (
+  token: Token,
+  pools: FeedbackDataModel<Pool|null>[],
+  reefPrice: FeedbackDataModel<number>,
+): FeedbackDataModel<number> => {
+  if (!isDataSet(reefPrice)) {
+    return reefPrice;
+  }
+  const { address: reefAddress } = reefTokenWithAmount();
+  let ratio: number;
+  if (token.address.toLowerCase() !== reefAddress.toLowerCase()) {
+    const reefTokenPool = findReefTokenPool_fbk(pools, reefAddress, token);
+    if (reefTokenPool?.getStatus() === FeedbackStatusCode.COMPLETE_DATA && !!reefTokenPool.data) {
+      const { reefReserve, tokenReserve } = getReefTokenPoolReserves(
+        reefTokenPool.data!,
+        reefAddress,
+      );
+      ratio = reefReserve / tokenReserve;
+      return toFeedbackDM(ratio * (reefPrice as number), FeedbackStatusCode.COMPLETE_DATA);
+    }
+    return toFeedbackDM(0, reefTokenPool?.getStatus()?.code || FeedbackStatusCode.COMPLETE_DATA);
+  }
+  return reefPrice;
 };
 
 export const calculateBalanceValue = ({

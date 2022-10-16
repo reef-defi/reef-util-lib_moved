@@ -23,15 +23,15 @@ const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2Q
 async function testNfts() {
     console.log('Testing nfts');
     let nfts = await firstValueFrom(selectedSignerNFTs$);
-    console.assert(nfts.status?.code === FeedbackStatusCode.LOADING, 'Nfts not cleared when changing signer')
+    console.assert(nfts.getStatus()?.code === FeedbackStatusCode.LOADING, 'Nfts not cleared when changing signer')
     console.log("resolve url=",);
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
-    console.assert(nfts.status?.code === FeedbackStatusCode.RESOLVING_NFT_URL, 'Nft data not complete')
+    console.assert(nfts.getStatus()?.code === FeedbackStatusCode.RESOLVING_NFT_URL, 'Nft data not complete')
 
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(
         tap(v=>console.log('Waiting for nft complete data')),
-        skipWhile(nfts => nfts.status?.code !== FeedbackStatusCode.COMPLETE_DATA)));
-    console.assert(!nfts.data.find(nft => nft.status?.code !== FeedbackStatusCode.COMPLETE_DATA), 'Nft data not complete')
+        skipWhile(nfts => nfts.getStatus()?.code !== FeedbackStatusCode.COMPLETE_DATA)));
+    console.assert(!nfts.data.find(nft => nft.getStatus()?.code !== FeedbackStatusCode.COMPLETE_DATA), 'Nft data not complete')
     console.log(`nfts=`, nfts);
 }
 
@@ -60,7 +60,7 @@ async function testAvailablePools(tokens, signer, factoryAddr) {
     // const availablePools = await firstValueFrom(availableReefPools$);
     fetchPools$(tokens, signer?.signer, factoryAddr).subscribe(value => {
         console.log("fetchPools$=", value);
-    })
+    });
 
     console.log("END testAvailablePools");
 }
@@ -113,6 +113,9 @@ async function initTest() {
     const signer = await firstValueFrom(selectedSigner$);
     const tokens = await firstValueFrom(selectedSignerTokenBalances$);
     await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
+    selectedSignerTokenPrices$.subscribe(v => {
+        console.log("token prices=", v);
+    });
 }
 
 window.addEventListener('load', initTest);

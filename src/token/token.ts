@@ -4,6 +4,7 @@ import {EMPTY_ADDRESS, REEF_ADDRESS,} from '../utils/utils';
 import {ERC20} from "./abi/ERC20";
 import {ERC721Uri} from "./abi/ERC721Uri";
 import {ERC1155Uri} from "./abi/ERC1155Uri";
+import {FeedbackDataModel} from "../appState/model/feedbackDataModel";
 
 export enum ContractType {
   ERC20 = 'ERC20',
@@ -24,21 +25,10 @@ export interface BasicToken {
   iconUrl: string;
 }
 
-enum TokenStatusCode {
-  LOADING_FINALIZED_NBALANCE
-}
-
-interface TokenStatus {
-  message: string;
-  statusCode: TokenStatusCode;
-  oldValue: Token;
-}
-
 export interface Token extends BasicToken {
   symbol: string;
   balance: BigNumber;
   decimals: number;
-  status?: TokenStatus;
 }
 
 export interface TokenWithAmount extends Token {

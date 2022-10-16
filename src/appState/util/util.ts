@@ -13,11 +13,12 @@ import {Network,} from '../../network/network';
 import {ERC20} from '../../token/abi/ERC20';
 import {ERC721Uri} from '../../token/abi/ERC721Uri';
 import {ERC1155Uri} from '../../token/abi/ERC1155Uri';
-import {calculateTokenPrice} from '../../utils';
+import {calculateTokenPrice, calculateTokenPrice_fbk} from '../../utils';
 import {apolloClientSubj, setApolloUrls} from '../../graphql';
 import {ipfsUrlResolverFn} from '../../token/nftUtil';
 import {ReefSigner} from "../../account/ReefAccount";
 import {Pool} from "../../token/pool";
+import {FeedbackDataModel, FeedbackStatus, toFeedbackDM} from "../model/feedbackDataModel";
 
 export let _NFT_IPFS_RESOLVER_FN: ipfsUrlResolverFn|undefined;
 
@@ -68,6 +69,22 @@ export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
     ...token,
     price: calculateTokenPrice(token, pools, reefPrice),
   } as TokenWithAmount),
+):[];
+
+export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
+  Token[]|null,
+  FeedbackDataModel<number>,
+  FeedbackDataModel<Pool|null>[]
+]): FeedbackDataModel<TokenWithAmount>[] => tokens?tokens.map(
+  (token) => {
+    const priceFDM = calculateTokenPrice_fbk(token, pools, reefPrice);
+    const statusArr = [{...priceFDM.getStatus(), propName: 'price'} as FeedbackStatus];
+    ... TODO token balances
+    return toFeedbackDM({
+      ...token,
+      price: priceFDM.data,
+    } as TokenWithAmount, statusArr);
+  },
 ):[];
 
 export const getGQLUrls = (network: Network): { ws: string; http: string }|undefined => {
