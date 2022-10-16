@@ -3,7 +3,7 @@ import {loadAvailablePools, toAvailablePools} from "./token/pools";
 import {NFT, Token, TokenTransfer, TokenWithAmount} from "../token/token";
 import {toTokensWithPrice, toTokensWithPrice_fbk} from "./util/util";
 import {reefPrice$, reefPrice_fbk$} from "../token/reefPrice.rx";
-import {loadSignerTokens} from "./token/selectedSignerTokenBalances";
+import {loadSignerTokens, loadSignerTokens_fbk} from "./token/selectedSignerTokenBalances";
 import {apolloClientInstance$} from "../graphql";
 import {selectedSigner$} from "./account/selectedSigner";
 import {currentNetwork$, currentProvider$} from "./providerState";
@@ -21,7 +21,7 @@ export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineL
     selectedSigner$,
     currentProvider$,
 ]).pipe(
-    switchMap(loadSignerTokens),
+    switchMap(loadSignerTokens_fbk),
     catchError(((err) => {
         console.log('selectedSignerTokenBalances$ ERROR=', err.message);
         return of(null);

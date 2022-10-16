@@ -1,10 +1,11 @@
 import {BigNumber, ContractInterface} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
-import {EMPTY_ADDRESS, REEF_ADDRESS,} from '../utils/utils';
 import {ERC20} from "./abi/ERC20";
 import {ERC721Uri} from "./abi/ERC721Uri";
 import {ERC1155Uri} from "./abi/ERC1155Uri";
-import {FeedbackDataModel} from "../appState/model/feedbackDataModel";
+
+export const REEF_ADDRESS = REEF_TOKEN.address;
+export const EMPTY_ADDRESS = '0x';
 
 export enum ContractType {
   ERC20 = 'ERC20',

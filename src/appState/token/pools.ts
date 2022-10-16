@@ -1,12 +1,12 @@
 // TODO when network changes signer changes as well? this could make 2 requests unnecessary - check
-import {reefTokenWithAmount} from "../../token/token";
 import {zenToRx} from "../../graphql";
 import {AVAILABLE_REEF_POOLS_GQL} from "../../graphql/availablePools.gql";
+import {REEF_ADDRESS} from "../../token/token";
 
 export const loadAvailablePools = ([apollo, provider]) => zenToRx(
     apollo.subscribe({
         query: AVAILABLE_REEF_POOLS_GQL,
-        variables: {hasTokenAddress: reefTokenWithAmount().address},
+        variables: {hasTokenAddress: REEF_ADDRESS},
         fetchPolicy: 'network-only',
     }),
 );

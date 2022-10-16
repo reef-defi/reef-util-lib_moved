@@ -1,7 +1,7 @@
 // TODO replace with our own from lib and remove
 import {reefTokenWithAmount, Token} from "../../token/token";
 import {BigNumber, FixedNumber, utils} from "ethers";
-import {map, mergeScan, startWith, switchMap} from "rxjs";
+import {from, map, mergeScan, startWith} from "rxjs";
 import {zenToRx} from "../../graphql";
 import {getReefCoinBalance} from "../../account/accounts";
 import {getIconUrl} from "../../utils";
@@ -15,7 +15,6 @@ const fetchTokensData = (
     // apollo: ApolloClient<any>,
     apollo: any,
     missingCacheContractDataAddresses: string[],
-    state: { tokens: Token[]; contractData: Token[] },
 ): Promise<Token[]> => apollo
     .query({
         query: CONTRACT_DATA_GQL,
@@ -31,13 +30,30 @@ const fetchTokensData = (
             name: vContract.contract_data.name,
             symbol: vContract.contract_data.symbol,
         } as Token),
-    ))
-    .then((newTokens) => newTokens.concat(state.contractData));
+    ));
 
 // eslint-disable-next-line camelcase
+function toTokensWithContractDataFn(tokenBalances: { token_address: string; balance: number }[]): ()=>{tokens: FeedbackDataModel<Token>[], contractData: any} {
+    return (cData: Token[]) => {
+        const tkns = tokenBalances
+            .map((tBalance) => {
+                const cDataTkn = cData.find(
+                    (cd) => cd.address === tBalance.token_address,
+                ) as Token;
+
+                return cDataTkn?toFeedbackDM({
+                    ...cDataTkn,
+                    balance: BigNumber.from(toPlainString(tBalance.balance)),
+                }, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set'): toFeedbackDM({address: tBalance.token_address, balance:tBalance.balance} as Token, FeedbackStatusCode.PARTIAL_DATA, 'Loading contract data');
+            });
+            //.filter((v) => !!v);
+        return {tokens: tkns, contractData: cData};
+    };
+}
+
 // const tokenBalancesWithContractDataCache = (apollo: ApolloClient<any>) => (
-const tokenBalancesWithContractDataCache = (apollo: any) => (
-    state: { tokens: Token[]; contractData: Token[] },
+const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
+    state: { tokens: FeedbackDataModel<Token>[]; contractData: Token[] },
     // eslint-disable-next-line camelcase
     tokenBalances: { token_address: string; balance: number }[],
 ) => {
@@ -46,24 +62,18 @@ const tokenBalancesWithContractDataCache = (apollo: any) => (
             (tb) => !state.contractData.some((cd) => cd.address === tb.token_address),
         )
         .map((tb) => tb.token_address);
+
     const contractDataPromise = missingCacheContractDataAddresses.length
-        ? fetchTokensData(apollo, missingCacheContractDataAddresses, state)
+        ? fetchTokensData(apollo, missingCacheContractDataAddresses)
+            .then((newTokens) => newTokens.concat(state.contractData))
         : Promise.resolve(state.contractData);
 
-    return contractDataPromise.then((cData: Token[]) => {
-        const tkns = tokenBalances
-            .map((tBalance) => {
-                const cDataTkn = cData.find(
-                    (cd) => cd.address === tBalance.token_address,
-                ) as Token;
-                return {
-                    ...cDataTkn,
-                    balance: BigNumber.from(toPlainString(tBalance.balance)),
-                };
-            })
-            .filter((v) => !!v);
-        return {tokens: tkns, contractData: cData};
-    });
+    return from(contractDataPromise).pipe(
+        ...
+        startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData))
+    )
+
+    return contractDataPromise.then(toTokensWithContractDataFn(tokenBalances));
 };
 
 let addReefTokenBalance = async (
@@ -94,6 +104,10 @@ let addReefTokenBalance = async (
 // noinspection TypeScriptValidateTypes
 export const loadSignerTokens_fbk = ([apollo, signer, provider]): FeedbackDataModel<Token>[] | null => {
 
+    let resolveEmptyIconUrl = (val: { tokens: Token[] }) => val.tokens.map((t) => ({
+        ...t,
+        iconUrl: t.iconUrl || getIconUrl(t.address),
+    }));
     return (!signer
         ? []
         : zenToRx(
@@ -106,19 +120,15 @@ export const loadSignerTokens_fbk = ([apollo, signer, provider]): FeedbackDataMo
             map((res: any) => (res.data && res.data.token_holder
                 ? res.data.token_holder
                 : undefined)),
+            // switchMap(
+            //     addReefTokenBalance,
+            // ),
             // eslint-disable-next-line camelcase
-            switchMap(
-                addReefTokenBalance,
-            ),
-            // eslint-disable-next-line camelcase
-            mergeScan(tokenBalancesWithContractDataCache(apollo), {
+            mergeScan(tokenBalancesWithContractDataCache_fbk(apollo), {
                 tokens: [],
                 contractData: [reefTokenWithAmount()],
             }),
-            map((val: { tokens: Token[] }) => val.tokens.map((t) => ({
-                ...t,
-                iconUrl: t.iconUrl || getIconUrl(t.address),
-            }))),
+            map(resolveEmptyIconUrl),
             map(sortReefTokenFirst),
             startWith(null)
         ));

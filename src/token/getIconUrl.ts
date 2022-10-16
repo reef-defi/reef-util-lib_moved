@@ -1,4 +1,4 @@
-import {reefTokenWithAmount} from "./token";
+import {REEF_ADDRESS, REEF_TOKEN} from "./token";
 import {getHashSumLastNr} from "../utils/math";
 
 const DEFAULT_TOKEN_ICONS: string[] = [
@@ -20,10 +20,8 @@ const DEFAULT_TOKEN_ICONS: string[] = [
  *  and prefixed with data string, so it can be used directly with <img /> tag.
  */
 export const getIconUrl = (tokenAddress = ''): string => {
-    const reefToken = reefTokenWithAmount();
-
-    if (tokenAddress === reefToken.address) {
-        return reefToken.iconUrl;
+    if (tokenAddress === REEF_ADDRESS) {
+        return REEF_TOKEN.iconUrl;
     }
 
     const checkSum = getHashSumLastNr(tokenAddress);
