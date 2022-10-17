@@ -7,7 +7,6 @@ import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {
-    availableReefPools$,
     selectedSignerNFTs$,
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$

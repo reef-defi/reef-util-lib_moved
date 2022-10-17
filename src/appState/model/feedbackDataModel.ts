@@ -34,6 +34,11 @@ export class FeedbackDataModel<T> {
         return this._status;
     }
 
+    isStatus(status: FeedbackStatusCode, propName?: string): boolean {
+        const stat = this.getStatus(propName);
+        return stat === status;
+    }
+
     toJson(){
         return JSON.stringify({data: this.data, status: this._status});
     }
