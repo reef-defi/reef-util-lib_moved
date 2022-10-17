@@ -112,6 +112,7 @@ async function initTest() {
 
     const signer = await firstValueFrom(selectedSigner$);
     const tokens = await firstValueFrom(selectedSignerTokenBalances$);
+    console.log("token balances=",tokens);
     await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
     selectedSignerTokenPrices$.subscribe(v => {
         console.log("token prices=", v);

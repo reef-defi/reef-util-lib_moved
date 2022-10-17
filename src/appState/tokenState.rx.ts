@@ -1,6 +1,6 @@
-import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap,} from 'rxjs';
+import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, withLatestFrom,} from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
-import {NFT, Token, TokenTransfer, TokenWithAmount} from "../token/token";
+import {NFT, REEF_ADDRESS, Token, TokenTransfer, TokenWithAmount} from "../token/token";
 import {toTokensWithPrice, toTokensWithPrice_fbk} from "./util/util";
 import {reefPrice$, reefPrice_fbk$} from "../token/reefPrice.rx";
 import {loadSignerTokens, loadSignerTokens_fbk} from "./token/selectedSignerTokenBalances";
@@ -8,20 +8,29 @@ import {apolloClientInstance$} from "../graphql";
 import {selectedSigner$} from "./account/selectedSigner";
 import {currentNetwork$, currentProvider$} from "./providerState";
 import {AvailablePool, Pool} from "../token/pool";
-import {selectedSignerAddressUpdate$} from "./account/selectedSignerAddressUpdate";
+import {selectedSignerAddressChange$} from "./account/selectedSignerAddressUpdate";
 import {dexConfig, Network} from "../network/network";
 import {ReefSigner} from "../account/ReefAccount";
 import {fetchPools$, loadPools} from "../pools/pools";
 import {FeedbackDataModel} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
+import {BigNumber} from "ethers";
 
 export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineLatest([
     apolloClientInstance$,
-    selectedSigner$,
+    selectedSignerAddressChange$,
     currentProvider$,
 ]).pipe(
     switchMap(loadSignerTokens_fbk),
+    withLatestFrom(selectedSigner$),
+    map(([tokens, selSigner]: [FeedbackDataModel<Token>[], ReefSigner] )=>{
+        if (selSigner?.balance) {
+            const reefT = tokens.find(t => t.data.address === REEF_ADDRESS);
+            reefT.data.balance = selSigner.balance;
+        }
+        return tokens;
+    }),
     catchError(((err) => {
         console.log('selectedSignerTokenBalances$ ERROR=', err.message);
         return of(null);
@@ -32,7 +41,7 @@ export const selectedSignerTokenBalances$: Observable<Token[] | null> = combineL
 export const selectedSignerPools$: Observable<FeedbackDataModel<Pool|null>[]> = combineLatest([
     selectedSignerTokenBalances$,
     currentNetwork$,
-    selectedSignerAddressUpdate$,
+    selectedSignerAddressChange$,
 ]).pipe(
     switchMap(([tkns, network, signer]: [Token[] | null, Network, ReefSigner]) => (signer && tkns?.length ?     fetchPools$(tkns as Token[], signer.signer, dexConfig[network.name].factoryAddress) : [])),
     shareReplay(1),
@@ -71,7 +80,7 @@ export const availableReefPools$: Observable<AvailablePool[]> = combineLatest([
 
 export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> = combineLatest([
     apolloClientInstance$,
-    selectedSignerAddressUpdate$,
+    selectedSignerAddressChange$,
     currentProvider$,
 ])
     .pipe(
@@ -81,7 +90,7 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
 
 
 export const transferHistory$: Observable<null | TokenTransfer[]> = combineLatest([
-    apolloClientInstance$, selectedSignerAddressUpdate$, currentNetwork$
+    apolloClientInstance$, selectedSignerAddressChange$, currentNetwork$
 ]).pipe(
     switchMap(loadTransferHistory),
     startWith(null),

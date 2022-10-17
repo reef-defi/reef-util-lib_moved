@@ -8,7 +8,7 @@ import type {
   InjectedAccountWithMeta as InjectedAccountWithMetaReef
 } from '@reef-defi/extension-inject/types';
 import type {InjectedAccount, InjectedAccountWithMeta,} from '@polkadot/extension-inject/types';
-import {ContractType, reefTokenWithAmount, Token, TokenWithAmount} from '../../token/token';
+import {ContractType, REEF_ADDRESS, reefTokenWithAmount, Token, TokenWithAmount} from '../../token/token';
 import {Network,} from '../../network/network';
 import {ERC20} from '../../token/abi/ERC20';
 import {ERC721Uri} from '../../token/abi/ERC721Uri';
@@ -35,9 +35,8 @@ export const toPlainString = (num: number): string => `${+num}`.replace(
         : b + c + d + Array(e - d.length + 1).join('0')),
 );
 
-export const sortReefTokenFirst = (tokens): Token[] => {
-  const {address} = reefTokenWithAmount();
-  const reefTokenIndex = tokens.findIndex((t: Token) => t.address === address);
+export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token>[]): FeedbackDataModel<Token>[] => {
+  const reefTokenIndex = tokens.findIndex((t: FeedbackDataModel<Token>) => t.data.address === REEF_ADDRESS);
   if (reefTokenIndex > 0) {
     return [tokens[reefTokenIndex], ...tokens.slice(0, reefTokenIndex), ...tokens.slice(reefTokenIndex + 1, tokens.length)];
   }
