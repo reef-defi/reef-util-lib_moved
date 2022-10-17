@@ -1,5 +1,5 @@
 // TODO replace with our own from lib and remove
-import {reefTokenWithAmount, Token} from "../../token/token";
+import {REEF_ADDRESS, REEF_TOKEN, reefTokenWithAmount, Token} from "../../token/token";
 import {BigNumber, FixedNumber, utils} from "ethers";
 import {defer, from, map, mergeScan, Observable, of, shareReplay, startWith} from "rxjs";
 import {zenToRx} from "../../graphql";
@@ -73,8 +73,8 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
             .then((newTokens) => newTokens.concat(state.contractData))
         : Promise.resolve(state.contractData);
 
-    return defer(()=>from(contractDataPromise)).pipe(
-        map((tokens: Token[])=>toTokensWithContractDataFn(tokenBalances)(tokens)),
+    return defer(() => from(contractDataPromise)).pipe(
+        map((tokens: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokens)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
         shareReplay(1)
     );
@@ -82,7 +82,7 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
     // return contractDataPromise.then(toTokensWithContractDataFn(tokenBalances));
 };
 
-let addReefTokenBalance = async (
+/*let addReefTokenBalance = async (
     // eslint-disable-next-line camelcase
     tokenBalances: { token_address: string; balance: number }[],
 ) => {
@@ -105,7 +105,7 @@ let addReefTokenBalance = async (
 
     reefTokenResult.balance = FixedNumber.fromValue(reefBalance).toUnsafeFloat();
     return Promise.resolve(tokenBalances);
-};
+};*/
 
 const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token>[]) =>
     tokens.map((t) =>
@@ -118,7 +118,7 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token>[]) =>
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo, signer, provider]:[ApolloClient<any>,ReefSigner,]): Observable<FeedbackDataModel<Token>[] | null> => {
+export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<Token>[] | null> => {
     return (!signer
         ? of([])
         : zenToRx(
@@ -131,9 +131,6 @@ export const loadSignerTokens_fbk = ([apollo, signer, provider]:[ApolloClient<an
             map((res: any) => (res.data && res.data.token_holder
                 ? res.data.token_holder
                 : undefined)),
-            // switchMap(
-            //     addReefTokenBalance,
-            // ),
             // eslint-disable-next-line camelcase
             mergeScan(tokenBalancesWithContractDataCache_fbk(apollo), {
                 tokens: [],
@@ -143,6 +140,25 @@ export const loadSignerTokens_fbk = ([apollo, signer, provider]:[ApolloClient<an
             map(sortReefTokenFirst)
         ));
 };
+
+export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<Token>[] | null, ReefSigner]): FeedbackDataModel<Token>[] => {
+    const signerTkns = tokens ? tokens : [];
+    if (selSigner?.balance) {
+
+        const reefT = signerTkns.find((t) => t.data.address === REEF_ADDRESS);
+        if (reefT) {
+            reefT.data.balance = selSigner.balance;
+        } else {
+            signerTkns.unshift(toFeedbackDM({
+                ...REEF_TOKEN,
+                balance: selSigner.balance
+            }, FeedbackStatusCode.COMPLETE_DATA));
+        }
+    }
+    return signerTkns;
+};
+
+
 /*
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
