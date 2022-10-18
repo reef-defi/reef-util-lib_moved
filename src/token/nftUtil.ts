@@ -66,7 +66,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
         return Promise.resolve(null);
     }
     try {
-        throw new Error('Test234')
+        // throw new Error('Test234')
         const contractTypeAbi = getContractTypeAbi(nft.contractType);
         const contract = new Contract(nft.address, contractTypeAbi, signer);
         const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)

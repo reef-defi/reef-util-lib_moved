@@ -1,7 +1,7 @@
 // TODO replace with our own from lib and remove
 import {REEF_ADDRESS, REEF_TOKEN, reefTokenWithAmount, Token} from "../../token/token";
 import {BigNumber, FixedNumber, utils} from "ethers";
-import {defer, from, map, mergeScan, Observable, of, shareReplay, startWith} from "rxjs";
+import {defer, from, map, mergeScan, Observable, of, shareReplay, startWith, tap} from "rxjs";
 import {zenToRx} from "../../graphql";
 import {getReefCoinBalance} from "../../account/accounts";
 import {getIconUrl} from "../../utils";
@@ -42,16 +42,16 @@ function toTokensWithContractDataFn(tokenBalances: { token_address: string; bala
                 const cDataTkn = cData.find(
                     (cd) => cd.address === tBalance.token_address,
                 ) as Token;
-
                 return cDataTkn ? toFeedbackDM({
                     ...cDataTkn,
                     balance: BigNumber.from(toPlainString(tBalance.balance)),
-                } as Token, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set') : toFeedbackDM({
+                } as Token, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set')
+                    : toFeedbackDM({
                     address: tBalance.token_address,
                     balance: tBalance.balance
                 } as Token, FeedbackStatusCode.PARTIAL_DATA, 'Loading contract data');
             });
-        //.filter((v) => !!v);
+
         return {tokens: tkns, contractData: cData};
     };
 }
@@ -78,8 +78,6 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
         shareReplay(1)
     );
-
-    // return contractDataPromise.then(toTokensWithContractDataFn(tokenBalances));
 };
 
 /*let addReefTokenBalance = async (
@@ -109,12 +107,8 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
 
 const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token>[]) =>
     tokens.map((t) =>
-        t.data.iconUrl ? t : (
-            toFeedbackDM({
-                ...t.data,
-                iconUrl: t.data.iconUrl || getIconUrl(t.data.address),
-            } as Token)
-        ));
+        t.data.iconUrl ? t : (t.data.iconUrl= t.data.iconUrl || getIconUrl(t.data.address))&&t
+        );
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes

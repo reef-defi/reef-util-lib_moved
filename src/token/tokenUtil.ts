@@ -83,9 +83,6 @@ export const calculateTokenPrice_fbk = (
   pools: FeedbackDataModel<Pool|null>[],
   reefPrice: FeedbackDataModel<number>,
 ): FeedbackDataModel<number> => {
-  if (!isDataSet(reefPrice)) {
-    return reefPrice;
-  }
   const { address: reefAddress } = reefTokenWithAmount();
   let ratio: number;
   if (token.address.toLowerCase() !== reefAddress.toLowerCase()) {
@@ -100,6 +97,7 @@ export const calculateTokenPrice_fbk = (
     }
     return toFeedbackDM(0, reefTokenPool?.getStatus()?.code || FeedbackStatusCode.COMPLETE_DATA);
   }
+  console.log("RRR=",reefPrice);
   return reefPrice;
 };
 

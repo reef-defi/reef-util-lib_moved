@@ -1,5 +1,6 @@
 export enum FeedbackStatusCode {
     _,
+    NOT_SET,
     LOADING,
     PARTIAL_DATA,
     RESOLVING_NFT_URL,
@@ -24,27 +25,35 @@ export class FeedbackDataModel<T> {
         this._status = status;
     }
 
-    getStatus(propName?: string): FeedbackStatus | undefined {
-        if (Array.isArray(this._status)) {
-            return this._status.find(s => s.propName === propName);
+    getStatus(propName?: string): FeedbackStatus {
+        const isStatArr = Array.isArray(this._status);
+        const statusArr = isStatArr ? this._status as Array<FeedbackStatus> : [this._status as FeedbackStatus];
+        if (!propName) {
+            if (statusArr.length === 1) {
+                return statusArr[0];
+            }
+            // all have same code
+            let itemCode = statusArr[0].code;
+            if (!statusArr.some(fs => fs.code !== itemCode)) {
+                return {code: itemCode};
+            }
         }
-        if (propName) {
-            return undefined;
-        }
-        return this._status;
+
+        const stat = statusArr.find(s => (!s.propName && !propName) || (s.propName === propName));
+        return stat ? stat : {code: FeedbackStatusCode.NOT_SET};
     }
 
-    isStatus(status: FeedbackStatusCode, propName?: string): boolean {
+    hasStatus(status: FeedbackStatusCode, propName?: string): boolean {
         const stat = this.getStatus(propName);
-        return stat === status;
+        return stat?.code === status;
     }
 
-    toJson(){
+    toJson() {
         return JSON.stringify({data: this.data, status: this._status});
     }
 }
 
-export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode|FeedbackStatus[], message?: string, propName?: string): FeedbackDataModel<T> => {
+export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | FeedbackStatus[], message?: string, propName?: string): FeedbackDataModel<T> => {
     let status;
     if ((statCode as FeedbackStatus)?.code == null) {
         const code = statCode ? statCode as FeedbackStatusCode : FeedbackStatusCode.COMPLETE_DATA;
