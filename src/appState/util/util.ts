@@ -76,17 +76,15 @@ export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
   FeedbackDataModel<Pool|null>[]
 ]): FeedbackDataModel<TokenWithAmount>[] => tokens?tokens.map(
   (token_fbk) => {
-    console.log("ppp=",token_fbk.data.address, token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA));
     if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+
       const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools, reefPrice);
-      const statusArr = [{...priceFDM.getStatus(), propName: 'price'} as FeedbackStatus];
-      return toFeedbackDM({
-        ...token_fbk,
-        price: priceFDM.data,
-      } as TokenWithAmount, statusArr);
+      token_fbk.setStatus([{...priceFDM.getStatus(), propName: 'price', message:'Price set'}]);
+      (token_fbk.data as TokenWithAmount).price = priceFDM.data;
+      console.log("PRICE SET=",token_fbk.data.address, token_fbk.getStatus());
+      return token_fbk as FeedbackDataModel<TokenWithAmount>;
     }
     (token_fbk.data as TokenWithAmount).price = 0;
-    console.log("noCCC=",token_fbk.data.address, token_fbk.getStatus());
     return token_fbk as FeedbackDataModel<TokenWithAmount>;
   },
 ):[];

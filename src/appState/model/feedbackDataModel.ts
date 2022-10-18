@@ -48,6 +48,10 @@ export class FeedbackDataModel<T> {
         return stat?.code === status;
     }
 
+    setStatus(statArr: FeedbackStatus[]){
+        this._status = statArr;
+    }
+
     toJson() {
         return JSON.stringify({data: this.data, status: this._status});
     }

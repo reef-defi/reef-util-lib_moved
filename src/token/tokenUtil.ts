@@ -97,7 +97,6 @@ export const calculateTokenPrice_fbk = (
     }
     return toFeedbackDM(0, reefTokenPool?.getStatus()?.code || FeedbackStatusCode.COMPLETE_DATA);
   }
-  console.log("RRR=",reefPrice);
   return reefPrice;
 };
 
