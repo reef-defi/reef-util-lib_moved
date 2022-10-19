@@ -18,16 +18,16 @@ export interface FeedbackStatus {
 
 export class FeedbackDataModel<T> {
     data: T;
-    private _status: FeedbackStatus | FeedbackStatus[];
+    private _status: FeedbackStatus[];
 
-    constructor(data: T, status: FeedbackStatus | FeedbackStatus[]) {
+    constructor(data: T, status: FeedbackStatus[]) {
         this.data = data;
         this._status = status;
     }
 
     getStatus(propName?: string): FeedbackStatus {
         const isStatArr = Array.isArray(this._status);
-        const statusArr = isStatArr ? this._status as Array<FeedbackStatus> : [this._status as FeedbackStatus];
+        const statusArr = this._status;
         if (!propName) {
             if (statusArr.length === 1) {
                 return statusArr[0];
@@ -48,8 +48,12 @@ export class FeedbackDataModel<T> {
         return stat?.code === status;
     }
 
-    setStatus(statArr: FeedbackStatus[]){
+    setStatus(statArr: FeedbackStatus[]) {
         this._status = statArr;
+    }
+
+    getStatusList(): FeedbackStatus[] {
+        return this._status;
     }
 
     toJson() {
@@ -57,18 +61,46 @@ export class FeedbackDataModel<T> {
     }
 }
 
-export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | FeedbackStatus[], message?: string, propName?: string): FeedbackDataModel<T> => {
-    let status;
-    if ((statCode as FeedbackStatus)?.code == null) {
-        const code = statCode ? statCode as FeedbackStatusCode : FeedbackStatusCode.COMPLETE_DATA;
-        const stat: FeedbackStatus = {code, message, propName};
-        status = propName ? [stat] : stat;
+function createFeedBackStatus(statCode: FeedbackStatusCode | undefined, message?: string, propName?: string) {
+    const code = statCode ? statCode as FeedbackStatusCode : FeedbackStatusCode.COMPLETE_DATA;
+    return {code, message, propName};
+}
+
+function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string) {
+    let status = [];
+    if (!statCode) {
+        return status;
     }
-    return new FeedbackDataModel<T>(data, status || statCode as FeedbackStatus[]);
+    if (Array.isArray(statCode) && statCode.length) {
+        if ((statCode as FeedbackStatus[])[0]?.code == null) {
+            statCode.forEach(sc => status.push(createFeedBackStatus(sc as FeedbackStatusCode)));
+        }else {
+            return statCode;
+        }
+    } else if ((statCode as FeedbackStatus)?.code == null) {
+        status.push(createFeedBackStatus(statCode as FeedbackStatusCode, message, propName));
+    }
+
+    return status;
+}
+
+export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string): FeedbackDataModel<T> => {
+    return new FeedbackDataModel<T>(data, createStatusFromCode(statCode, message, propName));
 };
 
 export const isFeedbackDM = (value: any): boolean => {
     return value?.data && value.getStatus() != null && value.getStatus().code != null;
+}
+
+export const collectFeedbackDMStatus = (items: FeedbackDataModel<any>[]): FeedbackStatusCode[] => {
+    return items.reduce((state: FeedbackStatusCode[], curr) => {
+        curr.getStatusList().forEach((stat) => {
+            if (state.indexOf(stat.code) < 0) {
+                state.push(stat.code);
+            }
+        });
+        return state;
+    }, [])
 }
 
 // export const unwrapFeedbackDM = (value: FeedbackDataModel<T>): T => value.data;

@@ -7,7 +7,7 @@ import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {
-    selectedSignerNFTs$,
+    selectedSignerNFTs$, selectedSignerPools$,
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$
 } from "../src/appState/tokenState.rx";
@@ -15,6 +15,7 @@ import {firstValueFrom, skip, skipWhile, tap} from "rxjs";
 import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
+import {reefPrice_fbk$} from "../src/token/reefPrice.rx";
 
 const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
@@ -131,10 +132,13 @@ async function initTest() {
 
     // await testTokenBalances(accounts);
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
-    setCurrentAddress(accounts[0].address)
-    selectedSignerTokenPrices$.subscribe(v => {
-        console.log("token prices=", v);
-    });
+    setCurrentAddress(accounts[0].address);
+    console.log("GET PPPPP=",);
+    selectedSignerPools$.subscribe(v => console.log('Poooo', v));
+    // setCurrentAddress(accounts[0].address)
+    // selectedSignerTokenPrices$.subscribe(v => {
+    //     console.log("token prices=", v);
+    // });
 }
 
 window.addEventListener('load', initTest);

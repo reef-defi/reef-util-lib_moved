@@ -78,6 +78,5 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
                 )
             ),
             map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
-            catchError(err => of(toFeedbackDM(null, FeedbackStatusCode.ERROR, err.message))),
-            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
+            catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
         ));

@@ -1,7 +1,7 @@
 import {BigNumber, utils} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
 import {DataProgress, DataWithProgress, isDataSet} from '../utils/dataWithProgress';
-import {reefTokenWithAmount, Token, TokenWithAmount,} from './token';
+import {REEF_ADDRESS, reefTokenWithAmount, Token, TokenWithAmount,} from './token';
 import {toDecimalPlaces} from '../utils/math';
 import {Pool} from "./pool";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
@@ -83,14 +83,13 @@ export const calculateTokenPrice_fbk = (
   pools: FeedbackDataModel<Pool|null>[],
   reefPrice: FeedbackDataModel<number>,
 ): FeedbackDataModel<number> => {
-  const { address: reefAddress } = reefTokenWithAmount();
   let ratio: number;
-  if (token.address.toLowerCase() !== reefAddress.toLowerCase()) {
-    const reefTokenPool = findReefTokenPool_fbk(pools, reefAddress, token);
-    if (reefTokenPool?.getStatus() === FeedbackStatusCode.COMPLETE_DATA && !!reefTokenPool.data) {
+  if (token.address.toLowerCase() !== REEF_ADDRESS.toLowerCase()) {
+    const reefTokenPool = findReefTokenPool_fbk(pools, REEF_ADDRESS, token);
+    if (reefTokenPool?.getStatus() === FeedbackStatusCode.COMPLETE_DATA && !!reefTokenPool.data?.reserve1) {
       const { reefReserve, tokenReserve } = getReefTokenPoolReserves(
         reefTokenPool.data!,
-        reefAddress,
+        REEF_ADDRESS,
       );
       ratio = reefReserve / tokenReserve;
       return toFeedbackDM(ratio * (reefPrice as number), FeedbackStatusCode.COMPLETE_DATA);

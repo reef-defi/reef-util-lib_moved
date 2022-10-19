@@ -114,7 +114,7 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token>[]) =>
 // noinspection TypeScriptValidateTypes
 export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<Token>[] | null> => {
     return (!signer
-        ? of([])
+        ? of(null)
         : zenToRx(
             apollo.subscribe({
                 query: SIGNER_TOKENS_GQL,
@@ -124,7 +124,7 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
         ).pipe(
             map((res: any) => (res.data && res.data.token_holder
                 ? res.data.token_holder
-                : undefined)),
+                : throw new Error('No result from SIGNER_TOKENS_GQL'))),
             // eslint-disable-next-line camelcase
             mergeScan(tokenBalancesWithContractDataCache_fbk(apollo), {
                 tokens: [],
@@ -138,7 +138,6 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
 export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<Token>[] | null, ReefSigner]): FeedbackDataModel<Token>[] => {
     const signerTkns = tokens ? tokens : [];
     if (selSigner?.balance) {
-
         const reefT = signerTkns.find((t) => t.data.address === REEF_ADDRESS);
         if (reefT) {
             reefT.data.balance = selSigner.balance;

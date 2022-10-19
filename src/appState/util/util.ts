@@ -79,9 +79,10 @@ export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
     if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
 
       const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools, reefPrice);
+
       token_fbk.setStatus([{...priceFDM.getStatus(), propName: 'price', message:'Price set'}]);
       (token_fbk.data as TokenWithAmount).price = priceFDM.data;
-      console.log("PRICE SET=",token_fbk.data.address, token_fbk.getStatus());
+      console.log("PRICE SET=", token_fbk.getStatus(), token_fbk.data.address);
       return token_fbk as FeedbackDataModel<TokenWithAmount>;
     }
     (token_fbk.data as TokenWithAmount).price = 0;

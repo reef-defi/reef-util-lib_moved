@@ -1,4 +1,15 @@
-import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, withLatestFrom,} from 'rxjs';
+import {
+    catchError,
+    combineLatest,
+    map,
+    mapTo,
+    Observable,
+    of,
+    shareReplay,
+    startWith,
+    switchMap,
+    withLatestFrom,
+} from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
 import {NFT, Token, TokenTransfer, TokenWithAmount} from "../token/token";
 import {toTokensWithPrice_fbk} from "./util/util";
@@ -12,61 +23,62 @@ import {selectedSignerAddressChange$} from "./account/selectedSignerAddressUpdat
 import {dexConfig, Network} from "../network/network";
 import {ReefSigner} from "../account/ReefAccount";
 import {fetchPools$} from "../pools/pools";
-import {FeedbackDataModel} from "./model/feedbackDataModel";
+import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
+import {filter, merge} from "rxjs/operators";
 
-export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<Token>[]) | null> = combineLatest([
+const reloadingValues$ = combineLatest([currentNetwork$, selectedSignerAddressChange$]);
+
+export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token>[]>)> = combineLatest([
     apolloClientInstance$,
     selectedSignerAddressChange$,
 ]).pipe(
     switchMap(loadSignerTokens_fbk),
+    filter(v=>!!v),
     withLatestFrom(selectedSigner$),
     map(setReefBalanceFromSigner),
-    catchError(err => {
-        console.log('selectedSignerTokenBalances$ ERROR=', err.message);
-        return of([]);
-    }),
-   shareReplay(1)
+    merge(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
+    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+    shareReplay(1)
 );
 
-export const selectedSignerPools$: Observable<FeedbackDataModel<Pool|null>[]> = combineLatest([
+export const selectedSignerPools$: Observable<FeedbackDataModel<Pool | null>[]> = combineLatest([
     selectedSignerTokenBalances$,
     currentNetwork$,
     selectedSignerAddressChange$,
 ]).pipe(
-    switchMap(([tkns, network, signer]: [Token[] | null, Network, ReefSigner]) => (signer && tkns?.length ?     fetchPools$(tkns as Token[], signer.signer, dexConfig[network.name].factoryAddress) : [])),
+    switchMap(([tkns, network, signer]: [(FeedbackDataModel<FeedbackDataModel<Token>[]>), Network, ReefSigner]) => {
+
+        (signer && tkns.data?.length ? fetchPools$(tkns as FeedbackDataModel<Token>[], signer.signer, dexConfig[network.name].factoryAddress) : [])
+    }),
+    merge(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     shareReplay(1),
 );
-
-/*
-
-export const selectedSignerPools$: Observable<Pool[]> = combineLatest([
-    selectedSignerTokenBalances$,
-    currentNetwork$,
-    selectedSignerAddressUpdate$,
-]).pipe(
-    switchMap(([tkns, network, signer]: [Token[] | null, Network, ReefSigner]) => (signer && tkns?.length ? loadPools(tkns as Token[], signer.signer, dexConfig[network.name].factoryAddress) : [])),
-    shareReplay(1),
-);
-*/
 
 // TODO pools and tokens emit events at same time - check how to make 1 event from it
-export const selectedSignerTokenPrices$: Observable<FeedbackDataModel<TokenWithAmount>[]> = combineLatest([
-    selectedSignerTokenBalances$,
-    reefPrice_fbk$,
-    selectedSignerPools$,
-]).pipe(
+export const selectedSignerTokenPrices$: Observable<FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]>> = combineLatest([
+        selectedSignerTokenBalances$,
+        reefPrice_fbk$,
+        selectedSignerPools$,
+    ]).pipe(
     map(toTokensWithPrice_fbk),
+    map(tkns=>toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
+    merge(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
+    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+    startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
     shareReplay(1)
 );
 
-export const availableReefPools$: Observable<AvailablePool[]> = combineLatest([
+export const availableReefPools$: Observable<FeedbackDataModel<AvailablePool[]>> = combineLatest([
     apolloClientInstance$,
     currentProvider$,
 ]).pipe(
     switchMap(loadAvailablePools),
     map(toAvailablePools),
+    map(pools=>toFeedbackDM(pools, FeedbackStatusCode.COMPLETE_DATA)),
+    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+    startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
     shareReplay(1)
 );
 
@@ -78,14 +90,17 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
 ])
     .pipe(
         switchMap(loadSignerNfts),
+        merge(reloadingValues$.pipe(mapTo(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)))),
+        catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+        startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
         shareReplay(1)
     );
-
 
 export const transferHistory$: Observable<null | TokenTransfer[]> = combineLatest([
     apolloClientInstance$, selectedSignerAddressChange$, currentNetwork$
 ]).pipe(
     switchMap(loadTransferHistory),
+    merge(reloadingValues$.pipe(mapTo(null))),
     startWith(null),
     shareReplay(1),
 );
