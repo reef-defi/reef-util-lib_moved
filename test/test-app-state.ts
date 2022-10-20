@@ -23,16 +23,17 @@ const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2Q
 async function testNfts() {
     console.log('Testing nfts');
     let nfts = await firstValueFrom(selectedSignerNFTs$);
-    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer')
-    console.log("resolve url=",);
+    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat='+nfts.getStatus().code)
+    console.log("resolve url",);
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
     console.assert(nfts.hasStatus(FeedbackStatusCode.RESOLVING_NFT_URL), 'Nft data not complete')
 
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(
         tap(v => console.log('Waiting for nft complete data')),
-        skipWhile(nfts => !nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+        skipWhile(nfts => !nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA)))
+    );
     console.assert(!nfts.data.find(nft => !nft.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Nft data not complete')
-    console.log(`nfts=`, nfts);
+    console.log(`END test nfts=`, nfts);
 }
 
 async function testAppStateTokens(testAccount: string) {
@@ -42,14 +43,14 @@ async function testAppStateTokens(testAccount: string) {
     console.log(`signer ${selSig?.address}`);
 
     let tkns = await firstValueFrom(selectedSignerTokenBalances$);
-    console.assert(tkns === null, 'Tokens not cleared when changing signer')
-    tkns = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(v => !v)));
+    console.assert(tkns.hasStatus(FeedbackStatusCode.LOADING), 'Tokens not cleared when changing signer')
+    tkns = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(v => !v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.log(` tokens=`, tkns);
-    console.assert(tkns !== null, 'Tokens should load')
+    console.assert(tkns.data.length, 'Tokens should load');
 
-    tkns?.forEach((tkn) => {
-        let sameAddressesLen = tkns?.filter(t => t.data.address === tkn.data.address).length;
-        console.assert(sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.address}`);
+    tkns.data.forEach((tkn) => {
+        let sameAddressesLen = tkns.data?.filter(t => t.data.address === tkn.data.address).length;
+        console.assert(sameAddressesLen === 1, `${sameAddressesLen} duplicates = ${tkn.data.address}`);
     });
 
     console.log("END testAppStateTokens");
@@ -85,7 +86,6 @@ async function testAppStateSigners(accounts: any) {
     console.assert(sigTokenBals.hasStatus(FeedbackStatusCode.LOADING), 'Token balances status');
     const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
-    console.log("SSSSS=",sigTokenBalancesCompl);
     console.assert(sigTokenBalancesCompl && sigTokenBalancesCompl.data?.length > 0, 'Tokens balances length');
     console.assert(sigTokenBalancesCompl.data?.length === sigTokenPricesCompl.data.length, 'Token prices and balances not same length');
 
@@ -101,11 +101,11 @@ async function testAppStateSigners(accounts: any) {
 async function testTokenBalances(accounts: InjectedAccount[]) {
     setCurrentAddress(accounts[0].address);
     // const signer = await firstValueFrom(selectedSigner$);
-    const tokens = await firstValueFrom(selectedSignerTokenBalances$);
+    const tokens = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(t=>!t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
 
-    console.assert(tokens?.length > 1, 'There should be at least 2 tokens');
-    console.assert(tokens!.some(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
+    console.assert(tokens.data?.length > 1, 'There should be at least 2 tokens');
+    console.assert(tokens.data!.some(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
     console.assert(tokens!.find(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))?.data.address === REEF_ADDRESS, 'Reef should be complete at first');
 
     const tokensCompl = await firstValueFrom(
@@ -128,21 +128,19 @@ async function initTest() {
     });
 
     await testAppStateSigners(accounts);
-    // await testAppStateTokens(accounts[0].address);
-    // await testNfts();
-    // await testAppStateTokens(accounts[1].address);
-    // await testNfts();
+    await testAppStateTokens(accounts[0].address);
+    await testNfts();
+    await testAppStateTokens(accounts[1].address);
+    await testNfts();
 
-    // await testTokenBalances(accounts);
+    await testTokenBalances(accounts);
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
-    setCurrentAddress(accounts[0].address);
-    console.log("GET PPPPP=",);
-    selectedSignerTokenBalances$.subscribe(v => console.log('BBBB', v));
-    // selectedSignerPools$.subscribe(v => console.log('Poooo', v));
-    // setCurrentAddress(accounts[0].address)
-    selectedSignerTokenPrices$.subscribe(v => {
-        console.log("PPP=", v);
-    });
+    // setCurrentAddress(accounts[0].address);
+    // console.log("GET PPPPP=",);
+    // selectedSignerTokenBalances$.subscribe(v => console.log('BBBB', v));
+    // selectedSignerTokenPrices$.subscribe(v => {
+    //     console.log("PPP=", v);
+    // });
     // setTimeout(()=>{setCurrentAddress(accounts[1].address)},10000)
 }
 

@@ -1,7 +1,7 @@
 // TODO replace with our own from lib and remove
 import {REEF_ADDRESS, REEF_TOKEN, reefTokenWithAmount, Token} from "../../token/token";
 import {BigNumber, FixedNumber, utils} from "ethers";
-import {defer, from, map, mergeScan, Observable, of, shareReplay, startWith, tap} from "rxjs";
+import {catchError, defer, from, map, mergeScan, Observable, of, shareReplay, startWith, tap} from "rxjs";
 import {zenToRx} from "../../graphql";
 import {getReefCoinBalance} from "../../account/accounts";
 import {getIconUrl} from "../../utils";
@@ -134,7 +134,10 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
                 contractData: [reefTokenWithAmount()],
             }),
             map(({tokens}) => resolveEmptyIconUrls(tokens)),
-            map(sortReefTokenFirst)
+            map(sortReefTokenFirst),
+            catchError(err => {
+                return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))
+            }),
         ));
 };
 

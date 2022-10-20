@@ -7,7 +7,7 @@ import {
     of,
     shareReplay,
     startWith,
-    switchMap,
+    switchMap, tap,
     withLatestFrom,
 } from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
@@ -94,7 +94,7 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
     .pipe(
         switchMap(loadSignerNfts),
         merge(reloadingValues$.pipe(mapTo(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)))),
-        catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+        catchError(err => of(toFeedbackDM([] as NFT[], FeedbackStatusCode.ERROR, err.message))),
         startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
         shareReplay(1)
     );
