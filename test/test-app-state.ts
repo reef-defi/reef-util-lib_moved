@@ -23,7 +23,7 @@ const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2Q
 async function testNfts() {
     console.log('Testing nfts');
     let nfts = await firstValueFrom(selectedSignerNFTs$);
-    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat='+nfts.getStatus().code)
+    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().code)
     console.log("resolve url",);
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
     console.assert(nfts.hasStatus(FeedbackStatusCode.RESOLVING_NFT_URL), 'Nft data not complete')
@@ -84,8 +84,8 @@ async function testAppStateSigners(accounts: any) {
     const sigTokenBals = await firstValueFrom(selectedSignerTokenBalances$);
     console.assert(sigTokenBals && sigTokenBals.data?.length === 0, 'Tokens balances loading');
     console.assert(sigTokenBals.hasStatus(FeedbackStatusCode.LOADING), 'Token balances status');
-    const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
-    const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.assert(sigTokenBalancesCompl && sigTokenBalancesCompl.data?.length > 0, 'Tokens balances length');
     console.assert(sigTokenBalancesCompl.data?.length === sigTokenPricesCompl.data.length, 'Token prices and balances not same length');
 
@@ -101,20 +101,18 @@ async function testAppStateSigners(accounts: any) {
 async function testTokenBalances(accounts: InjectedAccount[]) {
     setCurrentAddress(accounts[0].address);
     // const signer = await firstValueFrom(selectedSigner$);
-    const tokens = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(t=>!t.hasStatus(FeedbackStatusCode.LOADING))));
+    console.log("waiting for tokens to load");
+    const tokens = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
 
     console.assert(tokens.data?.length > 1, 'There should be at least 2 tokens');
-    console.assert(tokens.data!.some(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
-    console.assert(tokens!.find(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))?.data.address === REEF_ADDRESS, 'Reef should be complete at first');
+    console.assert(tokens.data.some(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
+    console.assert(tokens.data!.find(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))?.data.address === REEF_ADDRESS, 'Reef should be complete at first');
 
-    const tokensCompl = await firstValueFrom(
-        selectedSignerTokenBalances$.pipe(
-            skipWhile(tkns => tkns.filter(t => t.isStatus(FeedbackStatusCode.COMPLETE_DATA)).length !== tkns.length),
-            tap(v => console.log('Waiting for signer balances complete data', v)),
-        )
-    );
-    console.log("tokens complete=", tokensCompl);
+    console.log("waiting for tokens to complete");
+    const tokensCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    console.assert(tokensCompl.hasStatus(FeedbackStatusCode.COMPLETE_DATA),'Tokens not complete');
+    console.log("END testTokenBalances=", tokens);
 }
 
 async function initTest() {
