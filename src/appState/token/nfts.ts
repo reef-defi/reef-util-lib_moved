@@ -47,6 +47,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
         } as NFT)
     });
 
+
 export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<NFT[]>> => (!signer
     ? of(toFeedbackDM([] as NFT[], FeedbackStatusCode.PARTIAL_DATA, 'Signer not set'))
     : zenToRx(
@@ -70,14 +71,12 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
             switchMap((nftArr: NFT[]) => of(nftArr).pipe(
                 switchMap(nfts => resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
                 map((feedbackNfts: FeedbackDataModel<NFT | null>[]) => {
-                    const code = (feedbackNfts.find(nftFDM => nftFDM.status?.code !== FeedbackStatusCode.COMPLETE_DATA)?.status.code) || FeedbackStatusCode.COMPLETE_DATA;
+                    const code = (feedbackNfts.find(nftFDM => nftFDM.getStatus()?.code !== FeedbackStatusCode.COMPLETE_DATA)?.getStatus().code) || FeedbackStatusCode.COMPLETE_DATA;
                     const message = code === FeedbackStatusCode.RESOLVING_NFT_URL ? 'Resolving nft urls.' : '';
                     return toFeedbackDM(feedbackNfts, code, message);
                 })
                 )
             ),
             map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
-            startWith(toFeedbackDM([] as NFT[], FeedbackStatusCode.LOADING)),
-            catchError(err => of(toFeedbackDM(null, FeedbackStatusCode.ERROR, err.message))),
+            catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
         ));
-

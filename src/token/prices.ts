@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 
-const REEF_TOKEN_ID = 'reef';
+export const PRICE_REEF_TOKEN_ID = 'reef';
 
 interface PriceRes {
   [currenty: string]: {
@@ -21,7 +21,7 @@ const explorerApi = axios.create({
 });
 
 export const getTokenPrice = async (tokenId: string): Promise<number> => {
-  if (tokenId === REEF_TOKEN_ID) {
+  if (tokenId === PRICE_REEF_TOKEN_ID) {
     return explorerApi.get<void, AxiosResponse<any>>(
       '/price',
     ).then((res) => res.data.usd);
@@ -63,4 +63,4 @@ export const getTokenEthAddressListPrices = async (
     return tknPrices;
   }, {}));
 
-export const retrieveReefCoingeckoPrice = async (): Promise<number> => getTokenPrice(REEF_TOKEN_ID);
+export const retrieveReefCoingeckoPrice = async (): Promise<number> => getTokenPrice(PRICE_REEF_TOKEN_ID);

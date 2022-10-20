@@ -1,4 +1,3 @@
-import {ContractInterface} from 'ethers';
 import {Provider} from '@reef-defi/evm-provider';
 import {ApolloClient} from '@apollo/client';
 import type {Signer as InjectedSigningKey} from '@polkadot/api/types';
@@ -8,16 +7,14 @@ import type {
   InjectedAccountWithMeta as InjectedAccountWithMetaReef
 } from '@reef-defi/extension-inject/types';
 import type {InjectedAccount, InjectedAccountWithMeta,} from '@polkadot/extension-inject/types';
-import {ContractType, reefTokenWithAmount, Token, TokenWithAmount} from '../../token/token';
+import {REEF_ADDRESS, Token, TokenWithAmount} from '../../token/token';
 import {Network,} from '../../network/network';
-import {ERC20} from '../../token/abi/ERC20';
-import {ERC721Uri} from '../../token/abi/ERC721Uri';
-import {ERC1155Uri} from '../../token/abi/ERC1155Uri';
-import {calculateTokenPrice} from '../../utils';
+import {calculateTokenPrice_fbk} from '../../utils';
 import {apolloClientSubj, setApolloUrls} from '../../graphql';
 import {ipfsUrlResolverFn} from '../../token/nftUtil';
 import {ReefSigner} from "../../account/ReefAccount";
 import {Pool} from "../../token/pool";
+import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
 
 export let _NFT_IPFS_RESOLVER_FN: ipfsUrlResolverFn|undefined;
 
@@ -34,16 +31,15 @@ export const toPlainString = (num: number): string => `${+num}`.replace(
         : b + c + d + Array(e - d.length + 1).join('0')),
 );
 
-export const sortReefTokenFirst = (tokens): Token[] => {
-  const {address} = reefTokenWithAmount();
-  const reefTokenIndex = tokens.findIndex((t: Token) => t.address === address);
+export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token>[]): FeedbackDataModel<Token>[] => {
+  const reefTokenIndex = tokens.findIndex((t: FeedbackDataModel<Token>) => t.data.address === REEF_ADDRESS);
   if (reefTokenIndex > 0) {
     return [tokens[reefTokenIndex], ...tokens.slice(0, reefTokenIndex), ...tokens.slice(reefTokenIndex + 1, tokens.length)];
   }
   return tokens;
 };
 
-export const combineTokensDistinct = ([tokens1, tokens2]: [
+/*export const combineTokensDistinct = ([tokens1, tokens2]: [
   Token[]|null,
   Token[]
 ]): Token[] => {
@@ -57,9 +53,9 @@ export const combineTokensDistinct = ([tokens1, tokens2]: [
     : null));
   // console.log('1111COMBINED=', combinedT);
   return combinedT;
-};
+};*/
 
-export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
+/*export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
   Token[]|null,
   number,
   Pool[]
@@ -68,7 +64,32 @@ export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
     ...token,
     price: calculateTokenPrice(token, pools, reefPrice),
   } as TokenWithAmount),
-):[];
+):[];*/
+
+export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
+  FeedbackDataModel<FeedbackDataModel<Token>[]>,
+  FeedbackDataModel<number>,
+  FeedbackDataModel<Pool|null>[]
+]): FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]> => {
+  if(tokens.hasStatus([FeedbackStatusCode.LOADING, FeedbackStatusCode.ERROR, FeedbackStatusCode.NOT_SET])){
+    return toFeedbackDM([], tokens.getStatusList());
+  }
+   const tknsWPrice = tokens.data.map(
+      (token_fbk) => {
+        const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, FeedbackStatusCode.PARTIAL_DATA);
+        if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+          const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools, reefPrice);
+          returnTkn.setStatus([{...priceFDM.getStatus(), propName: 'price', message: 'Price set'}]);
+          returnTkn.data.price = priceFDM.data;
+
+          return returnTkn;
+        }
+        returnTkn.data.price = 0;
+        return returnTkn;
+      },
+  );
+  return toFeedbackDM(tknsWPrice, collectFeedbackDMStatus(tknsWPrice));
+};
 
 export const getGQLUrls = (network: Network): { ws: string; http: string }|undefined => {
   if (!network.graphqlUrl) {
