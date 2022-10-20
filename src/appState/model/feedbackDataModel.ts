@@ -1,11 +1,13 @@
 export enum FeedbackStatusCode {
     _,
-    NOT_SET,
-    LOADING,
-    PARTIAL_DATA,
-    RESOLVING_NFT_URL,
-    RESOLVING_NFT_URL_ERROR,
     ERROR,
+    RESOLVING_NFT_URL_ERROR,
+    NOT_SET,
+    MISSING_INPUT_VALUES,
+    PARTIAL_DATA,
+    LOADING,
+    // TODO use propName for status and remove nft specific codes
+    RESOLVING_NFT_URL,
     COMPLETE_DATA,
 }
 
@@ -26,7 +28,6 @@ export class FeedbackDataModel<T> {
     }
 
     getStatus(propName?: string): FeedbackStatus {
-        const isStatArr = Array.isArray(this._status);
         const statusArr = this._status;
         if (!propName) {
             if (statusArr.length === 1) {
@@ -43,9 +44,12 @@ export class FeedbackDataModel<T> {
         return stat ? stat : {code: FeedbackStatusCode.NOT_SET};
     }
 
-    hasStatus(status: FeedbackStatusCode, propName?: string): boolean {
-        const stat = this.getStatus(propName);
-        return stat?.code === status;
+    hasStatus(status: FeedbackStatusCode | FeedbackStatusCode[], propName?: string): boolean {
+        const checkStatArr = Array.isArray(status) ? status : [status];
+        return checkStatArr.some((stat) => {
+            const s = this.getStatus(propName);
+            return s?.code === status;
+        });
     }
 
     setStatus(statArr: FeedbackStatus[]) {
@@ -74,7 +78,7 @@ function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode
     if (Array.isArray(statCode) && statCode.length) {
         if ((statCode as FeedbackStatus[])[0]?.code == null) {
             statCode.forEach(sc => status.push(createFeedBackStatus(sc as FeedbackStatusCode)));
-        }else {
+        } else {
             return statCode;
         }
     } else if ((statCode as FeedbackStatus)?.code == null) {
@@ -103,14 +107,19 @@ export const collectFeedbackDMStatus = (items: FeedbackDataModel<any>[]): Feedba
     }, [])
 }
 
-// export const unwrapFeedbackDM = (value: FeedbackDataModel<T>): T => value.data;
+export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefined)[]): FeedbackStatusCode => {
+    const statListArr = feedbackDMs.reduce((stListArr: (FeedbackStatus | undefined)[], fdm: FeedbackDataModel<any> | undefined) => {
+        const fdmStats = fdm ? fdm.getStatusList() : [undefined];
+        return stListArr.concat(fdmStats);
+    }, []);
 
-// export const getStatus = (status: FeedbackStatus | FeedbackStatus[], propName?: string): FeedbackStatus | undefined => {
-//     if (Array.isArray(status)) {
-//         return status.find(s => s.propName === propName);
-//     }
-//     if (propName) {
-//         return undefined;
-//     }
-//     return status;
-// }
+    const statCodes = statListArr.map(st => st?.code);
+    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode) => {
+        if (v == null) {
+            v = FeedbackStatusCode.NOT_SET;
+        }
+        return v < s ? v : s;
+    }, FeedbackStatusCode.COMPLETE_DATA);
+    return minStat as FeedbackStatusCode;
+}
+

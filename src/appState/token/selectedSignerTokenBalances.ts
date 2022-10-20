@@ -43,13 +43,13 @@ function toTokensWithContractDataFn(tokenBalances: { token_address: string; bala
                     (cd) => cd.address === tBalance.token_address,
                 ) as Token;
                 return cDataTkn ? toFeedbackDM({
-                    ...cDataTkn,
-                    balance: BigNumber.from(toPlainString(tBalance.balance)),
-                } as Token, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set')
+                        ...cDataTkn,
+                        balance: BigNumber.from(toPlainString(tBalance.balance)),
+                    } as Token, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set')
                     : toFeedbackDM({
-                    address: tBalance.token_address,
-                    balance: tBalance.balance
-                } as Token, FeedbackStatusCode.PARTIAL_DATA, 'Loading contract data');
+                        address: tBalance.token_address,
+                        balance: tBalance.balance
+                    } as Token, FeedbackStatusCode.PARTIAL_DATA, 'Loading contract data');
             });
 
         return {tokens: tkns, contractData: cData};
@@ -107,8 +107,8 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
 
 const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token>[]) =>
     tokens.map((t) =>
-        t.data.iconUrl ? t : (t.data.iconUrl= t.data.iconUrl || getIconUrl(t.data.address))&&t
-        );
+        t.data.iconUrl ? t : (t.data.iconUrl = t.data.iconUrl || getIconUrl(t.data.address)) && t
+    );
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
@@ -122,9 +122,12 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
                 fetchPolicy: 'network-only',
             }),
         ).pipe(
-            map((res: any) => (res.data && res.data.token_holder
-                ? res.data.token_holder
-                : throw new Error('No result from SIGNER_TOKENS_GQL'))),
+            map((res: any) => {
+                if (res.data && res.data.token_holder) {
+                    return res.data.token_holder;
+                }
+                throw new Error('No result from SIGNER_TOKENS_GQL');
+            }),
             // eslint-disable-next-line camelcase
             mergeScan(tokenBalancesWithContractDataCache_fbk(apollo), {
                 tokens: [],

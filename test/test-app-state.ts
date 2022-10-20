@@ -134,11 +134,13 @@ async function initTest() {
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
     setCurrentAddress(accounts[0].address);
     console.log("GET PPPPP=",);
-    selectedSignerPools$.subscribe(v => console.log('Poooo', v));
+    selectedSignerTokenBalances$.subscribe(v => console.log('BBBB', v));
+    // selectedSignerPools$.subscribe(v => console.log('Poooo', v));
     // setCurrentAddress(accounts[0].address)
-    // selectedSignerTokenPrices$.subscribe(v => {
-    //     console.log("token prices=", v);
-    // });
+    selectedSignerTokenPrices$.subscribe(v => {
+        console.log("PPP=", v);
+    });
+    setTimeout(()=>{setCurrentAddress(accounts[1].address)},10000)
 }
 
 window.addEventListener('load', initTest);
