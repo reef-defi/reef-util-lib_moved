@@ -7,7 +7,7 @@ import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {
-    selectedSignerNFTs$, selectedSignerPools$,
+    selectedSignerNFTs$,
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$
 } from "../src/appState/tokenState.rx";
@@ -15,7 +15,6 @@ import {firstValueFrom, skip, skipWhile, tap} from "rxjs";
 import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
-import {reefPrice_fbk$} from "../src/token/reefPrice.rx";
 
 const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
@@ -82,9 +81,13 @@ async function testAppStateSigners(accounts: any) {
     console.assert(selSig?.address === selectAddr, 'Selected signer not the same as current address.');
 
     const sigTokenBals = await firstValueFrom(selectedSignerTokenBalances$);
-    const sigTokenPrices = await firstValueFrom(selectedSignerTokenPrices$);
-    console.assert(sigTokenBals && sigTokenBals?.length > 0, 'Token balances length');
-    console.assert(sigTokenBals?.length === sigTokenPrices.length, 'Token prices and balances not same length');
+    console.assert(sigTokenBals && sigTokenBals.data?.length === 0, 'Tokens balances loading');
+    console.assert(sigTokenBals.hasStatus(FeedbackStatusCode.LOADING), 'Token balances status');
+    const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns=>!tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    console.log("SSSSS=",sigTokenBalancesCompl);
+    console.assert(sigTokenBalancesCompl && sigTokenBalancesCompl.data?.length > 0, 'Tokens balances length');
+    console.assert(sigTokenBalancesCompl.data?.length === sigTokenPricesCompl.data.length, 'Token prices and balances not same length');
 
     const selectAddr1 = accounts[0].address;
     console.assert(selectAddr !== selectAddr1, 'Address not different');
@@ -124,7 +127,7 @@ async function initTest() {
         jsonAccounts: {accounts: accountsWMeta, injectedSigner: reefExt.signer}
     });
 
-    // await testAppStateSigners(accounts);
+    await testAppStateSigners(accounts);
     // await testAppStateTokens(accounts[0].address);
     // await testNfts();
     // await testAppStateTokens(accounts[1].address);
@@ -140,7 +143,7 @@ async function initTest() {
     selectedSignerTokenPrices$.subscribe(v => {
         console.log("PPP=", v);
     });
-    setTimeout(()=>{setCurrentAddress(accounts[1].address)},10000)
+    // setTimeout(()=>{setCurrentAddress(accounts[1].address)},10000)
 }
 
 window.addEventListener('load', initTest);
