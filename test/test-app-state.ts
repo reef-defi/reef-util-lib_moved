@@ -16,7 +16,7 @@ import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
 
-const testAccounts = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
+const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
 ];
 
@@ -68,7 +68,7 @@ async function testAvailablePools(tokens, signer, factoryAddr) {
 
 async function testAppStateSigners(accounts: any) {
 
-    const testAddress = testAccounts[0].address;
+    const testAddress = TEST_ACCOUNTS[0].address;
     console.assert(accounts.some(a => a.address === testAddress), 'Test account not in extension')
     let selectAddr = accounts[1].address;
     setCurrentAddress(selectAddr);
@@ -84,8 +84,10 @@ async function testAppStateSigners(accounts: any) {
     const sigTokenBals = await firstValueFrom(selectedSignerTokenBalances$);
     console.assert(sigTokenBals && sigTokenBals.data?.length === 0, 'Tokens balances loading');
     console.assert(sigTokenBals.hasStatus(FeedbackStatusCode.LOADING), 'Token balances status');
+    selectedSignerTokenPrices$.subscribe(v=>    console.log("ss=",v));
     const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
-    const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+
+    console.log("dd2=",);const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.assert(sigTokenBalancesCompl && sigTokenBalancesCompl.data?.length > 0, 'Tokens balances length');
     console.assert(sigTokenBalancesCompl.data?.length === sigTokenPricesCompl.data.length, 'Token prices and balances not same length');
 
@@ -118,14 +120,15 @@ async function testTokenBalances(accounts: InjectedAccount[]) {
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
-    const accounts = await reefExt.accounts.get();
-    const accountsWMeta = toInjectedAccountsWithMeta(accounts, REEF_EXTENSION_IDENT);
+    const accounts = TEST_ACCOUNTS;//await reefExt.accounts.get();
+    // const accountsWMeta = toInjectedAccountsWithMeta(accounts, REEF_EXTENSION_IDENT);
     await initReefState({
         network: availableNetworks.testnet,
-        jsonAccounts: {accounts: accountsWMeta, injectedSigner: reefExt.signer}
+        jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
 
     await testAppStateSigners(accounts);
+    console.log("EEE=",);
     await testAppStateTokens(accounts[0].address);
     await testNfts();
     await testAppStateTokens(accounts[1].address);

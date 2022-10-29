@@ -7,7 +7,7 @@ import type {
   InjectedAccountWithMeta as InjectedAccountWithMetaReef
 } from '@reef-defi/extension-inject/types';
 import type {InjectedAccount, InjectedAccountWithMeta,} from '@polkadot/extension-inject/types';
-import {REEF_ADDRESS, Token, TokenWithAmount} from '../../token/token';
+import {REEF_ADDRESS, Token, TokenBalance, TokenWithAmount} from '../../token/token';
 import {Network,} from '../../network/network';
 import {calculateTokenPrice_fbk} from '../../utils';
 import {apolloClientSubj, setApolloUrls} from '../../graphql';
@@ -31,7 +31,7 @@ export const toPlainString = (num: number): string => `${+num}`.replace(
         : b + c + d + Array(e - d.length + 1).join('0')),
 );
 
-export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token>[]): FeedbackDataModel<Token>[] => {
+export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token|TokenBalance>[]): FeedbackDataModel<Token|TokenBalance>[] => {
   const reefTokenIndex = tokens.findIndex((t: FeedbackDataModel<Token>) => t.data.address === REEF_ADDRESS);
   if (reefTokenIndex > 0) {
     return [tokens[reefTokenIndex], ...tokens.slice(0, reefTokenIndex), ...tokens.slice(reefTokenIndex + 1, tokens.length)];
@@ -67,13 +67,14 @@ export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token>[]): Feedback
 ):[];*/
 
 export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
-  FeedbackDataModel<FeedbackDataModel<Token>[]>,
+  FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>,
   FeedbackDataModel<number>,
   FeedbackDataModel<Pool|null>[]
 ]): FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]> => {
   if(tokens.hasStatus([FeedbackStatusCode.LOADING, FeedbackStatusCode.ERROR, FeedbackStatusCode.NOT_SET])){
     return toFeedbackDM([], tokens.getStatusList());
   }
+  console.log("oo=",tokens);
    const tknsWPrice = tokens.data.map(
       (token_fbk) => {
         const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, FeedbackStatusCode.PARTIAL_DATA);

@@ -1,9 +1,9 @@
-import {ERC20ContractData, Token} from './token';
+import {ERC20ContractData, Token, TokenBalance} from './token';
 import {BigNumber} from "ethers";
 
 export interface Pool {
-  token1: Token;
-  token2: Token;
+  token1: Token|TokenBalance;
+  token2: Token|TokenBalance;
   decimals: number;
   // TODO transform reserve1, reserve2, userPoolBalance and minimumLiquidity to BigNumber
   reserve1: string;

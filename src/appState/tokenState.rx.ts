@@ -7,11 +7,11 @@ import {
     of,
     shareReplay,
     startWith,
-    switchMap, tap,
+    switchMap,
     withLatestFrom,
 } from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
-import {NFT, Token, TokenTransfer, TokenWithAmount} from "../token/token";
+import {NFT, Token, TokenBalance, TokenTransfer, TokenWithAmount} from "../token/token";
 import {toTokensWithPrice_fbk} from "./util/util";
 import {reefPrice_fbk$} from "../token/reefPrice.rx";
 import {loadSignerTokens_fbk, setReefBalanceFromSigner} from "./token/selectedSignerTokenBalances";
@@ -23,22 +23,20 @@ import {selectedSignerAddressChange$} from "./account/selectedSignerAddressUpdat
 import {dexConfig, Network} from "../network/network";
 import {ReefSigner} from "../account/ReefAccount";
 import {fetchPools$} from "../pools/pools";
-import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
-import {filter, merge} from "rxjs/operators";
+import {merge} from "rxjs/operators";
 
 const reloadingValues$ = combineLatest([currentNetwork$, selectedSignerAddressChange$]).pipe(shareReplay(1));
 
-export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token>[]>)> = combineLatest([
+export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>)> = combineLatest([
     apolloClientInstance$,
     selectedSignerAddressChange$,
 ]).pipe(
     switchMap(loadSignerTokens_fbk),
-    filter(v => !!v),
     withLatestFrom(selectedSigner$),
-    map(setReefBalanceFromSigner),
-    map(tkns => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
+    map(([tokens, signer])=>setReefBalanceFromSigner(tokens, signer)),
     merge(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1),
@@ -49,7 +47,7 @@ export const selectedSignerPools$: Observable<FeedbackDataModel<Pool | null>[]> 
     currentNetwork$,
     selectedSignerAddressChange$,
 ]).pipe(
-    switchMap(([tkns, network, signer]: [(FeedbackDataModel<FeedbackDataModel<Token>[]>), Network, ReefSigner]) => {
+    switchMap(([tkns, network, signer]: [(FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>), Network, ReefSigner]) => {
         if (!signer) {
             return of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES));
         }

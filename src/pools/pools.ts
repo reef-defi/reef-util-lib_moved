@@ -2,7 +2,7 @@ import {Signer} from '@reef-defi/evm-provider';
 import {Contract} from 'ethers';
 import {ensure} from '../utils';
 import {getReefswapFactory} from "../network/rpc";
-import {REEF_TOKEN, Token} from "../token/token";
+import {REEF_TOKEN, Token, TokenBalance} from "../token/token";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
@@ -22,7 +22,7 @@ const findPoolTokenAddress = async (
 };
 
 export const loadPool = async (
-    token1: Token,
+    token1: Token|TokenBalance,
     token2: Token,
     signer: Signer,
     factoryAddress: string,
@@ -85,11 +85,11 @@ const cachePool$: Map<string, Observable<FeedbackDataModel<Pool | null>>> = new 
 // TODO listen to pool events and refresh then
 const poolsRefresh$ = timer(0, 420000);
 
-function isPoolCached(token1: Token, token2: Token) {
+function isPoolCached(token1: Token|TokenBalance, token2: Token|TokenBalance) {
     return (cachePool$.has(`${token1.address}-${token2.address}`) || cachePool$.has(`${token1.address}-${token2.address}`));
 }
 
-const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool>> => {
+const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool>> => {
     const token2 = REEF_TOKEN;
     if (!isPoolCached(token1, token2)) {
         const pool$ = poolsRefresh$.pipe(
@@ -110,7 +110,7 @@ const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observ
     return cachePool$.get(`${token1.address}-${token2.address}`) || cachePool$.get(`${token2.address}-${token1.address}`)!;
 }
 
-export const fetchPools$ = (tokens: FeedbackDataModel<Token>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null> | undefined)[]> => {
+export const fetchPools$ = (tokens: FeedbackDataModel<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null> | undefined)[]> => {
     const pools$ = tokens.map(tkn => {
         if (tkn.hasStatus( FeedbackStatusCode.COMPLETE_DATA)) {
             return getPool$(tkn.data, signer, factoryAddress);
