@@ -30,7 +30,7 @@ export interface ERC20ContractData {
 }
 
 export interface BasicToken {
-    name: string;
+    name: string | undefined;
     address: string;
     iconUrl: string;
 }

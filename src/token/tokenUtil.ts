@@ -99,7 +99,7 @@ export const calculateTokenPrice_fbk = (
     }
 
     const {reefReserve, tokenReserve} = getReefTokenPoolReserves(
-        reefTokenPool.data!,
+        reefTokenPool?.data!,
         REEF_ADDRESS,
     );
     ratio = reefReserve / tokenReserve;

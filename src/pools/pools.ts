@@ -62,25 +62,6 @@ export const loadPool = async (
     };
 };
 
-/*export const loadPools = async (
-  tokens: Token[],
-  signer: Signer,
-  factoryAddress: string,
-): Promise<Pool[]> => {
-  const tokenCombinations = uniqueCombinations(tokens);
-  const pools: Pool[] = [];
-  for (let index = 0; index < tokenCombinations.length; index += 1) {
-    try {
-      const [token1, token2] = tokenCombinations[index];
-      /!* eslint-disable no-await-in-loop *!/
-      const pool = await loadPool(token1, token2, signer, factoryAddress);
-      /!* eslint-disable no-await-in-loop *!/
-      pools.push(pool);
-    } catch (e) {}
-  }
-  return pools;
-};*/
-
 const cachePool$: Map<string, Observable<FeedbackDataModel<Pool | null>>> = new Map<string, Observable<FeedbackDataModel<Pool | null>>>();
 // TODO listen to pool events and refresh then
 const poolsRefresh$ = timer(0, 420000);
@@ -89,7 +70,7 @@ function isPoolCached(token1: Token, token2: Token) {
     return (cachePool$.has(`${token1.address}-${token2.address}`) || cachePool$.has(`${token1.address}-${token2.address}`));
 }
 
-const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool>> => {
+const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool | null>> => {
     const token2 = REEF_TOKEN;
     if (!isPoolCached(token1, token2)) {
         const pool$ = poolsRefresh$.pipe(
@@ -110,7 +91,7 @@ const getPool$ = (token1: Token, signer: Signer, factoryAddress: string): Observ
     return cachePool$.get(`${token1.address}-${token2.address}`) || cachePool$.get(`${token2.address}-${token1.address}`)!;
 }
 
-export const fetchPools$ = (tokens: FeedbackDataModel<Token>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null> | undefined)[]> => {
+export const fetchPools$ = (tokens: FeedbackDataModel<Token>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null>)[]> => {
     const pools$ = tokens.map(tkn => {
         if (tkn.hasStatus( FeedbackStatusCode.COMPLETE_DATA)) {
             return getPool$(tkn.data, signer, factoryAddress);
