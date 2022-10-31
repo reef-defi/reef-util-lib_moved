@@ -73,11 +73,9 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
         ? fetchTokensData(apollo, missingCacheContractDataAddresses)
             .then((newTokens) => newTokens.concat(state.contractData))
         : Promise.resolve(state.contractData);
-
     return defer(() => from(contractDataPromise)).pipe(
         map((tokenContractData: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokenContractData)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
-        tap(v=>console.log('RRR',v)),
         shareReplay(1)
     );
 };
@@ -114,7 +112,7 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token|TokenBalance>[]) =
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>> => {
+export const loadSignerTokens_fbk = ([apollo,signer]:[ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES,'Signer not set'))
         : zenToRx(
@@ -138,7 +136,6 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
             map((tokens_cd: {tokens: FeedbackDataModel<Token|TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
             map(sortReefTokenFirst),
             map((tkns: FeedbackDataModel<Token|TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
-            tap(v=>console.log('VAL', v)),
             catchError(err => {
                 return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))
             }),

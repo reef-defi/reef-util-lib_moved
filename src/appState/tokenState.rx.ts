@@ -36,9 +36,9 @@ export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<Feedbac
 ]).pipe(
     switchMap(loadSignerTokens_fbk),
     withLatestFrom(selectedSigner$),
-    map(([tokens, signer])=>setReefBalanceFromSigner(tokens, signer)),
+    map(setReefBalanceFromSigner),
     merge(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
-    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+    catchError((err: any) => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1),
 );
 

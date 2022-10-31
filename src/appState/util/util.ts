@@ -74,8 +74,7 @@ export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
   if(tokens.hasStatus([FeedbackStatusCode.LOADING, FeedbackStatusCode.ERROR, FeedbackStatusCode.NOT_SET])){
     return toFeedbackDM([], tokens.getStatusList());
   }
-  console.log("oo=",tokens);
-   const tknsWPrice = tokens.data.map(
+  const tknsWPrice = tokens.data.map(
       (token_fbk) => {
         const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, FeedbackStatusCode.PARTIAL_DATA);
         if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {

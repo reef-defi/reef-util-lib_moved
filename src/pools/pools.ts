@@ -96,7 +96,6 @@ const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: st
             switchMap(() => loadPool(token1, token2, signer, factoryAddress)),
             map(pool => toFeedbackDM(pool, FeedbackStatusCode.COMPLETE_DATA)),
             catchError((err) => {
-                console.log("ERROR loadPool=", err.message);
                 return of(toFeedbackDM({
                     token1,
                     token2

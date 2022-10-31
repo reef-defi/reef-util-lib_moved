@@ -68,8 +68,6 @@ async function testAvailablePools(tokens, signer, factoryAddr) {
 
 async function testAppStateSigners(accounts: any) {
 
-    const testAddress = TEST_ACCOUNTS[0].address;
-    console.assert(accounts.some(a => a.address === testAddress), 'Test account not in extension')
     let selectAddr = accounts[1].address;
     setCurrentAddress(selectAddr);
 
@@ -84,10 +82,9 @@ async function testAppStateSigners(accounts: any) {
     const sigTokenBals = await firstValueFrom(selectedSignerTokenBalances$);
     console.assert(sigTokenBals && sigTokenBals.data?.length === 0, 'Tokens balances loading');
     console.assert(sigTokenBals.hasStatus(FeedbackStatusCode.LOADING), 'Token balances status');
-    selectedSignerTokenPrices$.subscribe(v=>    console.log("ss=",v));
     const sigTokenPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
 
-    console.log("dd2=",);const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const sigTokenBalancesCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.assert(sigTokenBalancesCompl && sigTokenBalancesCompl.data?.length > 0, 'Tokens balances length');
     console.assert(sigTokenBalancesCompl.data?.length === sigTokenPricesCompl.data.length, 'Token prices and balances not same length');
 
@@ -102,7 +99,6 @@ async function testAppStateSigners(accounts: any) {
 
 async function testTokenBalances(accounts: InjectedAccount[]) {
     setCurrentAddress(accounts[0].address);
-    // const signer = await firstValueFrom(selectedSigner$);
     console.log("waiting for tokens to load");
     const tokens = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
@@ -128,21 +124,15 @@ async function initTest() {
     });
 
     await testAppStateSigners(accounts);
-    console.log("EEE=",);
     await testAppStateTokens(accounts[0].address);
     await testNfts();
     await testAppStateTokens(accounts[1].address);
     await testNfts();
 
     await testTokenBalances(accounts);
+
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
-    // setCurrentAddress(accounts[0].address);
-    // console.log("GET PPPPP=",);
-    // selectedSignerTokenBalances$.subscribe(v => console.log('BBBB', v));
-    // selectedSignerTokenPrices$.subscribe(v => {
-    //     console.log("PPP=", v);
-    // });
-    // setTimeout(()=>{setCurrentAddress(accounts[1].address)},10000)
+
 }
 
 window.addEventListener('load', initTest);
