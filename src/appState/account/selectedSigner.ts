@@ -35,7 +35,7 @@ combineLatest([signers$, currentAddress$])
         }
     });
 
-export const selectedSigner$ = combineLatest([
+export const selectedSigner$: Observable<ReefSigner | undefined> = combineLatest([
     currentAddress$,
     signers$,
 ])
@@ -66,7 +66,7 @@ export const selectedSigner$ = combineLatest([
         }),
         catchError((err) => {
             console.log('selectedSigner$ ERROR=', err.message);
-            return of(null);
+            return of(undefined);
         }),
         shareReplay(1),
-    ) as Observable<ReefSigner | undefined | null>;
+    );

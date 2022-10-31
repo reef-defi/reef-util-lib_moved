@@ -2,8 +2,9 @@
 import {zenToRx} from "../../graphql";
 import {AVAILABLE_REEF_POOLS_GQL} from "../../graphql/availablePools.gql";
 import {REEF_ADDRESS} from "../../token/token";
+import {Observable} from 'rxjs';
 
-export const loadAvailablePools = ([apollo, provider]) => zenToRx(
+export const loadAvailablePools = ([apollo, provider]): Observable<any> => zenToRx(
     apollo.subscribe({
         query: AVAILABLE_REEF_POOLS_GQL,
         variables: {hasTokenAddress: REEF_ADDRESS},

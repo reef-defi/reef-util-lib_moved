@@ -65,13 +65,14 @@ export class FeedbackDataModel<T> {
     }
 }
 
-function createFeedBackStatus(statCode: FeedbackStatusCode | undefined, message?: string, propName?: string) {
+function createFeedBackStatus(statCode: FeedbackStatusCode | undefined, message?: string, propName?: string): FeedbackStatus {
     const code = statCode ? statCode as FeedbackStatusCode : FeedbackStatusCode.COMPLETE_DATA;
     return {code, message, propName};
 }
 
-function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string) {
-    let status = [];
+// TODO test with different params
+function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string): FeedbackStatus[] {
+    let status: FeedbackStatus[] = [];
     if (!statCode) {
         return status;
     }
@@ -79,9 +80,9 @@ function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode
         if ((statCode as FeedbackStatus[])[0]?.code == null) {
             statCode.forEach(sc => status.push(createFeedBackStatus(sc as FeedbackStatusCode)));
         } else {
-            return statCode;
+            return statCode as FeedbackStatus[];
         }
-    } else if ((statCode as FeedbackStatus)?.code == null) {
+    } else if ((statCode as any)?.code == null) {
         status.push(createFeedBackStatus(statCode as FeedbackStatusCode, message, propName));
     }
 
@@ -114,10 +115,15 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
     }, []);
 
     const statCodes = statListArr.map(st => st?.code);
-    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode) => {
+    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode|undefined) => {
         if (v == null) {
             v = FeedbackStatusCode.NOT_SET;
         }
+
+        // if (s == null) {
+        //     s = FeedbackStatusCode.NOT_SET;
+        // }
+
         return v < s ? v : s;
     }, FeedbackStatusCode.COMPLETE_DATA);
     return minStat as FeedbackStatusCode;

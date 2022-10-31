@@ -77,7 +77,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
             .then(axios.get)
             .then((jsonStr) => resolveImageData(jsonStr.data, nft, ipfsUrlResolver))
             .then((nftUri) => ({...nft, ...nftUri}));
-    } catch (e) {
+    } catch (e: any) {
         console.log("ERROR getResolveNftPromise=", e);
         throw new Error(e.message);
     }

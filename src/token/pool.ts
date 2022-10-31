@@ -13,7 +13,7 @@ export interface Pool {
   userPoolBalance: string;
 }
 
-export interface AvailablePool extends Pool {
+export interface AvailablePool extends Omit<Pool, "reserve1" | "reserve2" | "userPoolBalance"> {
   totalVolumeToken1: BigNumber;
   totalVolumeToken2: BigNumber;
   lastTimeframe: string;
