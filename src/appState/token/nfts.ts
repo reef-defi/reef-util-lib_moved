@@ -1,4 +1,4 @@
-import {catchError, map, Observable, of, startWith, switchMap} from "rxjs";
+import {catchError, map, Observable, of, shareReplay, startWith, switchMap, tap} from "rxjs";
 import {BigNumber} from "ethers";
 import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/token";
 import {zenToRx} from "../../graphql";
@@ -48,7 +48,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
     });
 
 
-export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<NFT[]>> => (!signer
+export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<FeedbackDataModel<NFT[]>>> => (!signer
     ? of(toFeedbackDM([], FeedbackStatusCode.PARTIAL_DATA, 'Signer not set'))
     : zenToRx(
         apollo.subscribe({
@@ -77,6 +77,6 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<N
                 })
                 )
             ),
-            map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
+            //map(data => isFeedbackDM(data) ? data : toFeedbackDM(data as NFT[])),
             catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
         ));
