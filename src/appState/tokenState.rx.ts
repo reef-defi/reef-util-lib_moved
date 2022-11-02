@@ -52,7 +52,7 @@ export const selectedSignerPools$: Observable<FeedbackDataModel<FeedbackDataMode
         }
 
         return fetchPools$(tkns.data, signer.signer, dexConfig[network.name].factoryAddress).pipe(
-            map((poolsArr: FeedbackDataModel<Pool|null>[])=>toFeedbackDM(poolsArr?poolsArr:[], poolsArr?.length?collectFeedbackDMStatus(poolsArr):FeedbackStatusCode.NOT_SET)),
+            map((poolsArr: FeedbackDataModel<Pool|null>[])=>toFeedbackDM(poolsArr||[], poolsArr?.length?collectFeedbackDMStatus(poolsArr):FeedbackStatusCode.NOT_SET)),
         );
     }),
     mergeWith(reloadingValues$.pipe(map(()=>toFeedbackDM([], FeedbackStatusCode.LOADING)))),
@@ -93,7 +93,7 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
         switchMap(loadSignerNfts),
         mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
         catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
-        startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
+        // startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
         shareReplay(1)
     );
 

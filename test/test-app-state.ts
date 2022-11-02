@@ -24,7 +24,7 @@ const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2
 async function testNfts() {
     await changeCurrentAddress();
     let nfts = await firstValueFrom(selectedSignerNFTs$);
-    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().code)
+    console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().map(v=>v.code))
     console.log("resolve url",);
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
     console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
@@ -42,10 +42,11 @@ async function testNfts() {
 
 async function changeCurrentAddress(): Promise<string> {
     const allSig = await firstValueFrom(signersFromJson$);
+    console.assert(allSig.length>1, 'Need more than 1 signer.')
     const currSig = await firstValueFrom(selectedSignerAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.address);
-    setCurrentAddress(newSig.address);
-    return newSig.address;
+    setCurrentAddress(newSig?.address);
+    return newSig?.address!;
 }
 
 async function testAppStateTokens() {
@@ -149,7 +150,7 @@ async function initTest() {
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
-    // await testProvider();
+    await testProvider();
     await testInitSelectedAddress()
     setCurrentAddress(TEST_ACCOUNTS[0].address);
     await testBalancesProgressStatus();

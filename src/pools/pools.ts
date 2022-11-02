@@ -89,7 +89,7 @@ function isPoolCached(token1: Token|TokenBalance, token2: Token|TokenBalance) {
     return (cachePool$.has(`${token1.address}-${token2.address}`) || cachePool$.has(`${token1.address}-${token2.address}`));
 }
 
-const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool>> => {
+const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool|null>> => {
     const token2 = REEF_TOKEN;
     if (!isPoolCached(token1, token2)) {
         const pool$ = poolsRefresh$.pipe(
@@ -109,12 +109,12 @@ const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: st
     return cachePool$.get(`${token1.address}-${token2.address}`) || cachePool$.get(`${token2.address}-${token1.address}`)!;
 }
 
-export const fetchPools$ = (tokens: FeedbackDataModel<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null> | undefined)[]> => {
-    const pools$ = tokens.map(tkn => {
+export const fetchPools$ = (tokens: FeedbackDataModel<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null>[])> => {
+    const poolsArr$: Observable<FeedbackDataModel<Pool|null>>[] = tokens.map(tkn => {
         if (tkn.hasStatus( FeedbackStatusCode.COMPLETE_DATA)) {
             return getPool$(tkn.data, signer, factoryAddress);
         }
         return of(toFeedbackDM(null, tkn.getStatusList()));
     });
-    return combineLatest(pools$).pipe(shareReplay(1));
+    return combineLatest([...poolsArr$]).pipe(shareReplay(1));
 };

@@ -253,7 +253,13 @@ export const toDecimalPlaces = (
   return noExpValue.substring(0, decimalDelim + 1 + maxDecimalPlaces);
 };
 
-export const poolRatio = ({ token1, token2 }: Pool): number => toBalance(token2) / toBalance(token1);
+export const poolRatio = ({ token1, token2 }: Pool): number => {
+  if(!(token1 as Token).decimals || !(token2 as Token).decimals){
+    console.warn('getInputAmount pool param does not have Token types');
+    return 0;
+  }
+  return toBalance(token2 as Token) / toBalance(token1 as Token);
+};
 
 export const ensureAmount = (token: TokenWithAmount): void => ensure(
   BigNumber.from(calculateAmount(token)).lte(token.balance),
@@ -261,10 +267,15 @@ export const ensureAmount = (token: TokenWithAmount): void => ensure(
 );
 
 export const getOutputAmount = (token: TokenWithAmount, pool: Pool): number => {
+  if(!(pool.token1 as Token).decimals || !(pool.token2 as Token).decimals){
+    console.warn('getOutputAmount pool param does not have Token types');
+    return 0;
+  }
+
   const inputAmount = parseFloat(assertAmount(token.amount)) * 997;
 
-  const inputReserve = convert2Normal(pool.token1.decimals, pool.reserve1);
-  const outputReserve = convert2Normal(pool.token2.decimals, pool.reserve2);
+  const inputReserve = convert2Normal((pool.token1 as Token).decimals, pool.reserve1);
+  const outputReserve = convert2Normal((pool.token2 as Token).decimals, pool.reserve2);
 
   const numerator = inputAmount * outputReserve;
   const denominator = inputReserve * 1000 + inputAmount;
@@ -273,10 +284,14 @@ export const getOutputAmount = (token: TokenWithAmount, pool: Pool): number => {
 };
 
 export const getInputAmount = (token: TokenWithAmount, pool: Pool): number => {
+  if(!(pool.token1 as Token).decimals || !(pool.token2 as Token).decimals){
+    console.warn('getInputAmount pool param does not have Token types');
+    return 0;
+  }
   const outputAmount = parseFloat(assertAmount(token.amount));
 
-  const inputReserve = convert2Normal(pool.token1.decimals, pool.reserve1);
-  const outputReserve = convert2Normal(pool.token2.decimals, pool.reserve2);
+  const inputReserve = convert2Normal((pool.token1 as Token).decimals, pool.reserve1);
+  const outputReserve = convert2Normal((pool.token2 as Token).decimals, pool.reserve2);
 
   const numerator = inputReserve * outputAmount * 1000;
   const denominator = (outputReserve - outputAmount) * 997;

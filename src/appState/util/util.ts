@@ -14,7 +14,13 @@ import {apolloClientSubj, setApolloUrls} from '../../graphql';
 import {ipfsUrlResolverFn} from '../../token/nftUtil';
 import {ReefSigner} from "../../account/ReefAccount";
 import {Pool} from "../../token/pool";
-import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
+import {
+  collectFeedbackDMStatus,
+  FeedbackDataModel,
+  FeedbackStatus,
+  FeedbackStatusCode,
+  toFeedbackDM
+} from "../model/feedbackDataModel";
 
 export let _NFT_IPFS_RESOLVER_FN: ipfsUrlResolverFn|undefined;
 
@@ -32,7 +38,7 @@ export const toPlainString = (num: number): string => `${+num}`.replace(
 );
 
 export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token|TokenBalance>[]): FeedbackDataModel<Token|TokenBalance>[] => {
-  const reefTokenIndex = tokens.findIndex((t: FeedbackDataModel<Token>) => t.data.address === REEF_ADDRESS);
+  const reefTokenIndex = tokens.findIndex((t: FeedbackDataModel<Token|TokenBalance>) => t.data.address === REEF_ADDRESS);
   if (reefTokenIndex > 0) {
     return [tokens[reefTokenIndex], ...tokens.slice(0, reefTokenIndex), ...tokens.slice(reefTokenIndex + 1, tokens.length)];
   }
@@ -76,7 +82,7 @@ export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
         const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, token_fbk.getStatusList());
         if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
             const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools.data, reefPrice);
-            returnTkn.setStatus([{...priceFDM.getStatus(), propName: 'price', message: 'Price set'}]);
+            returnTkn.setStatus(priceFDM.getStatus().map(priceStat=>({...priceStat, propName: 'price', message: 'Price set'} as FeedbackStatus)));
             returnTkn.data.price = priceFDM.data;
           }
         return returnTkn;
