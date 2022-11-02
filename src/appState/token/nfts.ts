@@ -5,7 +5,13 @@ import {zenToRx} from "../../graphql";
 import {resolveNftImageLinks$} from "../../token/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "../util/util";
 import {ReefSigner} from "../../account/ReefAccount";
-import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {
+    collectFeedbackDMStatus,
+    FeedbackDataModel,
+    FeedbackStatusCode,
+    isFeedbackDM,
+    toFeedbackDM
+} from "../model/feedbackDataModel";
 import {SIGNER_NFTS_GQL} from "../../graphql/signerNfts.gql";
 
 export interface VerifiedNft {
@@ -49,7 +55,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
 
 
 export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<FeedbackDataModel<NFT[]>>> => (!signer
-    ? of(toFeedbackDM([], FeedbackStatusCode.PARTIAL_DATA, 'Signer not set'))
+    ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
     : zenToRx(
         apollo.subscribe({
             query: SIGNER_NFTS_GQL,
@@ -71,9 +77,9 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<F
             switchMap((nftArr: NFT[]) => of(nftArr).pipe(
                 switchMap(nfts => resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
                 map((feedbackNfts: FeedbackDataModel<NFT | null>[]) => {
-                    const code = (feedbackNfts.find(nftFDM => nftFDM.getStatus()?.code !== FeedbackStatusCode.COMPLETE_DATA)?.getStatus().code) || FeedbackStatusCode.COMPLETE_DATA;
-                    const message = code === FeedbackStatusCode.RESOLVING_NFT_URL ? 'Resolving nft urls.' : '';
-                    return toFeedbackDM(feedbackNfts, code, message);
+                    const codes = collectFeedbackDMStatus(feedbackNfts);
+                    const message = codes.some(c=>c===FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
+                    return toFeedbackDM(feedbackNfts, codes, message);
                 })
                 )
             ),

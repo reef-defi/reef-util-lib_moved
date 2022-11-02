@@ -52,7 +52,7 @@ function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token
                         ...cDataTkn,
                         balance: BigNumber.from(toPlainString(tBalance.balance)),
                     } as Token, FeedbackStatusCode.COMPLETE_DATA, 'Contract data set')
-                    : toFeedbackDM({...tBalance} as TokenBalance, FeedbackStatusCode.PARTIAL_DATA, 'Loading contract data');
+                    : toFeedbackDM({...tBalance} as TokenBalance, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading contract data');
             });
 
         return {tokens: tkns, contractData: cData};

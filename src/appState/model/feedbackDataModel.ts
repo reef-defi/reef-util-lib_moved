@@ -1,14 +1,15 @@
 export enum FeedbackStatusCode {
+    // not using 0
     _,
-    ERROR,
-    RESOLVING_NFT_URL_ERROR,
-    NOT_SET,
-    MISSING_INPUT_VALUES,
-    PARTIAL_DATA,
     LOADING,
-    // TODO use propName for status and remove nft specific codes
-    RESOLVING_NFT_URL,
+    PARTIAL_DATA_LOADING,
+    // from here on data won't load anymore
+    MISSING_INPUT_VALUES,
+    NOT_SET,
+    ERROR,
+    //
     COMPLETE_DATA,
+
 }
 
 export interface FeedbackStatus {
@@ -27,28 +28,28 @@ export class FeedbackDataModel<T> {
         this._status = status;
     }
 
-    getStatus(propName?: string): FeedbackStatus {
+    getStatus(propName?: string): FeedbackStatus[] {
         const statusArr = this._status;
         if (!propName) {
-            if (statusArr.length === 1) {
+            /*if (statusArr.length === 1) {
                 return statusArr[0];
             }
             // all have same code
             let itemCode = statusArr[0].code;
             if (!statusArr.some(fs => fs.code !== itemCode)) {
                 return {code: itemCode};
-            }
+            }*/
+            return statusArr;
         }
 
-        const stat = statusArr.find(s => (!s.propName && !propName) || (s.propName === propName));
-        return stat ? stat : {code: FeedbackStatusCode.NOT_SET};
+        return statusArr.filter(s => (s.propName === propName));
     }
 
     hasStatus(status: FeedbackStatusCode | FeedbackStatusCode[], propName?: string): boolean {
         const checkStatArr = Array.isArray(status) ? status : [status];
         return checkStatArr.some((stat) => {
-            const s = this.getStatus(propName);
-            return s?.code === status;
+            const stats = this.getStatus(propName);
+            return stats.find(s=>s?.code === stat);
         });
     }
 
@@ -119,11 +120,6 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
         if (v == null) {
             v = FeedbackStatusCode.NOT_SET;
         }
-
-        // if (s == null) {
-        //     s = FeedbackStatusCode.NOT_SET;
-        // }
-
         return v < s ? v : s;
     }, FeedbackStatusCode.COMPLETE_DATA);
     return minStat as FeedbackStatusCode;

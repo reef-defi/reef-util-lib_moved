@@ -69,26 +69,20 @@ export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token|TokenBalance>
 export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
   FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>,
   FeedbackDataModel<number>,
-  FeedbackDataModel<Pool|null>[]
+  FeedbackDataModel<FeedbackDataModel<Pool|null>[]>
 ]): FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]> => {
-  if(tokens.hasStatus([FeedbackStatusCode.LOADING, FeedbackStatusCode.ERROR, FeedbackStatusCode.NOT_SET])){
-    return toFeedbackDM([], tokens.getStatusList());
-  }
   const tknsWPrice = tokens.data.map(
       (token_fbk) => {
-        const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, FeedbackStatusCode.PARTIAL_DATA);
-        if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
-          const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools, reefPrice);
-          returnTkn.setStatus([{...priceFDM.getStatus(), propName: 'price', message: 'Price set'}]);
-          returnTkn.data.price = priceFDM.data;
-
-          return returnTkn;
-        }
-        returnTkn.data.price = 0;
+        const returnTkn = toFeedbackDM({...token_fbk.data, price:0} as TokenWithAmount, token_fbk.getStatusList());
+        if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+            const priceFDM = calculateTokenPrice_fbk(token_fbk.data, pools.data, reefPrice);
+            returnTkn.setStatus([{...priceFDM.getStatus(), propName: 'price', message: 'Price set'}]);
+            returnTkn.data.price = priceFDM.data;
+          }
         return returnTkn;
-      },
+      }
   );
-  return toFeedbackDM(tknsWPrice, collectFeedbackDMStatus(tknsWPrice));
+  return toFeedbackDM(tknsWPrice, tknsWPrice.length?collectFeedbackDMStatus(tknsWPrice):tokens.getStatusList());
 };
 
 export const getGQLUrls = (network: Network): { ws: string; http: string }|undefined => {

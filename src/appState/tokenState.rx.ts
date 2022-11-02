@@ -2,12 +2,12 @@ import {
     catchError,
     combineLatest,
     map,
-    mapTo, mergeWith,
+    mergeWith,
     Observable,
     of,
     shareReplay,
     startWith,
-    switchMap,
+    switchMap, tap,
     withLatestFrom,
 } from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/pools";
@@ -23,10 +23,9 @@ import {selectedSignerAddressChange$} from "./account/selectedSignerAddressUpdat
 import {dexConfig, Network} from "../network/network";
 import {ReefSigner} from "../account/ReefAccount";
 import {fetchPools$} from "../pools/pools";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
+import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
 import {loadSignerNfts} from "./token/nfts";
 import {loadTransferHistory} from "./token/transferHistory";
-import {merge} from "rxjs/operators";
 
 const reloadingValues$ = combineLatest([currentNetwork$, selectedSignerAddressChange$]).pipe(shareReplay(1));
 
@@ -42,7 +41,7 @@ export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<Feedbac
     shareReplay(1),
 );
 
-export const selectedSignerPools$: Observable<FeedbackDataModel<Pool | null>[]> = combineLatest([
+export const selectedSignerPools$: Observable<FeedbackDataModel<FeedbackDataModel<Pool | null>[]>> = combineLatest([
     selectedSignerTokenBalances$,
     currentNetwork$,
     selectedSignerAddressChange$,
@@ -52,9 +51,11 @@ export const selectedSignerPools$: Observable<FeedbackDataModel<Pool | null>[]> 
             return of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES));
         }
 
-        return fetchPools$(tkns.data, signer.signer, dexConfig[network.name].factoryAddress);
+        return fetchPools$(tkns.data, signer.signer, dexConfig[network.name].factoryAddress).pipe(
+            map((poolsArr: FeedbackDataModel<Pool|null>[])=>toFeedbackDM(poolsArr?poolsArr:[], poolsArr?.length?collectFeedbackDMStatus(poolsArr):FeedbackStatusCode.NOT_SET)),
+        );
     }),
-    mergeWith(reloadingValues$.pipe(mapTo(toFeedbackDM([], FeedbackStatusCode.LOADING)))),
+    mergeWith(reloadingValues$.pipe(map(()=>toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     shareReplay(1),
 );
 

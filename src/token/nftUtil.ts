@@ -95,9 +95,9 @@ export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfs
             map((resNft: NFT | null) => toFeedbackDM(resNft, FeedbackStatusCode.COMPLETE_DATA, 'Url resolved')),
             catchError(err => {
                 console.log("ERROR resolving nft img=", err);
-                return of(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL_ERROR, 'Url resolve error.'));
+                return of(toFeedbackDM(nft, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Url resolve error.', 'iconUrl'));
             }),
-            startWith(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL, 'Resolving url.'))
+            startWith(toFeedbackDM(nft, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Resolving url.', 'iconUrl'))
         )
     );
     return combineLatest(

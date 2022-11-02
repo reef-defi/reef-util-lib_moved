@@ -94,11 +94,11 @@ export const calculateTokenPrice_fbk = (
     const reefTokenPool = findReefTokenPool_fbk(pools, REEF_ADDRESS, token);
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 
-    if (minStat < FeedbackStatusCode.COMPLETE_DATA) {
+    if (!reefTokenPool || !reefTokenPool.data || minStat < FeedbackStatusCode.COMPLETE_DATA) {
+        if(!reefTokenPool || reefTokenPool.hasStatus(FeedbackStatusCode.ERROR)){
+            return toFeedbackDM(0, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Pool not found.')
+        }
         return toFeedbackDM(0, minStat);
-    }
-    if (!reefTokenPool?.data) {
-        return toFeedbackDM(0, FeedbackStatusCode.MISSING_INPUT_VALUES, 'No pool value');
     }
 
     const {reefReserve, tokenReserve} = getReefTokenPoolReserves(

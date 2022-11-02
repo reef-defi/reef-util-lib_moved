@@ -10,8 +10,8 @@ import {
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$
 } from "../src/appState/tokenState.rx";
-import {firstValueFrom, skip, skipWhile, take, tap} from "rxjs";
-import {FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
+import {firstValueFrom, skipWhile, tap} from "rxjs";
+import {FeedbackDataModel, FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
 import {selectedSignerAddressChange$} from "../src/appState/account/selectedSignerAddressUpdate";
@@ -26,13 +26,16 @@ async function testNfts() {
     let nfts = await firstValueFrom(selectedSignerNFTs$);
     console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().code)
     console.log("resolve url",);
-    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skip(1)));
-    console.assert(nfts.hasStatus(FeedbackStatusCode.RESOLVING_NFT_URL), 'Nft data not complete')
+    nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
+    console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
 
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(
         tap(v => console.log('Waiting for nft complete data')),
-        skipWhile(nfts => !nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA)))
+        skipWhile((nfts: FeedbackDataModel<any>) => {
+            return !(nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && nfts.getStatusList().length===1)
+        }))
     );
+
     console.assert(!nfts.data.find(nft => !nft.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Nft data not complete')
     console.log(`END test nfts=`, nfts);
 }
@@ -53,9 +56,8 @@ async function testAppStateTokens() {
     console.assert(tknsLoading && tknsLoading.data?.length === 0, 'Tokens balances loading');
     console.assert(tknsLoading.hasStatus(FeedbackStatusCode.LOADING), 'Tokens not cleared when changing signer')
     let tknsBalsCompl = await firstValueFrom(selectedSignerTokenBalances$.pipe(skipWhile(v => !v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
-    console.log("tt111t=", tknsBalsCompl);
-    const tknPricesCompl = await firstValueFrom(selectedSignerTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), take(1)));
-    console.log("pppppppp=",);
+    let completePrices$ = selectedSignerTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA)));
+    const tknPricesCompl = await firstValueFrom(completePrices$);
     console.log(`token bal=`, tknsBalsCompl);
     console.assert(tknsBalsCompl.data.length, 'Tokens should load');
     console.assert(tknPricesCompl.data.length, 'Tokens should load');
@@ -147,7 +149,7 @@ async function initTest() {
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
-    await testProvider();
+    // await testProvider();
     await testInitSelectedAddress()
     setCurrentAddress(TEST_ACCOUNTS[0].address);
     await testBalancesProgressStatus();
