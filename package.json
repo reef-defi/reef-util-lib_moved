@@ -1,6 +1,6 @@
 {
   "name": "@reef-chain/util-lib",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "private": false,
   "source": "src/index.ts",
@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "ts-types": "tsc --emitDeclarationOnly --outDir ./lib",
+    "ts-types": "tsc --emitDeclarationOnly --declarationMap --outDir ./lib",
     "circular-dep": "dpdm --no-warning --no-tree ./src/index.ts ",
     "circular-dep-test": "dpdm --no-warning --no-tree ./test/test-app-state.ts ",
     "build": "rimraf lib && node ./esbuild.cjs && yarn run circular-dep && yarn run ts-types",
