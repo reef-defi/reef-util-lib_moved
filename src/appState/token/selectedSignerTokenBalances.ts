@@ -43,7 +43,7 @@ const fetchTokensData = (
 // eslint-disable-next-line camelcase
 function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: FeedbackDataModel<Token | TokenBalance>[], contractData: Token[] } {
     return (cData: Token[]) => {
-        const tkns: FeedbackDataModel<Token | TokenBalance>[] = tokenBalances
+        const tokens: FeedbackDataModel<Token | TokenBalance>[] = tokenBalances
             .map((tBalance) => {
                 const cDataTkn = cData.find(
                     (cd) => cd.address === tBalance.address,
@@ -55,7 +55,7 @@ function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token
                     : toFeedbackDM({...tBalance} as TokenBalance, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading contract data');
             });
 
-        return {tokens: tkns, contractData: cData};
+        return {tokens, contractData: cData};
     };
 }
 

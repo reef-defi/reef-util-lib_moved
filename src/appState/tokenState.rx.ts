@@ -68,7 +68,6 @@ export const selectedSignerTokenPrices$: Observable<FeedbackDataModel<FeedbackDa
     map(toTokensWithPrice_fbk),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
-    startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
     shareReplay(1)
 );
 
@@ -93,7 +92,6 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
         switchMap(loadSignerNfts),
         mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
         catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
-        // startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
         shareReplay(1)
     );
 
@@ -102,6 +100,5 @@ export const transferHistory$: Observable<null | TokenTransfer[]> = combineLates
 ]).pipe(
     switchMap(loadTransferHistory),
     mergeWith(reloadingValues$.pipe(map(() => null))),
-    startWith(null),
     shareReplay(1),
 );

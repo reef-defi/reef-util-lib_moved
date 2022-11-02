@@ -116,5 +116,5 @@ export const fetchPools$ = (tokens: FeedbackDataModel<Token|TokenBalance>[], sig
         }
         return of(toFeedbackDM(null, tkn.getStatusList()));
     });
-    return combineLatest([...poolsArr$]).pipe(shareReplay(1));
+    return combineLatest(poolsArr$).pipe(shareReplay(1));
 };
