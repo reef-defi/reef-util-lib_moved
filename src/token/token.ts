@@ -50,6 +50,7 @@ export interface TokenWithAmount extends Token {
 export interface TokenBalance {
     address: string;
     balance: number;
+    iconUrl?: string;
 }
 
 export interface TokenState {

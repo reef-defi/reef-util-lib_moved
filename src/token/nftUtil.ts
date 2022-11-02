@@ -85,7 +85,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
 
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));
 
-export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> => {
+export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> | Observable<(FeedbackDataModel<(NFT)>[])> => {
     if (!nfts) {
         return of([]);
     }

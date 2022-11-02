@@ -75,10 +75,12 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<F
             ),
             map((res: VerifiedNft[] | undefined) => parseTokenHolderArray(res || [])),
             switchMap((nftArr: NFT[]) => of(nftArr).pipe(
-                switchMap(nfts => resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
-                map((feedbackNfts: FeedbackDataModel<NFT | null>[]) => {
+                switchMap(nfts => {
+                    return resolveNftImageLinks$(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN) as Observable<FeedbackDataModel<NFT>[]>
+                }),
+                map((feedbackNfts: FeedbackDataModel<NFT>[]): FeedbackDataModel<FeedbackDataModel<NFT>[]> => {
                     const codes = collectFeedbackDMStatus(feedbackNfts);
-                    const message = codes.some(c=>c===FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
+                    const message = codes.some(c => c === FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
                     return toFeedbackDM(feedbackNfts, codes, message);
                 })
                 )

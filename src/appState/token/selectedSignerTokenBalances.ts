@@ -41,9 +41,9 @@ const fetchTokensData = (
 };
 
 // eslint-disable-next-line camelcase
-function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: FeedbackDataModel<Token|TokenBalance>[], contractData: Token[] } {
+function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: FeedbackDataModel<Token | TokenBalance>[], contractData: Token[] } {
     return (cData: Token[]) => {
-        const tkns: FeedbackDataModel<Token|TokenBalance>[] = tokenBalances
+        const tkns: FeedbackDataModel<Token | TokenBalance>[] = tokenBalances
             .map((tBalance) => {
                 const cDataTkn = cData.find(
                     (cd) => cd.address === tBalance.address,
@@ -60,10 +60,10 @@ function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token
 }
 
 const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
-    state: { tokens: FeedbackDataModel<Token>[]; contractData: Token[] },
+    state: { tokens: FeedbackDataModel<Token | TokenBalance>[]; contractData: Token[] },
     // eslint-disable-next-line camelcase
     tokenBalances: TokenBalance[],
-): Observable< {tokens: FeedbackDataModel<Token | TokenBalance > [], contractData: Token[]}> => {
+): Observable<{ tokens: FeedbackDataModel<Token | TokenBalance> [], contractData: Token[] }> => {
     const missingCacheContractDataAddresses = tokenBalances
         .filter(
             (tb) => !state.contractData.some((cd) => cd.address === tb.address),
@@ -105,16 +105,22 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
     return Promise.resolve(tokenBalances);
 };*/
 
-const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token|TokenBalance>[]) =>
-    tokens.map((t) =>
-        (t.data as Token).iconUrl ? t : ((t.data as Token).iconUrl = (t.data as Token).iconUrl || getIconUrl(t.data.address)) && t
+const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[]) =>
+    tokens.map((tkn) => {
+            if (!!tkn.data.iconUrl) {
+                return tkn;
+            } else {
+                tkn.data.iconUrl = getIconUrl(tkn.data.address);
+                return tkn;
+            }
+        }
     );
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo,signer]:[ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>> => {
+export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
     return (!signer
-        ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES,'Signer not set'))
+        ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
             apollo.subscribe({
                 query: SIGNER_TOKENS_GQL,
@@ -124,7 +130,10 @@ export const loadSignerTokens_fbk = ([apollo,signer]:[ApolloClient<any>, ReefSig
         ).pipe(
             map((res: any): TokenBalance[] => {
                 if (res.data && res.data.token_holder) {
-                    return res.data.token_holder.map(th=>({address:th.token_address, balance: th.balance} as TokenBalance));
+                    return res.data.token_holder.map(th => ({
+                        address: th.token_address,
+                        balance: th.balance
+                    } as TokenBalance));
                 }
                 throw new Error('No result from SIGNER_TOKENS_GQL');
             }),
@@ -133,16 +142,16 @@ export const loadSignerTokens_fbk = ([apollo,signer]:[ApolloClient<any>, ReefSig
                 tokens: [],
                 contractData: [reefTokenWithAmount()],
             }),
-            map((tokens_cd: {tokens: FeedbackDataModel<Token|TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
+            map((tokens_cd: { tokens: FeedbackDataModel<Token | TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
             map(sortReefTokenFirst),
-            map((tkns: FeedbackDataModel<Token|TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
+            map((tkns: FeedbackDataModel<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
             catchError(err => {
                 return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))
             }),
         ));
 };
 
-export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>, ReefSigner|null|undefined]): FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]> => {
+export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, ReefSigner | null | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
     if (!selSigner) {
         return toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES);
     }
