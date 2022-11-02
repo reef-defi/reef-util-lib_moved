@@ -3,9 +3,6 @@ import {ReefSigner} from "../../account/ReefAccount";
 import {signers$} from "./signers";
 import {currentAddressSubj, setCurrentAddress} from "./setAccounts";
 
-if(!currentAddressSubj){
-    debugger
-}
 export const currentAddress$: Observable<string | undefined> = currentAddressSubj.asObservable()
     .pipe(
         startWith(''),

@@ -1,16 +1,16 @@
 import {availableNetworks, selectedSigner$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
-import {setCurrentAddress} from "../src/appState/account/setAccounts";
+import {accountsJsonSubj, setCurrentAddress} from "../src/appState/account/setAccounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
-import {signersFromJson$} from "../src/appState/account/signersFromJson";
+import {availableAddresses$, signersFromJson$, signersRegistered$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {
     selectedSignerNFTs$,
     selectedSignerTokenBalances$,
     selectedSignerTokenPrices$
 } from "../src/appState/tokenState.rx";
-import {firstValueFrom, skipWhile, tap} from "rxjs";
+import {firstValueFrom, race, skipWhile, tap} from "rxjs";
 import {FeedbackDataModel, FeedbackStatusCode} from "../src/appState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
@@ -140,6 +140,11 @@ async function testInitSelectedAddress() {
     }
 }
 
+async function testSigners() {
+    const sig = await firstValueFrom(race(signersFromJson$, currentProvider$, signersRegistered$,availableAddresses$));
+    console.log("sigFromJson=",sig);
+}
+
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
@@ -150,6 +155,8 @@ async function initTest() {
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
+    await testSigners()
+    return;
     await testProvider();
     await testInitSelectedAddress()
     setCurrentAddress(TEST_ACCOUNTS[0].address);

@@ -7,9 +7,6 @@ import {signersRegistered$} from "./signersFromJson";
 import {TxStatusUpdate} from "../../utils";
 import {UpdateAction} from "../model/updateStateModel";
 
-if(!reloadSignersSubj ){
-    debugger
-}
 export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
     withLatestFrom(signersRegistered$),

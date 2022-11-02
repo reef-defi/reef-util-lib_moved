@@ -8,9 +8,6 @@ import {initApolloClient, setNftIpfsResolverFn, StateOptions} from "./util/util"
 
 type destroyConnection = ()=>void;
 
-if(!accountsSubj || !accountsJsonSubj){
-    debugger
-}
 export const initReefState = (
     {
         network,

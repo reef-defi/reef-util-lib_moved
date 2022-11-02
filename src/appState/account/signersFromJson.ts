@@ -8,6 +8,7 @@ import {combineLatest, map, merge, Observable, shareReplay, switchMap} from "rxj
 import {currentProvider$} from "../providerState";
 import {accountJsonToMeta, metaAccountToSigner} from "../../account/accounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
+import {filter} from "rxjs/operators";
 
 let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(AccountJson[] | InjectedAccountWithMeta[] | null), Provider, InjectedSigningKey]) => {
     let accounts = jsonAccounts || [];
@@ -27,10 +28,13 @@ export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([account
     shareReplay(1),
 );
 
-if(!accountsSubj || !accountsJsonSubj){
-    debugger
-}
 export const signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, signersFromJson$).pipe(
     map((signrs) => (signrs && signrs.length ? signrs : [])),
     shareReplay(1),
 );
+
+export const availableAddresses$: Observable<string[]> = merge(accountsJsonSubj, accountsSubj).pipe(
+    map(acc=> acc.map(a=>a.address)),
+    filter(v=>!!v),
+    shareReplay(1)
+)
