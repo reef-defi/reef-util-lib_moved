@@ -33,6 +33,7 @@ export const signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, 
     shareReplay(1),
 );
 
+... start to load account values from here
 export const availableAddresses$: Observable<string[]> = merge(accountsJsonSubj, accountsSubj).pipe(
     map(acc=> acc.map(a=>a.address)),
     filter(v=>!!v),
