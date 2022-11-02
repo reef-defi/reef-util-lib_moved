@@ -17,7 +17,7 @@ const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: ReefSigner)
     }
     return of(nftOrNull)
         .pipe(
-            switchMap((nfts) => resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
+            switchMap((nfts:(NFT | null)[]) => resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
             map((nftOrNullResolved: (NFT | null)[]) => {
                 const resolvedNftTransfers: (Token | NFT)[] = [];
                 nftOrNullResolved.forEach((nftOrN, i) => {

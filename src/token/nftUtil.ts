@@ -77,7 +77,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
             .then(axios.get)
             .then((jsonStr) => resolveImageData(jsonStr.data, nft, ipfsUrlResolver))
             .then((nftUri) => ({...nft, ...nftUri}));
-    } catch (e) {
+    } catch (e: any) {
         console.log("ERROR getResolveNftPromise=", e);
         throw new Error(e.message);
     }
@@ -85,7 +85,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
 
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));
 
-export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> => {
+export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> | Observable<(FeedbackDataModel<(NFT)>[])> => {
     if (!nfts) {
         return of([]);
     }
@@ -95,9 +95,9 @@ export const resolveNftImageLinks$ = (nfts: (NFT | null)[], signer: Signer, ipfs
             map((resNft: NFT | null) => toFeedbackDM(resNft, FeedbackStatusCode.COMPLETE_DATA, 'Url resolved')),
             catchError(err => {
                 console.log("ERROR resolving nft img=", err);
-                return of(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL_ERROR, 'Url resolve error.'));
+                return of(toFeedbackDM(nft, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Url resolve error.', 'iconUrl'));
             }),
-            startWith(toFeedbackDM(nft, FeedbackStatusCode.RESOLVING_NFT_URL, 'Resolving url.'))
+            startWith(toFeedbackDM(nft, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Resolving url.', 'iconUrl'))
         )
     );
     return combineLatest(

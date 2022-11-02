@@ -1,14 +1,15 @@
 export enum FeedbackStatusCode {
+    // not using 0
     _,
-    ERROR,
-    RESOLVING_NFT_URL_ERROR,
-    NOT_SET,
-    MISSING_INPUT_VALUES,
-    PARTIAL_DATA,
     LOADING,
-    // TODO use propName for status and remove nft specific codes
-    RESOLVING_NFT_URL,
+    PARTIAL_DATA_LOADING,
+    // from here on data won't load anymore
+    MISSING_INPUT_VALUES,
+    NOT_SET,
+    ERROR,
+    //
     COMPLETE_DATA,
+
 }
 
 export interface FeedbackStatus {
@@ -27,28 +28,28 @@ export class FeedbackDataModel<T> {
         this._status = status;
     }
 
-    getStatus(propName?: string): FeedbackStatus {
+    getStatus(propName?: string): FeedbackStatus[] {
         const statusArr = this._status;
         if (!propName) {
-            if (statusArr.length === 1) {
+            /*if (statusArr.length === 1) {
                 return statusArr[0];
             }
             // all have same code
             let itemCode = statusArr[0].code;
             if (!statusArr.some(fs => fs.code !== itemCode)) {
                 return {code: itemCode};
-            }
+            }*/
+            return statusArr;
         }
 
-        const stat = statusArr.find(s => (!s.propName && !propName) || (s.propName === propName));
-        return stat ? stat : {code: FeedbackStatusCode.NOT_SET};
+        return statusArr.filter(s => (s.propName === propName));
     }
 
     hasStatus(status: FeedbackStatusCode | FeedbackStatusCode[], propName?: string): boolean {
         const checkStatArr = Array.isArray(status) ? status : [status];
         return checkStatArr.some((stat) => {
-            const s = this.getStatus(propName);
-            return s?.code === status;
+            const stats = this.getStatus(propName);
+            return stats.find(s=>s?.code === stat);
         });
     }
 
@@ -65,13 +66,14 @@ export class FeedbackDataModel<T> {
     }
 }
 
-function createFeedBackStatus(statCode: FeedbackStatusCode | undefined, message?: string, propName?: string) {
+function createFeedBackStatus(statCode: FeedbackStatusCode | undefined, message?: string, propName?: string): FeedbackStatus {
     const code = statCode ? statCode as FeedbackStatusCode : FeedbackStatusCode.COMPLETE_DATA;
     return {code, message, propName};
 }
 
-function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string) {
-    let status = [];
+// TODO test with different params
+function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string): FeedbackStatus[] {
+    let status: FeedbackStatus[] = [];
     if (!statCode) {
         return status;
     }
@@ -79,9 +81,9 @@ function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode
         if ((statCode as FeedbackStatus[])[0]?.code == null) {
             statCode.forEach(sc => status.push(createFeedBackStatus(sc as FeedbackStatusCode)));
         } else {
-            return statCode;
+            return statCode as FeedbackStatus[];
         }
-    } else if ((statCode as FeedbackStatus)?.code == null) {
+    } else if ((statCode as any)?.code == null) {
         status.push(createFeedBackStatus(statCode as FeedbackStatusCode, message, propName));
     }
 
@@ -114,7 +116,7 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
     }, []);
 
     const statCodes = statListArr.map(st => st?.code);
-    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode) => {
+    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode|undefined) => {
         if (v == null) {
             v = FeedbackStatusCode.NOT_SET;
         }

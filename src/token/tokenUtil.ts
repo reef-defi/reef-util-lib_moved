@@ -1,6 +1,6 @@
 import {utils} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
-import {REEF_ADDRESS, Token,} from './token';
+import {REEF_ADDRESS, Token, TokenBalance,} from './token';
 import {Pool} from "./pool";
 import {
     FeedbackDataModel,
@@ -42,10 +42,10 @@ const getReefTokenPoolReserves = (
 const findReefTokenPool_fbk = (
     pools: FeedbackDataModel<Pool | null>[],
     reefAddress: string,
-    token: Token,
+    token: Token|TokenBalance,
 ): FeedbackDataModel<Pool | null> | undefined => pools.find(
     (pool_fdm) => {
-        if (!pool_fdm.data) {
+        if (!pool_fdm?.data) {
             return false;
         }
         const pool: Pool = pool_fdm.data!;
@@ -82,7 +82,7 @@ const findReefTokenPool_fbk = (
 };*/
 
 export const calculateTokenPrice_fbk = (
-    token: Token,
+    token: Token|TokenBalance,
     pools: FeedbackDataModel<Pool | null>[],
     reefPrice: FeedbackDataModel<number>,
 ): FeedbackDataModel<number> => {
@@ -94,7 +94,10 @@ export const calculateTokenPrice_fbk = (
     const reefTokenPool = findReefTokenPool_fbk(pools, REEF_ADDRESS, token);
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 
-    if (minStat < FeedbackStatusCode.COMPLETE_DATA) {
+    if (!reefTokenPool || !reefTokenPool.data || minStat < FeedbackStatusCode.COMPLETE_DATA) {
+        if(!reefTokenPool || reefTokenPool.hasStatus(FeedbackStatusCode.ERROR)){
+            return toFeedbackDM(0, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Pool not found.')
+        }
         return toFeedbackDM(0, minStat);
     }
 

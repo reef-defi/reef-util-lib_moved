@@ -47,6 +47,12 @@ export interface TokenWithAmount extends Token {
     isEmpty: boolean;
 }
 
+export interface TokenBalance {
+    address: string;
+    balance: number;
+    iconUrl?: string;
+}
+
 export interface TokenState {
     index: number;
     amount: string;
