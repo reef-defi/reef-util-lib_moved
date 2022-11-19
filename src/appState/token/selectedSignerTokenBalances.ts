@@ -6,7 +6,13 @@ import {zenToRx} from "../../graphql";
 import {getIconUrl} from "../../utils";
 import {sortReefTokenFirst, toPlainString} from "../util/util";
 import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
-import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
+import {
+    collectFeedbackDMStatus,
+    FeedbackDataModel,
+    FeedbackStatusCode,
+    isFeedbackDM,
+    toFeedbackDM
+} from "../model/feedbackDataModel";
 import {ApolloClient} from "@apollo/client";
 import {ReefSigner} from "../../account/ReefAccount";
 
@@ -129,11 +135,15 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
             }),
         ).pipe(
             map((res: any): TokenBalance[] => {
-                if (res.data && res.data.token_holder) {
+                if (res?.data?.token_holder) {
                     return res.data.token_holder.map(th => ({
                         address: th.token_address,
                         balance: th.balance
                     } as TokenBalance));
+                }
+
+                if(isFeedbackDM(res)){
+                    return res;
                 }
                 throw new Error('No result from SIGNER_TOKENS_GQL');
             }),

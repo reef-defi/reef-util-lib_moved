@@ -3,12 +3,12 @@ import {Signer} from "@reef-defi/evm-provider";
 import type { Signer as InjectedSigner } from '@polkadot/api/types';
 
 export interface ReefAccount {
-    name: string;
-    balance: BigNumber;
+    name?: string;
+    balance?: BigNumber;
     address: string;
-    evmAddress: string;
-    isEvmClaimed: boolean;
-    source: string;
+    evmAddress?: string;
+    isEvmClaimed?: boolean;
+    source?: string;
     genesisHash?: string;
 }
 

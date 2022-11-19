@@ -1,33 +1,37 @@
 import {catchError, map, mergeScan, Observable, of, shareReplay, startWith, switchMap, withLatestFrom} from "rxjs";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/ReefAccount";
 import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
 import {reloadSignersSubj} from "./setAccounts";
-import {signersRegistered$} from "./signersFromJson";
+import {availableAddresses$} from "./signersFromJson";
 import {TxStatusUpdate} from "../../utils";
 import {UpdateAction} from "../model/updateStateModel";
+import {currentProvider$} from "../providerState";
+import {Provider} from "@reef-defi/evm-provider";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
 
-export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSignersSubj.pipe(
+export const signersLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = reloadSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
-    withLatestFrom(signersRegistered$),
+    withLatestFrom(availableAddresses$, currentProvider$),
     mergeScan(
         (
             state: {
-                all: ReefSigner[];
-                allUpdated: ReefSigner[];
-                lastUpdated: ReefSigner[];
+                all: FeedbackDataModel<ReefAccount>[];
+                allUpdated: FeedbackDataModel<ReefAccount>[];
+                lastUpdated: FeedbackDataModel<ReefAccount>[];
             },
-            [updateCtx, signersInjected]: [any, ReefSigner[]],
+            [updateCtx, signersInjected, provider]: [any, ReefAccount[], Provider],
         ): any => {
             const allSignersLatestUpdates = replaceUpdatedSigners(
-                signersInjected,
+                signersInjected.map(s=>toFeedbackDM(s, FeedbackStatusCode.COMPLETE_DATA)),
                 state.allUpdated,
             );
             return of(updateCtx.updateActions || [])
                 .pipe(
                     switchMap((updateActions) => updateSignersEvmBindings(
                         updateActions,
-                        allSignersLatestUpdates,
+                        provider,
+                        allSignersLatestUpdates
                     )
                         .then((lastUpdated) => ({
                             all: replaceUpdatedSigners(
@@ -52,12 +56,9 @@ export const signersLocallyUpdatedData$: Observable<ReefSigner[]> = reloadSigner
     ),
     filter((val: any) => !!val.lastUpdated.length),
     map((val: any): any => val.all),
-    startWith([]),
-    catchError((err) => {
-        console.log('signersLocallyUpdatedData$ ERROR=', err.message);
-        return of([]);
-    }),
-    shareReplay(1),
+    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
+    startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
+    shareReplay(1)
 );
 
 export const onTxUpdateResetSigners = (

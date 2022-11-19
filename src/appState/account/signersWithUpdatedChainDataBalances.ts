@@ -3,32 +3,34 @@ import {
     combineLatest,
     distinctUntilChanged,
     map,
-    mergeScan, Observable, of,
+    mergeScan,
+    Observable,
+    of,
     ReplaySubject,
     shareReplay,
+    startWith,
     Subject,
     switchMap
 } from "rxjs";
 import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
-import {signersRegistered$} from "./signersFromJson";
+import {availableAddresses$} from "./signersFromJson";
+import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 
-export const signersWithUpdatedChainDataBalances$ = combineLatest([
-    currentProvider$,
-    signersRegistered$,
-])
-    .pipe(
+const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
+    const signers: ReefAccount[] = providerAndSigners[1];
+    return of(providerAndSigners).pipe(
         mergeScan(
             (
                 state: { unsub: any; balancesByAddressSubj: ReplaySubject<any> },
-                [provider, signers]: [Provider, ReefSigner[]],
+                [prov, sigs]: [Provider, ReefAccount[]],
             ) => {
                 if (state.unsub) {
                     state.unsub();
                 }
-                const distinctSignerAddresses = signers
+                const distinctSignerAddresses = sigs
                     .map((s) => s.address)
                     .reduce((distinctAddrList: string[], curr: string) => {
                         if (distinctAddrList.indexOf(curr) < 0) {
@@ -37,15 +39,15 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
                         return distinctAddrList;
                     }, []);
                 // eslint-disable-next-line no-param-reassign
-                return provider.api.query.system.account
+                return prov.api.query.system.account
                     .multi(distinctSignerAddresses, (balances: any[]) => {
-                        const balancesByAddr = balances.map(({ data }, index) => ({
+                        const balancesByAddr = balances.map(({data}, index) => ({
                             address: distinctSignerAddresses[index],
                             balance: data.free.toString(),
                         }));
                         state.balancesByAddressSubj.next({
                             balances: balancesByAddr,
-                            signers,
+                            signers: sigs,
                         });
                     })
                     .then((unsub) => {
@@ -64,27 +66,54 @@ export const signersWithUpdatedChainDataBalances$ = combineLatest([
         ),
         switchMap(
             (v: {
-                balancesByAddressSubj: Subject<{ balances: any; signers: ReefSigner[] }>;
-            }) => v.balancesByAddressSubj,
-        ),
-        map((balancesAndSigners: { balances: any; signers: ReefSigner[] }) => (!balancesAndSigners.signers
-            ? []
-            : balancesAndSigners.signers.map((sig) => {
-                const bal = balancesAndSigners.balances.find(
-                    (b: { address: string; balance: string }) => b.address === sig.address,
-                );
-                if (bal && !BigNumber.from(bal.balance)
-                    .eq(sig.balance)) {
-                    return {
-                        ...sig,
-                        balance: BigNumber.from(bal.balance),
-                    };
+                balancesByAddressSubj: Subject<{ balances: any; signers: ReefAccount[] }>;
+            }) => v.balancesByAddressSubj.pipe(
+                startWith(toFeedbackDM(signers.map(s => toFeedbackDM(s, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading balace', 'balance')), FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading chain balances.')),
+                catchError(err => of(toFeedbackDM(signers.map(s => toFeedbackDM(s, FeedbackStatusCode.ERROR, 'ERROR loading chain balance = ' + err.message, 'balance')), FeedbackStatusCode.ERROR, 'Error loading balance from chain = ' + err.message, 'balance')))
+            ),
+        )
+    )
+};
+
+function getAddressesErrorFallback(err) {
+    ... pass in the message
+    return availableAddresses$.pipe(
+        map((addrList) => toFeedbackDM(
+            addrList.map(a => toFeedbackDM(a, FeedbackStatusCode.ERROR, 'Error chain balance=' + err.message, 'balance')),
+            FeedbackStatusCode.ERROR, 'ERROR loading chain balances = ' + err.message, 'balance')
+        )
+    );
+}
+
+export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
+    currentProvider$,
+    availableAddresses$,
+])
+    .pipe(
+        switchMap(getUpdatedSignerChainBalances$),
+        map((balancesAndSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
+                if (isFeedbackDM(balancesAndSigners)) {
+                    return balancesAndSigners;
                 }
-                return sig;
-            }))),
-        shareReplay(1),
-        catchError((err) => {
-            console.log('signersWithUpdatedChainDataBalances$ ERROR=', err.message);
-            return of([]);
-        }),
-    ) as Observable<ReefSigner[]>;
+                const balAndSig = balancesAndSigners as { balances: any[], signers: ReefAccount[] };
+                const balances_fdm: FeedbackDataModel<ReefAccount>[] = balAndSig.signers
+                    .map((sig) => {
+                        const bal = balAndSig.balances.find(
+                            (b: { address: string; balance: string }) => b.address === sig.address,
+                        );
+                        if (bal && (!sig.balance || !BigNumber.from(bal.balance)
+                            .eq(sig.balance))) {
+                            return {
+                                ...sig,
+                                balance: BigNumber.from(bal.balance),
+                            };
+                        }
+                        return sig;
+                    })
+                    .map(acc => toFeedbackDM(acc, FeedbackStatusCode.COMPLETE_DATA, 'Balance set', 'balance'));
+                return toFeedbackDM(balances_fdm, FeedbackStatusCode.COMPLETE_DATA, 'balance');
+            }
+        ),
+        catchError(err => getAddressesErrorFallback(err)),
+        shareReplay(1)
+    );

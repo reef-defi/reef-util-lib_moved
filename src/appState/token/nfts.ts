@@ -8,8 +8,7 @@ import {ReefSigner} from "../../account/ReefAccount";
 import {
     collectFeedbackDMStatus,
     FeedbackDataModel,
-    FeedbackStatusCode,
-    isFeedbackDM,
+    FeedbackStatusCode, isFeedbackDM,
     toFeedbackDM
 } from "../model/feedbackDataModel";
 import {SIGNER_NFTS_GQL} from "../../graphql/signerNfts.gql";
@@ -67,10 +66,15 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<F
     )
         .pipe(
             map((res: any) => {
-                    if (!res || !res.data || !res.data.token_holder) {
-                        throw new Error('Could not load data.');
-                    }
+                if (res?.data?.token_holder) {
                     return res.data.token_holder as VerifiedNft[];
+                }
+
+                if(isFeedbackDM(result)){
+                    return result;
+                }
+                throw new Error('Could not load data.');
+
                 }
             ),
             map((res: VerifiedNft[] | undefined) => parseTokenHolderArray(res || [])),
