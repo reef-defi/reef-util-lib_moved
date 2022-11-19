@@ -27,7 +27,7 @@ interface AccountEvmAddrData {
     isEvmClaimed?: boolean;
 }
 
-const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
+export const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
     apolloClientInstance$,
     availableAddresses$,
 ])
@@ -41,9 +41,9 @@ const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>>
                     fetchPolicy: 'network-only',
                 }),
             ))),
-        map((result: any): AccountEvmAddrData[] => {
+        map((result: any): FeedbackDataModel<AccountEvmAddrData[]> => {
             if (result?.data?.account) {
-                return result.data.account;
+                return toFeedbackDM(result.data.account as AccountEvmAddrData[], FeedbackStatusCode.COMPLETE_DATA, 'Indexed evm address loaded');
             }
             if (isFeedbackDM(result)) {
                 return result;
@@ -55,7 +55,7 @@ const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>>
         shareReplay(1)
     );
 
-export function getAddressesErrorFallback(err:{message: string}, message: string, propName?: string) {
+export function getAddressesErrorFallback(err: { message: string }, message: string, propName?: string) {
     return availableAddresses$.pipe(
         map((addrList) => toFeedbackDM(
             addrList.map(a => toFeedbackDM(a, FeedbackStatusCode.ERROR, message + err.message, 'balance')),
@@ -125,7 +125,7 @@ export const signersWithUpdatedIndexedData$ = combineLatest([
                 lastSigners: toFeedbackDM([], FeedbackStatusCode.LOADING),
             },
         ),
-        map((values: {signers: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>}) => values.signers),
+        map((values: { signers: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> }) => values.signers),
         catchError(err => getAddressesErrorFallback(err, 'Error signers updated data =')),
         shareReplay(1)
     );

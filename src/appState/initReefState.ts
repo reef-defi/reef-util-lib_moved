@@ -35,7 +35,7 @@ export const initReefState = (
         tap((p_n) => {
             initApolloClient(p_n.network, client);
         }),
-        finalizeWithValue(((p_n) => disconnectProvider(p_n.provider))),
+        finalizeWithValue(((p_n) => p_n?disconnectProvider(p_n.provider):null)),
         catchError((err) => {
             console.log('initReefState ERROR=', err.message);
             return of(null);

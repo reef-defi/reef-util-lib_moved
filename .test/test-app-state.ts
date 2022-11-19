@@ -146,8 +146,12 @@ async function testSigners() {
     console.log("available addr=",sig);
     const indexedSigners = await firstValueFrom(signersWithUpdatedIndexedData$);
     console.log("sigFromJson=",indexedSigners);
-    const sigCompl = await firstValueFrom(signersWithUpdatedIndexedData$.pipe(skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const sigCompl = await firstValueFrom(signersWithUpdatedIndexedData$.pipe(
+        tap(v=>console.log('SSSSS', v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))),
+        skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.log("sig complete=",sigCompl);
+    signersWithUpdatedIndexedData$.subscribe(v=>console.log('RESSSS',v))
+
 }
 
 async function initTest() {
