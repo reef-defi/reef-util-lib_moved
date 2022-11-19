@@ -1,7 +1,7 @@
 import {availableNetworks, selectedSigner$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
-import {accountsJsonSubj, setCurrentAddress} from "../src/appState/account/setAccounts";
+import {setCurrentAddress} from "../src/appState/account/setAccounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {availableAddresses$, signersFromJson$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
@@ -16,7 +16,7 @@ import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/token";
 import {selectedSignerAddressChange$} from "../src/appState/account/selectedSignerAddressUpdate";
 import {currentProvider$} from "../src/appState/providerState";
-import {signersWithUpdatedIndexedData$} from "../lib/appState/account/signersIndexedData";
+import {signersWithUpdatedIndexedData$} from "../src/appState/account/signersIndexedData";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
@@ -98,13 +98,13 @@ async function testAppStateSelectedSigner(address1: string, address2: string) {
 
     setCurrentAddress(address1);
     const selSig = await firstValueFrom(selectedSigner$);
-    console.assert(selSig?.address === address1, 'Selected signer not the same as current address.');
+    console.assert(selSig?.data.address === address1, 'Selected signer not the same as current address.');
 
     console.assert(address1 !== address2, 'Address not different');
     setCurrentAddress(address2);
     const selSig1 = await firstValueFrom(selectedSigner$);
     const selSigAddrCh = await firstValueFrom(selectedSignerAddressChange$);
-    console.assert(selSig1?.address === address2, 'Selected signer 2 not the same as current address.');
+    console.assert(selSig1?.data.address === address2, 'Selected signer 2 not the same as current address.');
     console.assert(selSigAddrCh?.address === address2, 'Selected signer addr ch. 2 not the same as current address.');
     console.log("END testAppStateSelectedSigner");
 
@@ -134,7 +134,7 @@ async function testProvider() {
 async function testInitSelectedAddress() {
     const allSig = await firstValueFrom(signersFromJson$);
     const selSig = await firstValueFrom(selectedSigner$);
-    console.assert(allSig.length && selSig?.address && allSig[0].address===selSig.address, 'TODO First signer should be selected by default');
+    console.assert(allSig.length && selSig?.data.address && allSig[0].address===selSig.data.address, 'TODO First signer should be selected by default');
     // TODO set signer when initializing and remove
     if (!selSig) {
         setCurrentAddress(allSig[0].address);
@@ -143,9 +143,11 @@ async function testInitSelectedAddress() {
 
 async function testSigners() {
     const sig = await firstValueFrom(race(signersFromJson$, currentProvider$,availableAddresses$));
-    console.log("sigFromJson=",sig);
+    console.log("available addr=",sig);
     const indexedSigners = await firstValueFrom(signersWithUpdatedIndexedData$);
     console.log("sigFromJson=",indexedSigners);
+    const sigCompl = await firstValueFrom(signersWithUpdatedIndexedData$.pipe(skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    console.log("sig complete=",sigCompl);
 }
 
 async function initTest() {
