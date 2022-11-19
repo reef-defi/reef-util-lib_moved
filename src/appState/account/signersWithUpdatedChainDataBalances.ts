@@ -18,6 +18,7 @@ import {ReefAccount} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
 import {availableAddresses$} from "./signersFromJson";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {getAddressesErrorFallback} from "./signersIndexedData";
 
 const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
     const signers: ReefAccount[] = providerAndSigners[1];
@@ -75,16 +76,6 @@ const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider, ReefAccou
     )
 };
 
-function getAddressesErrorFallback(err) {
-    ... pass in the message
-    return availableAddresses$.pipe(
-        map((addrList) => toFeedbackDM(
-            addrList.map(a => toFeedbackDM(a, FeedbackStatusCode.ERROR, 'Error chain balance=' + err.message, 'balance')),
-            FeedbackStatusCode.ERROR, 'ERROR loading chain balances = ' + err.message, 'balance')
-        )
-    );
-}
-
 export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
     currentProvider$,
     availableAddresses$,
@@ -114,6 +105,6 @@ export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<
                 return toFeedbackDM(balances_fdm, FeedbackStatusCode.COMPLETE_DATA, 'balance');
             }
         ),
-        catchError(err => getAddressesErrorFallback(err)),
+        catchError(err => getAddressesErrorFallback(err, 'Error chain balance=','balance' )),
         shareReplay(1)
     );
