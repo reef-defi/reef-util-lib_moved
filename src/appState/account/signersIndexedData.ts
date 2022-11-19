@@ -55,7 +55,6 @@ const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>>
         shareReplay(1)
     );
 
-
 export function getAddressesErrorFallback(err:{message: string}, message: string, propName?: string) {
     return availableAddresses$.pipe(
         map((addrList) => toFeedbackDM(
@@ -64,7 +63,6 @@ export function getAddressesErrorFallback(err:{message: string}, message: string
         )
     );
 }
-
 
 export const signersWithUpdatedIndexedData$ = combineLatest([
     signersWithUpdatedChainDataBalances$,
@@ -127,7 +125,7 @@ export const signersWithUpdatedIndexedData$ = combineLatest([
                 lastSigners: toFeedbackDM([], FeedbackStatusCode.LOADING),
             },
         ),
-        map(({signers}) => signers),
+        map((values: {signers: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>}) => values.signers),
         catchError(err => getAddressesErrorFallback(err, 'Error signers updated data =')),
         shareReplay(1)
     );

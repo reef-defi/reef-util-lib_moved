@@ -23,6 +23,7 @@ let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(
     ).then((signers: (ReefSigner | undefined)[]) => signers.filter((s) => !!s)) as Promise<ReefSigner[]>;
 };
 
+// TODO not needed anymore
 export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([accountsJsonSubj, currentProvider$, accountsJsonSigningKeySubj]).pipe(
     switchMap(convertJsonAccountsToReefSigners),
     shareReplay(1),

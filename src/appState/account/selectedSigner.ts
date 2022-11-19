@@ -1,7 +1,8 @@
 import {catchError, combineLatest, distinctUntilChanged, map, Observable, of, shareReplay, startWith, take} from "rxjs";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/ReefAccount";
 import {signers$} from "./signers";
 import {currentAddressSubj, setCurrentAddress} from "./setAccounts";
+import {FeedbackDataModel, toFeedbackDM} from "../model/feedbackDataModel";
 
 export const currentAddress$: Observable<string | undefined> = currentAddressSubj.asObservable()
     .pipe(
@@ -13,7 +14,7 @@ export const currentAddress$: Observable<string | undefined> = currentAddressSub
 // setting default signer (when signers exist) if no selected address exists
 combineLatest([signers$, currentAddress$])
     .pipe(take(1))
-    .subscribe(([signers, address]: [ReefSigner[] | null, string | undefined]) => {
+    .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string]) => {
         let saved: string | undefined = address;
         try {
             if (!saved) {
@@ -25,45 +26,46 @@ combineLatest([signers$, currentAddress$])
         }
 
         if (!saved) {
-            const firstSigner = signers && signers[0] ? signers[0].address : undefined;
+            const firstSigner = signers && signers.data && signers.data[0] ? signers.data[0].data : undefined;
             setCurrentAddress(
-                saved || firstSigner,
+                saved || firstSigner?.address,
             );
         }
     });
 
-export const selectedSigner$: Observable<ReefSigner | undefined> = combineLatest([
+export const selectedSigner$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
     currentAddress$,
     signers$,
 ])
     .pipe(
-        map(([selectedAddress, signers]: [string | undefined, ReefSigner[] | null]) => {
-            if (!selectedAddress || !signers || !signers.length) {
+        map((selectedAddressAndSigners: [string | undefined, FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>]): FeedbackDataModel<ReefAccount>|undefined => {
+            const [selectedAddress, signers] = selectedAddressAndSigners
+            if (!selectedAddress || !signers || !signers.data?.length ) {
                 return undefined;
             }
 
-            let foundSigner = signers.find(
-                (signer: ReefSigner) => signer?.address === selectedAddress,
+            let foundSigner: FeedbackDataModel<ReefAccount>|undefined = signers.data.find(
+                (signer: FeedbackDataModel<ReefAccount>) => signer.data.address === selectedAddress,
             );
             if (!foundSigner) {
-                foundSigner = signers ? signers[0] as ReefSigner : undefined;
+                foundSigner = signers && signers.data ? signers.data[0] as FeedbackDataModel<ReefAccount> : undefined;
             }
             try {
                 if (foundSigner) {
                     localStorage.setItem(
                         'selected_address_reef',
-                        foundSigner.address || '',
+                        foundSigner.data.address || '',
                     );
                 }
             } catch (e) {
                 // getting error in Flutter: 'The operation is insecure'
                 // console.log('Flutter error=',e.message);
             }
-            return foundSigner ? {...foundSigner} as ReefSigner : undefined;
+            return foundSigner ? toFeedbackDM({...foundSigner} as ReefAccount, foundSigner.getStatusList()) : undefined;
         }),
         catchError((err) => {
             console.log('selectedSigner$ ERROR=', err.message);
             return of(undefined);
         }),
-        shareReplay(1),
+        shareReplay(1)
     );
