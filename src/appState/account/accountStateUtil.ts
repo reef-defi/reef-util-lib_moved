@@ -83,8 +83,8 @@ export const updateSignersEvmBindings = (
       return signer.isClaimed();
     }),
   ).then((claimed: (FeedbackDataModel<ReefAccount>|boolean)[]): FeedbackDataModel<ReefAccount>[] => claimed.map((isEvmClaimed: boolean|FeedbackDataModel<ReefAccount>, i: number) => {
-    if(isFeedbackDM(claimed)){
-      return claimed as FeedbackDataModel<ReefAccount>;
+    if(isFeedbackDM(isEvmClaimed)){
+      return isEvmClaimed as FeedbackDataModel<ReefAccount>;
     }
     const sig = updSigners[i] as ReefAccount;
     return  toFeedbackDM({ ...sig, isEvmClaimed } as ReefAccount, FeedbackStatusCode.COMPLETE_DATA);

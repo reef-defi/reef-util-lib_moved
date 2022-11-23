@@ -1,6 +1,9 @@
 import {accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj} from "./setAccounts";
 import {AccountJson} from "@reef-defi/extension-base/background/types";
-import {InjectedAccountWithMeta} from "@reef-defi/extension-inject/types";
+import {
+    InjectedAccountWithMeta as InjectedAccountWithMetaReef,
+    InjectedAccountWithMeta
+} from "@reef-defi/extension-inject/types";
 import {Provider} from "@reef-defi/evm-provider";
 import {Signer as InjectedSigningKey} from "@polkadot/api/types";
 import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
@@ -35,14 +38,14 @@ export const _signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj,
 );
 
 export const availableAddresses$: Observable<ReefAccount[]> = merge(accountsJsonSubj, accountsSubj).pipe(
-    filter(v => !!v),
-    map(acc => acc!.map(a => {
-        let source = acc.meta?.source || acc.source;
+    filter((v: any) => !!v),
+    map((acc:(ReefSigner  | AccountJson | InjectedAccountWithMeta | InjectedAccountWithMetaReef)[]  ) => acc!.map(a => {
+        let source = (a as InjectedAccountWithMeta).meta?.source || (a as ReefAccount).source;
         if (!source) {
             source = REEF_EXTENSION_IDENT;
-            console.log("No extension source set for account=", acc);
+            console.log("No extension source set for account=", a);
         }
-        let meta = acc.meta ? acc.meta : {source};
+        let meta = (a as InjectedAccountWithMeta).meta ? (a as InjectedAccountWithMeta).meta : {source};
 
         return {address: a.address, ...meta} as ReefAccount;
     })),

@@ -53,7 +53,7 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.verified_contra
         contractType: transfer.token.verified_contract.type,
     } as NFT);
 
-const toTokenTransfers = (resTransferData: any[], signer, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
+const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
     from: transferData.from_address,
     to: transferData.to_address,
     inbound:
@@ -76,12 +76,12 @@ export const loadTransferHistory = ([apollo, signer, network, provider]:[ApolloC
     )
         .pipe(
             map((res: any) => (res.data && res.data.transfer ? res.data.transfer : undefined)),
-            map((resData: any) => toTokenTransfers(resData, signer, network)),
+            map((resData: any) => toTokenTransfers(resData, signer.data, network)),
             switchMap((transfers: TokenTransfer[]) => {
                 const tokens = transfers.map((tr: TokenTransfer) => tr.token);
-                return from(getReefAccountSigner(signer.data, provider))
+                return from(getReefAccountSigner(signer!.data, provider))
                     .pipe(
-                        switchMap((sig: Signer)=>resolveTransferHistoryNfts(tokens, sig)),
+                        switchMap((sig: Signer|undefined)=>sig?resolveTransferHistoryNfts(tokens, sig):[]),
                         map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
                             ...transfers[i],
                             token: resToken,

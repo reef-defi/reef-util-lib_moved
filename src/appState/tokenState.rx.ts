@@ -56,7 +56,7 @@ export const selectedSignerPools$: Observable<FeedbackDataModel<FeedbackDataMode
             return of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES));
         }
         return from(getReefAccountSigner(signer.data, provider)).pipe(
-            switchMap((sig: Signer)=>fetchPools$(tkns.data, sig, dexConfig[network.name].factoryAddress).pipe(
+            switchMap((sig: Signer|undefined)=>fetchPools$(tkns.data, sig as Signer, dexConfig[network.name].factoryAddress).pipe(
                 map((poolsArr: FeedbackDataModel<Pool|null>[])=>toFeedbackDM(poolsArr||[], poolsArr?.length?collectFeedbackDMStatus(poolsArr):FeedbackStatusCode.NOT_SET)),
             ))
         )

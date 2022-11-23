@@ -161,19 +161,19 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feedb
         ));
 };
 
-export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, ReefSigner | null | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
+export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, FeedbackDataModel<ReefAccount> | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
     if (!selSigner) {
         return toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES);
     }
     const signerTkns = tokens ? tokens.data : [];
-    if (selSigner?.balance) {
+    if (selSigner.data.balance) {
         const reefT = signerTkns.find((t) => t.data.address === REEF_ADDRESS);
         if (reefT) {
-            reefT.data.balance = selSigner.balance;
+            reefT.data.balance = selSigner.data.balance;
         } else {
             signerTkns.unshift(toFeedbackDM({
                 ...REEF_TOKEN,
-                balance: selSigner.balance
+                balance: selSigner.data.balance
             }, FeedbackStatusCode.COMPLETE_DATA));
         }
     }

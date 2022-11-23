@@ -25,7 +25,7 @@ const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefine
     const signers: ReefAccount[] = providerAndSigners[1];
 
     return of(providerAndSigners).pipe(
-        switchMap((provAndSigs: [Provider, ReefAccount[]]) => {
+        switchMap((provAndSigs: [Provider|undefined, ReefAccount[]]) => {
             let provider = provAndSigs[0];
             if (!provider) {
                 let signers = provAndSigs[1];
@@ -37,7 +37,7 @@ const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefine
                 mergeScan(
                     (
                         state: { unsub: any; balancesByAddressSubj: ReplaySubject<any> },
-                        [prov, sigs]: [Provider, ReefAccount[]],
+                        [prov, sigs]: [Provider|undefined, ReefAccount[]],
                     ) => {
                         if (state.unsub) {
                             state.unsub();
@@ -97,7 +97,7 @@ export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<
         switchMap(getUpdatedSignerChainBalances$),
         map((balancesAndSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
                 if (isFeedbackDM(balancesAndSigners)) {
-                    return balancesAndSigners;
+                    return balancesAndSigners as FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
                 }
                 const balAndSig = balancesAndSigners as { balances: any[], signers: ReefAccount[] };
                 const balances_fdm: FeedbackDataModel<ReefAccount>[] = balAndSig.signers
@@ -118,6 +118,6 @@ export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<
                 return toFeedbackDM(balances_fdm, FeedbackStatusCode.COMPLETE_DATA, 'Balance set');
             }
         ),
-        catchError(err => getAddressesErrorFallback(err, 'Error chain balance=', 'balance')),
+        catchError((err) => getAddressesErrorFallback(err, 'Error chain balance=', 'balance')),
         shareReplay(1)
     );

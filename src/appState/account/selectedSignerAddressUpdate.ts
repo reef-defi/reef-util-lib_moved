@@ -6,6 +6,6 @@ import {FeedbackDataModel} from "../model/feedbackDataModel";
 
 export const selectedSignerAddressChange$ = selectedSigner$.pipe(
     filter((v): v is FeedbackDataModel<ReefAccount> => !!v),
-    distinctUntilChanged((s1, s2) => s1?.address === s2?.address),
+    distinctUntilChanged((s1, s2) => s1.data.address === s2.data.address),
     shareReplay(1)
 );

@@ -14,7 +14,7 @@ export const currentAddress$: Observable<string | undefined> = currentAddressSub
 // setting default signer (when signers exist) if no selected address exists
 combineLatest([signers$, currentAddress$])
     .pipe(take(1))
-    .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string]) => {
+    .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string|undefined]) => {
         let saved: string | undefined = address;
         try {
             if (!saved) {
@@ -61,7 +61,7 @@ export const selectedSigner$: Observable<FeedbackDataModel<ReefAccount> | undefi
                 // getting error in Flutter: 'The operation is insecure'
                 // console.log('Flutter error=',e.message);
             }
-            return foundSigner ? toFeedbackDM({...foundSigner} as ReefAccount, foundSigner.getStatusList()) : undefined;
+            return foundSigner ? toFeedbackDM({...foundSigner.data} as ReefAccount, foundSigner.getStatusList()) : undefined;
         }),
         catchError((err) => {
             console.log('selectedSigner$ ERROR=', err.message);
