@@ -6,6 +6,7 @@ import {ReefAccount} from "../../account/ReefAccount";
 import {signersLocallyUpdatedData$} from "./signersLocallyUpdatedData";
 import {availableAddresses$} from "./signersFromJson";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {getAddressesErrorFallback} from "./errorUtil";
 
 const EVM_ADDRESS_UPDATE_GQL = gql`
   subscription query($accountIds: [String!]!) {
@@ -54,15 +55,6 @@ export const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrD
         startWith(toFeedbackDM([], FeedbackStatusCode.LOADING)),
         shareReplay(1)
     );
-
-export function getAddressesErrorFallback(err: { message: string }, message: string, propName?: string) {
-    return availableAddresses$.pipe(
-        map((addrList) => toFeedbackDM(
-            addrList.map(a => toFeedbackDM(a, FeedbackStatusCode.ERROR, message + err.message, 'balance')),
-            FeedbackStatusCode.ERROR, message + err.message, propName)
-        )
-    );
-}
 
 export const signersWithUpdatedIndexedData$ = combineLatest([
     signersWithUpdatedChainDataBalances$,

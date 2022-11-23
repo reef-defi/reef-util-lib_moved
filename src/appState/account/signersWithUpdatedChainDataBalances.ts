@@ -18,7 +18,7 @@ import {ReefAccount} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
 import {availableAddresses$} from "./signersFromJson";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
-import {getAddressesErrorFallback} from "./signersIndexedData";
+import {getAddressesErrorFallback} from "./errorUtil";
 
 
 const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
