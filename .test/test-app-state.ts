@@ -45,7 +45,7 @@ async function changeCurrentAddress(): Promise<string> {
     const allSig = await firstValueFrom(signersFromJson$);
     console.assert(allSig.length>1, 'Need more than 1 signer.')
     const currSig = await firstValueFrom(selectedSignerAddressChange$);
-    const newSig = allSig.find(sig => sig.address !== currSig.address);
+    const newSig = allSig.find(sig => sig.address !== currSig.data.address);
     setCurrentAddress(newSig?.address);
     return newSig?.address!;
 }
@@ -53,7 +53,7 @@ async function changeCurrentAddress(): Promise<string> {
 async function testAppStateTokens() {
     const currSig = await firstValueFrom(selectedSignerAddressChange$);
     const address = await changeCurrentAddress();
-    console.assert(currSig.address !== address, 'Address passed in should be different');
+    console.assert(currSig.data.address !== address, 'Address passed in should be different');
     let tknsLoading = await firstValueFrom(selectedSignerTokenBalances$);
     console.assert(tknsLoading && tknsLoading.data?.length === 0, 'Tokens balances loading');
     console.assert(tknsLoading.hasStatus(FeedbackStatusCode.LOADING), 'Tokens not cleared when changing signer')
@@ -105,7 +105,7 @@ async function testAppStateSelectedSigner(address1: string, address2: string) {
     const selSig1 = await firstValueFrom(selectedSigner$);
     const selSigAddrCh = await firstValueFrom(selectedSignerAddressChange$);
     console.assert(selSig1?.data.address === address2, 'Selected signer 2 not the same as current address.');
-    console.assert(selSigAddrCh?.address === address2, 'Selected signer addr ch. 2 not the same as current address.');
+    console.assert(selSigAddrCh?.data.address === address2, 'Selected signer addr ch. 2 not the same as current address.');
     console.log("END testAppStateSelectedSigner");
 
 }
@@ -164,8 +164,8 @@ async function initTest() {
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
-    await testSigners()
-    return;
+    // await testSigners()
+    // return;
     await testProvider();
     await testInitSelectedAddress()
     setCurrentAddress(TEST_ACCOUNTS[0].address);

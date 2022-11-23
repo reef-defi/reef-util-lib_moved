@@ -4,7 +4,7 @@ import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/token";
 import {zenToRx} from "../../graphql";
 import {resolveNftImageLinks$} from "../../token/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "../util/util";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
 import {
     collectFeedbackDMStatus,
     FeedbackDataModel,
@@ -59,7 +59,7 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<F
         apollo.subscribe({
             query: SIGNER_NFTS_GQL,
             variables: {
-                accountId: (signer as ReefSigner).address,
+                accountId: (signer.data as ReefAccount).address,
             },
             fetchPolicy: 'network-only',
         }),
@@ -70,8 +70,8 @@ export const loadSignerNfts = ([apollo, signer]): Observable<FeedbackDataModel<F
                     return res.data.token_holder as VerifiedNft[];
                 }
 
-                if(isFeedbackDM(result)){
-                    return result;
+                if(isFeedbackDM(res)){
+                    return res;
                 }
                 throw new Error('Could not load data.');
 

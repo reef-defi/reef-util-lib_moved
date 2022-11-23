@@ -14,7 +14,7 @@ import {
     toFeedbackDM
 } from "../model/feedbackDataModel";
 import {ApolloClient} from "@apollo/client";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
 
 // eslint-disable-next-line camelcase
 const fetchTokensData = (
@@ -124,13 +124,13 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[])
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
+export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
             apollo.subscribe({
                 query: SIGNER_TOKENS_GQL,
-                variables: {accountId: signer.address},
+                variables: {accountId: signer.data.address},
                 fetchPolicy: 'network-only',
             }),
         ).pipe(
