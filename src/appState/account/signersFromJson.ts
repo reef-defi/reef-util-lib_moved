@@ -1,15 +1,11 @@
-import {accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj} from "./setAccounts";
+import {accountsJsonSubj, accountsSubj} from "./setAccounts";
 import {AccountJson} from "@reef-defi/extension-base/background/types";
 import {
     InjectedAccountWithMeta as InjectedAccountWithMetaReef,
     InjectedAccountWithMeta
 } from "@reef-defi/extension-inject/types";
-import {Provider} from "@reef-defi/evm-provider";
-import {Signer as InjectedSigningKey} from "@polkadot/api/types";
 import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
-import {combineLatest, map, merge, Observable, shareReplay, switchMap, tap} from "rxjs";
-import {currentProvider$} from "../providerState";
-import {accountJsonToMeta, metaAccountToSigner} from "../../account/accounts";
+import {map, merge, Observable, shareReplay} from "rxjs";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {filter} from "rxjs/operators";
 
