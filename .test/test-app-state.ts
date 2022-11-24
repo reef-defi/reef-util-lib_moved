@@ -26,12 +26,12 @@ async function testNfts() {
     await changeCurrentAddress();
     let nfts = await firstValueFrom(selectedSignerNFTs$);
     console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().map(v=>v.code))
-    console.log("resolve url",);
+    console.log("resolve nft urls");
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
     console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
 
     nfts = await firstValueFrom(selectedSignerNFTs$.pipe(
-        tap(v => console.log('Waiting for nft complete data')),
+        // tap(v => console.log('Waiting for nft complete data')),
         skipWhile((nfts: FeedbackDataModel<any>) => {
             return !(nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && nfts.getStatusList().length===1)
         }))

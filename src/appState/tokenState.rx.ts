@@ -1,6 +1,6 @@
 import {
     catchError,
-    combineLatest, from,
+    combineLatest, finalize, from,
     map,
     mergeWith,
     Observable,
@@ -96,7 +96,7 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
     selectedSignerAddressChange$
 ])
     .pipe(
-        switchMap(loadSignerNfts),
+        switchMap((v)=>loadSignerNfts(v)),
         mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
         catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
         shareReplay(1)

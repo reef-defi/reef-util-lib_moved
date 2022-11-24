@@ -22,16 +22,19 @@ const addressSigners = new Map<string, Signer|undefined>();
 
 const getAccountInjectedSigner = async (
     source: string = REEF_EXTENSION_IDENT,
-): Promise<InjectedSigner | undefined> => {
+): Promise<InjectedSigner|undefined> => {
   if (!accountSourceSigners.has(source)) {
     const signer = await web3FromSource(source)
         .then((injected) => injected?.signer)
         .catch((err) => console.error('getAccountSigner error =', err));
+    if (!signer) {
+      console.warn('Can not get signer for source=' + source);
+    }
     if (signer) {
       accountSourceSigners.set(source, signer);
     }
   }
-  return accountSourceSigners.get(source);
+  return accountSourceSigners.get(source)!;
 };
 
 export const getReefAccountSigner = async ({address, source}: ReefAccount, provider: Provider)=>{

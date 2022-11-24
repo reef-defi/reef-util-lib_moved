@@ -12,7 +12,7 @@ import {
     Subject,
     switchMap, tap
 } from "rxjs";
-import {currentProvider$} from "../providerState";
+import {currentProvider$, instantProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {ReefAccount} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
@@ -90,7 +90,7 @@ const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefine
 };
 
 export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
-    currentProvider$.pipe(startWith(undefined)),
+    instantProvider$,
     availableAddresses$,
 ])
     .pipe(
