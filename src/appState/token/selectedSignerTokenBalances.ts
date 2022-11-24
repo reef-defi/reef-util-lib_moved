@@ -6,9 +6,15 @@ import {zenToRx} from "../../graphql";
 import {getIconUrl} from "../../utils";
 import {sortReefTokenFirst, toPlainString} from "../util/util";
 import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
-import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
+import {
+    collectFeedbackDMStatus,
+    FeedbackDataModel,
+    FeedbackStatusCode,
+    isFeedbackDM,
+    toFeedbackDM
+} from "../model/feedbackDataModel";
 import {ApolloClient} from "@apollo/client";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
 
 // eslint-disable-next-line camelcase
 const fetchTokensData = (
@@ -118,22 +124,26 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[])
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefSigner]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
+export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
             apollo.subscribe({
                 query: SIGNER_TOKENS_GQL,
-                variables: {accountId: signer.address},
+                variables: {accountId: signer.data.address},
                 fetchPolicy: 'network-only',
             }),
         ).pipe(
             map((res: any): TokenBalance[] => {
-                if (res.data && res.data.token_holder) {
+                if (res?.data?.token_holder) {
                     return res.data.token_holder.map(th => ({
                         address: th.token_address,
                         balance: th.balance
                     } as TokenBalance));
+                }
+
+                if(isFeedbackDM(res)){
+                    return res;
                 }
                 throw new Error('No result from SIGNER_TOKENS_GQL');
             }),
@@ -151,19 +161,19 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, ReefS
         ));
 };
 
-export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, ReefSigner | null | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
+export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, FeedbackDataModel<ReefAccount> | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
     if (!selSigner) {
         return toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES);
     }
     const signerTkns = tokens ? tokens.data : [];
-    if (selSigner?.balance) {
+    if (selSigner.data.balance) {
         const reefT = signerTkns.find((t) => t.data.address === REEF_ADDRESS);
         if (reefT) {
-            reefT.data.balance = selSigner.balance;
+            reefT.data.balance = selSigner.data.balance;
         } else {
             signerTkns.unshift(toFeedbackDM({
                 ...REEF_TOKEN,
-                balance: selSigner.balance
+                balance: selSigner.data.balance
             }, FeedbackStatusCode.COMPLETE_DATA));
         }
     }

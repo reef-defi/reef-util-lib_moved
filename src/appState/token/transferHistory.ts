@@ -1,7 +1,7 @@
 import {ApolloClient} from "@apollo/client";
 import {ContractType, NFT, Token, TokenTransfer} from "../../token/token";
-import {ReefSigner} from "../../account/ReefAccount";
-import {map, Observable, of, switchMap} from "rxjs";
+import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
+import {from, map, Observable, of, switchMap} from "rxjs";
 import {resolveNftImageLinks} from "../../token/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN, toPlainString} from "../util/util";
 import {BigNumber} from "ethers";
@@ -9,15 +9,18 @@ import {getExtrinsicUrl, getIconUrl} from "../../utils";
 import {Network} from "../../network/network";
 import {zenToRx} from "../../graphql";
 import {TRANSFER_HISTORY_GQL} from "../../graphql/transferHistory.gql";
+import {FeedbackDataModel} from "../model/feedbackDataModel";
+import {getReefAccountSigner} from "../../account/accounts";
+import {Provider, Signer} from "@reef-defi/evm-provider";
 
-const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: ReefSigner): Observable<(Token | NFT)[]> => {
+const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Observable<(Token | NFT)[]> => {
     const nftOrNull: (NFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
     if (!nftOrNull.filter((v) => !!v).length) {
         return of(tokens);
     }
     return of(nftOrNull)
         .pipe(
-            switchMap((nfts:(NFT | null)[]) => resolveNftImageLinks(nfts, signer.signer, _NFT_IPFS_RESOLVER_FN)),
+            switchMap((nfts:(NFT | null)[]) => resolveNftImageLinks(nfts, signer, _NFT_IPFS_RESOLVER_FN)),
             map((nftOrNullResolved: (NFT | null)[]) => {
                 const resolvedNftTransfers: (Token | NFT)[] = [];
                 nftOrNullResolved.forEach((nftOrN, i) => {
@@ -50,7 +53,7 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.verified_contra
         contractType: transfer.token.verified_contract.type,
     } as NFT);
 
-const toTokenTransfers = (resTransferData: any[], signer, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
+const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
     from: transferData.from_address,
     to: transferData.to_address,
     inbound:
@@ -62,22 +65,23 @@ const toTokenTransfers = (resTransferData: any[], signer, network: Network): Tok
     extrinsic: { blockId: transferData.extrinsic.block_id, hash: transferData.extrinsic.hash, index: transferData.extrinsic.index },
 }));
 
-export const loadTransferHistory = ([apollo, signer, network]:[ApolloClient<any>, ReefSigner, Network]) => (!signer
+export const loadTransferHistory = ([apollo, signer, network, provider]:[ApolloClient<any>, FeedbackDataModel<ReefAccount>, Network, Provider]) => (!signer
     ? []
     : zenToRx(
         apollo.subscribe({
             query: TRANSFER_HISTORY_GQL,
-            variables: { accountId: signer.address },
+            variables: { accountId: signer.data.address },
             fetchPolicy: 'network-only',
         }),
     )
         .pipe(
             map((res: any) => (res.data && res.data.transfer ? res.data.transfer : undefined)),
-            map((resData: any) => toTokenTransfers(resData, signer, network)),
+            map((resData: any) => toTokenTransfers(resData, signer.data, network)),
             switchMap((transfers: TokenTransfer[]) => {
                 const tokens = transfers.map((tr: TokenTransfer) => tr.token);
-                return resolveTransferHistoryNfts(tokens, signer)
+                return from(getReefAccountSigner(signer!.data, provider))
                     .pipe(
+                        switchMap((sig: Signer|undefined)=>sig?resolveTransferHistoryNfts(tokens, sig):[]),
                         map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
                             ...transfers[i],
                             token: resToken,

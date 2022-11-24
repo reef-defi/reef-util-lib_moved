@@ -14,32 +14,44 @@ import { BigNumber } from 'ethers';
 import { AccountJson } from '@reef-defi/extension-base/background/types';
 import { web3FromAddress, web3FromSource } from '@reef-defi/extension-dapp';
 import { ensure, removeUndefinedItem } from '../utils/utils';
-import {ReefSigner} from "./ReefAccount";
+import {ReefAccount, ReefSigner} from "./ReefAccount";
+import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 
 const accountSourceSigners = new Map<string, InjectedSigner>();
+const addressSigners = new Map<string, Signer|undefined>();
 
 const getAccountInjectedSigner = async (
-    source: string,
-): Promise<InjectedSigner | undefined> => {
+    source: string = REEF_EXTENSION_IDENT,
+): Promise<InjectedSigner|undefined> => {
   if (!accountSourceSigners.has(source)) {
     const signer = await web3FromSource(source)
         .then((injected) => injected?.signer)
         .catch((err) => console.error('getAccountSigner error =', err));
+    if (!signer) {
+      console.warn('Can not get signer for source=' + source);
+    }
     if (signer) {
       accountSourceSigners.set(source, signer);
     }
   }
-  return accountSourceSigners.get(source);
+  return accountSourceSigners.get(source)!;
 };
+
+export const getReefAccountSigner = async ({address, source}: ReefAccount, provider: Provider)=>{
+  return getAccountSigner(address, provider, source);
+}
 
 export const getAccountSigner = async (
     address: string,
-    source: string,
     provider: Provider,
+    source?: string,
     injSigner?: InjectedSigner,
 ): Promise<Signer | undefined> => {
   const iSigner = injSigner || (await getAccountInjectedSigner(source));
-  return iSigner ? new Signer(provider, address, iSigner) : undefined;
+  if (!addressSigners.has(address)) {
+    addressSigners.set(address, iSigner ? new Signer(provider, address, iSigner) : undefined);
+  }
+  return addressSigners.get(address);
 };
 
 export const getReefCoinBalance = async (
@@ -97,8 +109,8 @@ export const metaAccountToSigner = async (
   const { source } = account.meta;
   const signer = await getAccountSigner(
       account.address,
-      source,
       provider,
+      source,
       injSigner,
   );
   if (!signer) {

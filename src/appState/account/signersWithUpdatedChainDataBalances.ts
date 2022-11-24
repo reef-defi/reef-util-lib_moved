@@ -2,89 +2,122 @@ import {
     catchError,
     combineLatest,
     distinctUntilChanged,
-    map,
-    mergeScan, Observable, of,
+    map, merge,
+    mergeScan, NEVER,
+    Observable,
+    of,
     ReplaySubject,
     shareReplay,
+    startWith,
     Subject,
-    switchMap
+    switchMap, tap
 } from "rxjs";
-import {currentProvider$} from "../providerState";
+import {currentProvider$, instantProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/ReefAccount";
 import {BigNumber} from "ethers";
-import {signersRegistered$} from "./signersFromJson";
+import {availableAddresses$} from "./signersFromJson";
+import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {getAddressesErrorFallback} from "./errorUtil";
 
-export const signersWithUpdatedChainDataBalances$ = combineLatest([
-    currentProvider$,
-    signersRegistered$,
+
+const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
+    const signers: ReefAccount[] = providerAndSigners[1];
+
+    return of(providerAndSigners).pipe(
+        switchMap((provAndSigs: [Provider|undefined, ReefAccount[]]) => {
+            let provider = provAndSigs[0];
+            if (!provider) {
+                let signers = provAndSigs[1];
+                return merge(of(signers), NEVER).pipe(
+                    map((sgs) => toFeedbackDM(sgs.map(s => toFeedbackDM(s, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Connecting to chain.', 'balance')), FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Connecting to chain and loading balances.')),
+                );
+            }
+            return of(provAndSigs).pipe(
+                mergeScan(
+                    (
+                        state: { unsub: any; balancesByAddressSubj: ReplaySubject<any> },
+                        [prov, sigs]: [Provider|undefined, ReefAccount[]],
+                    ) => {
+                        if (state.unsub) {
+                            state.unsub();
+                        }
+                        const distinctSignerAddresses = sigs
+                            .map((s) => s.address)
+                            .reduce((distinctAddrList: string[], curr: string) => {
+                                if (distinctAddrList.indexOf(curr) < 0) {
+                                    distinctAddrList.push(curr);
+                                }
+                                return distinctAddrList;
+                            }, []);
+                        // eslint-disable-next-line no-param-reassign
+                        return prov!.api.query.system.account
+                            .multi(distinctSignerAddresses, (balances: any[]) => {
+                                const balancesByAddr = balances.map(({data}, index) => ({
+                                    address: distinctSignerAddresses[index],
+                                    balance: data.free.toString(),
+                                }));
+                                state.balancesByAddressSubj.next({
+                                    balances: balancesByAddr,
+                                    signers: sigs,
+                                });
+                            })
+                            .then((unsub) => {
+                                // eslint-disable-next-line no-param-reassign
+                                state.unsub = unsub;
+                                return state;
+                            });
+                    },
+                    {
+                        unsub: null,
+                        balancesByAddressSubj: new ReplaySubject<any>(1),
+                    },
+                ),
+                distinctUntilChanged(
+                    (prev: any, curr: any): any => prev.balancesByAddressSubj !== curr.balancesByAddressSubj,
+                ),
+                switchMap(
+                    (v: {
+                        balancesByAddressSubj: Subject<{ balances: any; signers: ReefAccount[] }>;
+                    }) => v.balancesByAddressSubj.pipe(
+                        startWith(toFeedbackDM(signers.map(s => toFeedbackDM(s, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading balace', 'balance')), FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Loading chain balances.')),
+                        catchError(err => of(toFeedbackDM(signers.map(s => toFeedbackDM(s, FeedbackStatusCode.ERROR, 'ERROR loading chain balance = ' + err.message, 'balance')), FeedbackStatusCode.ERROR, 'Error loading balance from chain = ' + err.message, 'balance')))
+                    ),
+                )
+            );
+        })
+    );
+};
+
+export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
+    instantProvider$,
+    availableAddresses$,
 ])
     .pipe(
-        mergeScan(
-            (
-                state: { unsub: any; balancesByAddressSubj: ReplaySubject<any> },
-                [provider, signers]: [Provider, ReefSigner[]],
-            ) => {
-                if (state.unsub) {
-                    state.unsub();
+        switchMap(getUpdatedSignerChainBalances$),
+        map((balancesAndSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
+                if (isFeedbackDM(balancesAndSigners)) {
+                    return balancesAndSigners as FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
                 }
-                const distinctSignerAddresses = signers
-                    .map((s) => s.address)
-                    .reduce((distinctAddrList: string[], curr: string) => {
-                        if (distinctAddrList.indexOf(curr) < 0) {
-                            distinctAddrList.push(curr);
+                const balAndSig = balancesAndSigners as { balances: any[], signers: ReefAccount[] };
+                const balances_fdm: FeedbackDataModel<ReefAccount>[] = balAndSig.signers
+                    .map((sig) => {
+                        const bal = balAndSig.balances.find(
+                            (b: { address: string; balance: string }) => b.address === sig.address,
+                        );
+                        if (bal && (!sig.balance || !BigNumber.from(bal.balance)
+                            .eq(sig.balance))) {
+                            return {
+                                ...sig,
+                                balance: BigNumber.from(bal.balance),
+                            };
                         }
-                        return distinctAddrList;
-                    }, []);
-                // eslint-disable-next-line no-param-reassign
-                return provider.api.query.system.account
-                    .multi(distinctSignerAddresses, (balances: any[]) => {
-                        const balancesByAddr = balances.map(({ data }, index) => ({
-                            address: distinctSignerAddresses[index],
-                            balance: data.free.toString(),
-                        }));
-                        state.balancesByAddressSubj.next({
-                            balances: balancesByAddr,
-                            signers,
-                        });
+                        return sig;
                     })
-                    .then((unsub) => {
-                        // eslint-disable-next-line no-param-reassign
-                        state.unsub = unsub;
-                        return state;
-                    });
-            },
-            {
-                unsub: null,
-                balancesByAddressSubj: new ReplaySubject<any>(1),
-            },
+                    .map(acc => toFeedbackDM(acc, FeedbackStatusCode.COMPLETE_DATA, 'Balance set', 'balance'));
+                return toFeedbackDM(balances_fdm, FeedbackStatusCode.COMPLETE_DATA, 'Balance set');
+            }
         ),
-        distinctUntilChanged(
-            (prev: any, curr: any): any => prev.balancesByAddressSubj !== curr.balancesByAddressSubj,
-        ),
-        switchMap(
-            (v: {
-                balancesByAddressSubj: Subject<{ balances: any; signers: ReefSigner[] }>;
-            }) => v.balancesByAddressSubj,
-        ),
-        map((balancesAndSigners: { balances: any; signers: ReefSigner[] }) => (!balancesAndSigners.signers
-            ? []
-            : balancesAndSigners.signers.map((sig) => {
-                const bal = balancesAndSigners.balances.find(
-                    (b: { address: string; balance: string }) => b.address === sig.address,
-                );
-                if (bal && !BigNumber.from(bal.balance)
-                    .eq(sig.balance)) {
-                    return {
-                        ...sig,
-                        balance: BigNumber.from(bal.balance),
-                    };
-                }
-                return sig;
-            }))),
-        shareReplay(1),
-        catchError((err) => {
-            console.log('signersWithUpdatedChainDataBalances$ ERROR=', err.message);
-            return of([]);
-        }),
-    ) as Observable<ReefSigner[]>;
+        catchError((err) => getAddressesErrorFallback(err, 'Error chain balance=', 'balance')),
+        shareReplay(1)
+    );

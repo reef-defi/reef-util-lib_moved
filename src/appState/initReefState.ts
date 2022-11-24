@@ -8,14 +8,11 @@ import {initApolloClient, setNftIpfsResolverFn, StateOptions} from "./util/util"
 
 type destroyConnection = ()=>void;
 
-if(!accountsSubj || !accountsJsonSubj){
-    debugger
-}
 export const initReefState = (
     {
         network,
         client,
-        signers,
+        // signers,
         jsonAccounts,
         ipfsHashResolverFn,
     }: StateOptions,
@@ -38,7 +35,7 @@ export const initReefState = (
         tap((p_n) => {
             initApolloClient(p_n.network, client);
         }),
-        finalizeWithValue(((p_n) => disconnectProvider(p_n.provider))),
+        finalizeWithValue(((p_n) => p_n?disconnectProvider(p_n.provider):null)),
         catchError((err) => {
             console.log('initReefState ERROR=', err.message);
             return of(null);
@@ -51,9 +48,9 @@ export const initReefState = (
         });
     setCurrentNetwork(network || availableNetworks.mainnet);
     setNftIpfsResolverFn(ipfsHashResolverFn);
-    if (signers) {
-        accountsSubj.next(signers || null);
-    }
+    /*if (signers) {
+        accountsSubj.next(signers);
+    }*/
     if (jsonAccounts) {
         accountsJsonSigningKeySubj.next(jsonAccounts.injectedSigner);
         accountsJsonSubj.next(jsonAccounts.accounts);

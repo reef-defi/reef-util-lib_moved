@@ -94,8 +94,9 @@ export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | Feedbac
     return new FeedbackDataModel<T>(data, createStatusFromCode(statCode, message, propName));
 };
 
-export const isFeedbackDM = (value: any): boolean => {
-    return value?.data && value.getStatus() != null && value.getStatus().code != null;
+export const isFeedbackDM = (value: FeedbackDataModel<any>|any): boolean => {
+    return (value instanceof FeedbackDataModel);
+    // return value?.data && value.getStatus() != null && value.getStatus().code != null;
 }
 
 export const collectFeedbackDMStatus = (items: FeedbackDataModel<any>[]): FeedbackStatusCode[] => {
