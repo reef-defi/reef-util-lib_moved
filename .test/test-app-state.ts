@@ -3,7 +3,7 @@ import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
 import {setCurrentAddress} from "../src/appState/account/setAccounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
-import {availableAddresses$, signersFromJson$} from "../src/appState/account/signersFromJson";
+import {availableAddresses$} from "../src/appState/account/signersFromJson";
 import {initReefState} from "../src/appState/initReefState";
 import {
     selectedSignerNFTs$,
@@ -18,8 +18,8 @@ import {selectedSignerAddressChange$} from "../src/appState/account/selectedSign
 import {currentProvider$} from "../src/appState/providerState";
 import {signersWithUpdatedIndexedData$} from "../src/appState/account/signersIndexedData";
 
-const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "meta": {"source": "reef"}},
-    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "meta": {"source": "reef"}}
+const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
+    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"acc2", "meta": {"source": "reef"}}
 ];
 
 async function testNfts() {
@@ -42,7 +42,7 @@ async function testNfts() {
 }
 
 async function changeCurrentAddress(): Promise<string> {
-    const allSig = await firstValueFrom(signersFromJson$);
+    const allSig = await firstValueFrom(availableAddresses$);
     console.assert(allSig.length>1, 'Need more than 1 signer.')
     const currSig = await firstValueFrom(selectedSignerAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.data.address);
@@ -88,7 +88,7 @@ async function testAvailablePools(tokens, signer, factoryAddr) {
 
 async function testAppStateSigners(accounts: any) {
 
-    const sigJson = await firstValueFrom(signersFromJson$);
+    const sigJson = await firstValueFrom(availableAddresses$);
     console.assert(sigJson.length === 2, 'Number of signers');
     console.assert(accounts[0].address === sigJson[0].address, 'Accounts not the same');
     console.log("END testAppStateSigners");
@@ -132,7 +132,7 @@ async function testProvider() {
 }
 
 async function testInitSelectedAddress() {
-    const allSig = await firstValueFrom(signersFromJson$);
+    const allSig = await firstValueFrom(availableAddresses$);
     const selSig = await firstValueFrom(selectedSigner$);
     console.assert(allSig.length && selSig?.data.address && allSig[0].address===selSig.data.address, 'TODO First signer should be selected by default');
     // TODO set signer when initializing and remove
@@ -142,32 +142,32 @@ async function testInitSelectedAddress() {
 }
 
 async function testSigners() {
-    const sig = await firstValueFrom(race(signersFromJson$, currentProvider$,availableAddresses$));
+    const sig = await firstValueFrom(race(currentProvider$,availableAddresses$));
     console.log("available addr=",sig);
     const indexedSigners = await firstValueFrom(signersWithUpdatedIndexedData$);
     console.log("sigFromJson=",indexedSigners);
+    signersWithUpdatedIndexedData$.subscribe(v=>console.log('RESSSS',v))
     const sigCompl = await firstValueFrom(signersWithUpdatedIndexedData$.pipe(
-        tap(v=>console.log('SSSSS', v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))),
+        // tap(v=>console.log('SSSSS', v.getStatusList())),
         skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.log("sig complete=",sigCompl);
-    signersWithUpdatedIndexedData$.subscribe(v=>console.log('RESSSS',v))
 
 }
 
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
-    const accounts = TEST_ACCOUNTS;//await reefExt.accounts.get();
+    const accounts = TEST_ACCOUNTS;
+    // const accounts = await reefExt.accounts.get();
     // const accountsWMeta = toInjectedAccountsWithMeta(accounts, REEF_EXTENSION_IDENT);
     await initReefState({
         network: availableNetworks.testnet,
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
-    // await testSigners()
-    // return;
+    await testSigners();
     await testProvider();
-    await testInitSelectedAddress()
+    await testInitSelectedAddress();
     setCurrentAddress(TEST_ACCOUNTS[0].address);
     await testBalancesProgressStatus();
     await testAppStateSigners(accounts);

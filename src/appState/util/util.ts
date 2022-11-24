@@ -114,7 +114,7 @@ export interface State {
 
 export interface StateOptions {
   network?: Network;
-  signers?: ReefSigner[];
+  // signers?: ReefSigner[];
   client?: ApolloClient<any>;
   jsonAccounts?:{accounts: AccountJson[] | InjectedAccountWithMeta[] | InjectedAccountWithMetaReef[], injectedSigner: InjectedSigningKey}
   ipfsHashResolverFn?: ipfsUrlResolverFn;

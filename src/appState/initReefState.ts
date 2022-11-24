@@ -12,7 +12,7 @@ export const initReefState = (
     {
         network,
         client,
-        signers,
+        // signers,
         jsonAccounts,
         ipfsHashResolverFn,
     }: StateOptions,
@@ -48,9 +48,9 @@ export const initReefState = (
         });
     setCurrentNetwork(network || availableNetworks.mainnet);
     setNftIpfsResolverFn(ipfsHashResolverFn);
-    if (signers) {
-        accountsSubj.next(signers || null);
-    }
+    /*if (signers) {
+        accountsSubj.next(signers);
+    }*/
     if (jsonAccounts) {
         accountsJsonSigningKeySubj.next(jsonAccounts.injectedSigner);
         accountsJsonSubj.next(jsonAccounts.accounts);

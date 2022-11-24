@@ -13,6 +13,7 @@ import {accountJsonToMeta, metaAccountToSigner} from "../../account/accounts";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {filter} from "rxjs/operators";
 
+/* TODO not needed anymore
 let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(AccountJson[] | InjectedAccountWithMeta[] | null), Provider, InjectedSigningKey]) => {
     let accounts = jsonAccounts || [];
     let accMeta: InjectedAccountWithMeta[] = [];
@@ -26,8 +27,7 @@ let convertJsonAccountsToReefSigners = ([jsonAccounts, provider, signingKey]: [(
     ).then((signers: (ReefSigner | undefined)[]) => signers.filter((s) => !!s)) as Promise<ReefSigner[]>;
 };
 
-// TODO not needed anymore
-export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([accountsJsonSubj, currentProvider$, accountsJsonSigningKeySubj]).pipe(
+    export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([accountsJsonSubj, currentProvider$, accountsJsonSigningKeySubj]).pipe(
     switchMap(convertJsonAccountsToReefSigners),
     shareReplay(1),
 );
@@ -35,7 +35,7 @@ export const signersFromJson$: Observable<ReefSigner[]> = combineLatest([account
 export const _signersRegistered$: Observable<ReefSigner[]> = merge(accountsSubj, signersFromJson$).pipe(
     map((signrs) => (signrs && signrs.length ? signrs : [])),
     shareReplay(1),
-);
+);*/
 
 export const availableAddresses$: Observable<ReefAccount[]> = merge(accountsJsonSubj, accountsSubj).pipe(
     filter((v: any) => !!v),
