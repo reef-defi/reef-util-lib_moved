@@ -86,7 +86,7 @@ export const loadSignerNfts = ([apollo, signer]:[any, FeedbackDataModel<ReefAcco
             switchMap((nftArr: NFT[]) => combineLatest([
                 of(nftArr), instantProvider$
                 ]).pipe(
-                switchMap( (nftsAndProvider:[(NFT|null)[], Provider|undefined]) => {
+                switchMap( (nftsAndProvider:[(NFT|null)[]|NFT[], Provider|undefined]) => {
                     const [nfts,provider] = nftsAndProvider;
 
                     if(!provider) {
