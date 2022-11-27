@@ -10,7 +10,8 @@ export const REEF_TOKEN: Token = {
     symbol: 'REEF',
 
 };
-export const EMPTY_ADDRESS = '0x';
+
+export const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export enum ContractType {
     ERC20 = 'ERC20',

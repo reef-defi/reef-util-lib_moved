@@ -1,8 +1,7 @@
 import {BigNumber, ContractInterface, utils} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
 import {
-    ContractType,
-    EMPTY_ADDRESS,
+    ContractType, EMPTY_ADDRESS,
     REEF_ADDRESS,
     REEF_TOKEN,
     Token,

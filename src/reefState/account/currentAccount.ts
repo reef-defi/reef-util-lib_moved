@@ -6,7 +6,7 @@ import {FeedbackDataModel, toFeedbackDM} from "../model/feedbackDataModel";
 
 export const currentAddress$: Observable<string | undefined> = currentAddressSubj.asObservable()
     .pipe(
-        startWith(''),
+        startWith(undefined),
         distinctUntilChanged(),
         shareReplay(1),
     );
@@ -33,7 +33,7 @@ combineLatest([accounts$, currentAddress$])
         }
     });
 
-export const selectedAccount$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
+export const currentAccount$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
     currentAddress$,
     accounts$,
 ])

@@ -28,7 +28,7 @@ interface AccountEvmAddrData {
     isEvmClaimed?: boolean;
 }
 
-export const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
+const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
     apolloClientInstance$,
     availableAddresses$,
 ])

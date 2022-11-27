@@ -2,7 +2,7 @@ import {catchError, map, mergeScan, Observable, of, shareReplay, startWith, swit
 import {ReefAccount} from "../../account/accountModel";
 import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
-import {reloadSignersSubj} from "./setAccounts";
+import {updateSignersSubj} from "./setAccounts";
 import {availableAddresses$} from "./availableAddresses";
 import {TxStatusUpdate} from "../../utils";
 import {UpdateAction} from "../model/updateStateModel";
@@ -10,7 +10,7 @@ import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
 
-export const accountsLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = reloadSignersSubj.pipe(
+export const accountsLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = updateSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
     withLatestFrom(availableAddresses$, currentProvider$),
     mergeScan(

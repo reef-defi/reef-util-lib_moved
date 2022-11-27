@@ -2,9 +2,24 @@ import {currentNetwork$, setCurrentNetwork, setCurrentProvider} from "./provider
 import {catchError, defer, finalize, Observable, of, scan, switchMap, tap} from "rxjs";
 import {disconnectProvider, initProvider} from "../utils";
 import {Provider} from "@reef-defi/evm-provider";
-import {availableNetworks, Network} from "../network/network";
-import {accountsJsonSigningKeySubj, accountsJsonSubj, accountsSubj} from "./account/setAccounts";
-import {initApolloClient, setNftIpfsResolverFn, StateOptions} from "./util/util";
+import {AVAILABLE_NETWORKS, Network} from "../network/network";
+import {accountsJsonSigningKeySubj, setAccounts} from "./account/setAccounts";
+import {setNftIpfsResolverFn} from "./token/nftUtils";
+import {ApolloClient} from "@apollo/client";
+import {AccountJson} from "@reef-defi/extension-base/background/types";
+import {InjectedAccountWithMeta} from "@polkadot/extension-inject/types";
+import {InjectedAccountWithMeta as InjectedAccountWithMetaReef} from "@reef-defi/extension-inject/types";
+import {Signer as InjectedSigningKey} from "@polkadot/api/types";
+import {ipfsUrlResolverFn} from "../token/nftUtil";
+import {getGQLUrls} from "../graphql/gqlUtil";
+import {apolloClientSubj, setApolloUrls} from "../graphql/apollo";
+
+export interface StateOptions {
+    network?: Network;
+    client?: ApolloClient<any>;
+    jsonAccounts?:{accounts: AccountJson[] | InjectedAccountWithMeta[] | InjectedAccountWithMetaReef[], injectedSigner: InjectedSigningKey}
+    ipfsHashResolverFn?: ipfsUrlResolverFn;
+}
 
 type destroyConnection = ()=>void;
 
@@ -46,14 +61,14 @@ export const initReefState = (
                 console.log('initReefState ERR=', e);
             },
         });
-    setCurrentNetwork(network || availableNetworks.mainnet);
+    setCurrentNetwork(network || AVAILABLE_NETWORKS.mainnet);
     setNftIpfsResolverFn(ipfsHashResolverFn);
     /*if (signers) {
         accountsSubj.next(signers);
     }*/
     if (jsonAccounts) {
         accountsJsonSigningKeySubj.next(jsonAccounts.injectedSigner);
-        accountsJsonSubj.next(jsonAccounts.accounts);
+        setAccounts(jsonAccounts.accounts);
     }
     return () => subscription.unsubscribe();
 };
@@ -67,3 +82,17 @@ function finalizeWithValue<T>(callback: (value: T) => void) {
         );
     });
 }
+
+function initApolloClient(selectedNetwork?: Network, client?: ApolloClient<any>) {
+    if (selectedNetwork) {
+        if (!client) {
+            const gqlUrls = getGQLUrls(selectedNetwork);
+            if (gqlUrls) {
+                setApolloUrls(gqlUrls);
+            }
+        } else {
+            apolloClientSubj.next(client);
+        }
+    }
+}
+
