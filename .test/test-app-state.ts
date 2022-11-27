@@ -1,4 +1,3 @@
-import {AVAILABLE_NETWORKS, currentAccount$} from "../src";
 import {web3Enable, web3FromSource} from "@reef-defi/extension-dapp";
 import {InjectedExtension} from "@reef-defi/extension-inject/types";
 import {setCurrentAddress} from "../src/reefState/account/setAccounts";
@@ -17,6 +16,8 @@ import {REEF_ADDRESS} from "../src/token/tokenModel";
 import {currentAccountAddressChange$} from "../src/reefState/account/currentAccountAddressChange";
 import {currentProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
+import {currentAccount$} from "../src/reefState";
+import {AVAILABLE_NETWORKS} from "../src/network";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"acc2", "meta": {"source": "reef"}}
