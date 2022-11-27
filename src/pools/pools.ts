@@ -2,13 +2,11 @@ import {Signer} from '@reef-defi/evm-provider';
 import {Contract} from 'ethers';
 import {ensure} from '../utils';
 import {getReefswapFactory} from "../network/rpc";
-import {REEF_TOKEN, Token, TokenBalance} from "../token/token";
+import {EMPTY_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../token/tokenModel";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
-
-const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/feedbackDataModel";
 
 const findPoolTokenAddress = async (
     address1: string,

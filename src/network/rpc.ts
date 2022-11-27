@@ -1,10 +1,11 @@
 import { Signer } from '@reef-defi/evm-provider';
 import { BigNumber, Contract } from 'ethers';
 import {ERC20} from "../token/abi/ERC20";
-import {ReefSigner} from "../account/ReefAccount";
-import {createEmptyToken, Token} from "../token/token";
+import {ReefSigner} from "../account/accountModel";
+import {Token} from "../token/tokenModel";
 import {ReefswapRouter} from "../token/abi/ReefswapRouter";
 import {ReefswapFactory} from "../token/abi/ReefswapFactory";
+import {createEmptyToken} from "../token/tokenUtil";
 
 export const checkIfERC20ContractExist = async (
   address: string,

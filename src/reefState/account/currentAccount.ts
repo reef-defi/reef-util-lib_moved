@@ -1,18 +1,18 @@
 import {catchError, combineLatest, distinctUntilChanged, map, Observable, of, shareReplay, startWith, take} from "rxjs";
-import {ReefAccount} from "../../account/ReefAccount";
-import {signers$} from "./signers";
+import {ReefAccount} from "../../account/accountModel";
+import {accounts$} from "./accounts";
 import {currentAddressSubj, setCurrentAddress} from "./setAccounts";
 import {FeedbackDataModel, toFeedbackDM} from "../model/feedbackDataModel";
 
 export const currentAddress$: Observable<string | undefined> = currentAddressSubj.asObservable()
     .pipe(
-        startWith(''),
+        startWith(undefined),
         distinctUntilChanged(),
         shareReplay(1),
     );
 
 // setting default signer (when signers exist) if no selected address exists
-combineLatest([signers$, currentAddress$])
+combineLatest([accounts$, currentAddress$])
     .pipe(take(1))
     .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string|undefined]) => {
         let saved: string | undefined = address;
@@ -33,9 +33,9 @@ combineLatest([signers$, currentAddress$])
         }
     });
 
-export const selectedSigner$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
+export const currentAccount$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
     currentAddress$,
-    signers$,
+    accounts$,
 ])
     .pipe(
         map((selectedAddressAndSigners: [string | undefined, FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>]): FeedbackDataModel<ReefAccount>|undefined => {

@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import {REEF_TOKEN} from "../token/token";
+import {REEF_TOKEN} from "../token/tokenModel";
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 

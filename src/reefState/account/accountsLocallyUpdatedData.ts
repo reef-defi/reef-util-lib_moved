@@ -1,16 +1,16 @@
 import {catchError, map, mergeScan, Observable, of, shareReplay, startWith, switchMap, withLatestFrom} from "rxjs";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/accountModel";
 import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
-import {reloadSignersSubj} from "./setAccounts";
-import {availableAddresses$} from "./signersFromJson";
+import {updateSignersSubj} from "./setAccounts";
+import {availableAddresses$} from "./availableAddresses";
 import {TxStatusUpdate} from "../../utils";
 import {UpdateAction} from "../model/updateStateModel";
 import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
 
-export const signersLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = reloadSignersSubj.pipe(
+export const accountsLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = updateSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
     withLatestFrom(availableAddresses$, currentProvider$),
     mergeScan(
@@ -61,7 +61,7 @@ export const signersLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDa
     shareReplay(1)
 );
 
-export const onTxUpdateResetSigners = (
+/*export const onTxUpdateResetSigners = (
     txUpdateData: TxStatusUpdate,
     updateActions: UpdateAction[],
 ): void => {
@@ -69,4 +69,4 @@ export const onTxUpdateResetSigners = (
         const delay = txUpdateData.txTypeEvm ? 2000 : 0;
         setTimeout(() => reloadSignersSubj.next({ updateActions }), delay);
     }
-};
+};*/

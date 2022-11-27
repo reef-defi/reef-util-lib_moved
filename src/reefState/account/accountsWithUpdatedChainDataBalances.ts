@@ -14,14 +14,14 @@ import {
 } from "rxjs";
 import {currentProvider$, instantProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/accountModel";
 import {BigNumber} from "ethers";
-import {availableAddresses$} from "./signersFromJson";
+import {availableAddresses$} from "./availableAddresses";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 import {getAddressesErrorFallback} from "./errorUtil";
 
 
-const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
+const getUpdatedAccountChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
     const signers: ReefAccount[] = providerAndSigners[1];
 
     return of(providerAndSigners).pipe(
@@ -89,12 +89,12 @@ const getUpdatedSignerChainBalances$ = (providerAndSigners: [Provider | undefine
     );
 };
 
-export const signersWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
+export const accountsWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
     instantProvider$,
     availableAddresses$,
 ])
     .pipe(
-        switchMap(getUpdatedSignerChainBalances$),
+        switchMap(getUpdatedAccountChainBalances$),
         map((balancesAndSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
                 if (isFeedbackDM(balancesAndSigners)) {
                     return balancesAndSigners as FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;

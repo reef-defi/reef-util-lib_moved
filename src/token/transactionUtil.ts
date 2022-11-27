@@ -1,7 +1,7 @@
 import { Provider } from '@reef-defi/evm-provider';
 import { BigNumber } from 'ethers';
-import {availableNetworks, Network} from "../network/network";
-import {ReefSigner} from "../account/ReefAccount";
+import {AVAILABLE_NETWORKS, Network} from "../network/network";
+import {ReefSigner} from "../account/accountModel";
 
 export type TxStatusHandler = (status: TxStatusUpdate) => void;
 
@@ -101,5 +101,5 @@ export const sendToNativeAddress = (
   return txIdent;
 };
 
-export const getExtrinsicUrl = (hash: string, network: Network = availableNetworks.mainnet): string => `${network.reefscanFrontendUrl}/extrinsic/${hash}`;
-export const getContractUrl = (address: string, network: Network = availableNetworks.mainnet): string => `${network.reefscanFrontendUrl}/contract/${address}`;
+export const getExtrinsicUrl = (hash: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/extrinsic/${hash}`;
+export const getContractUrl = (address: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/contract/${address}`;

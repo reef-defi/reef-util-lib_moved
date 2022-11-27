@@ -1,3 +1,5 @@
+import {Observable, skipWhile} from "rxjs";
+
 export enum FeedbackStatusCode {
     // not using 0
     _,
@@ -49,7 +51,7 @@ export class FeedbackDataModel<T> {
         const checkStatArr = Array.isArray(status) ? status : [status];
         return checkStatArr.some((stat) => {
             const stats = this.getStatus(propName);
-            return stats.find(s=>s?.code === stat);
+            return stats.find(s => s?.code === stat);
         });
     }
 
@@ -94,7 +96,7 @@ export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | Feedbac
     return new FeedbackDataModel<T>(data, createStatusFromCode(statCode, message, propName));
 };
 
-export const isFeedbackDM = (value: FeedbackDataModel<any>|any): boolean => {
+export const isFeedbackDM = (value: FeedbackDataModel<any> | any): boolean => {
     return (value instanceof FeedbackDataModel);
     // return value?.data && value.getStatus() != null && value.getStatus().code != null;
 }
@@ -117,7 +119,7 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
     }, []);
 
     const statCodes = statListArr.map(st => st?.code);
-    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode|undefined) => {
+    const minStat = statCodes.reduce((s: FeedbackStatusCode, v: FeedbackStatusCode | undefined) => {
         if (v == null) {
             v = FeedbackStatusCode.NOT_SET;
         }
@@ -126,3 +128,6 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
     return minStat as FeedbackStatusCode;
 }
 
+export function skipBeforeStatus$ <T>(observable: Observable<FeedbackDataModel<T>>, status: FeedbackStatusCode):Observable<FeedbackDataModel<T>> {
+    return observable.pipe(skipWhile(t => !t.hasStatus(status)));
+}

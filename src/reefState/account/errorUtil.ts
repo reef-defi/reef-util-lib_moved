@@ -1,7 +1,7 @@
-import {availableAddresses$} from "./signersFromJson";
+import {availableAddresses$} from "./availableAddresses";
 import {map, Observable} from "rxjs";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/accountModel";
 
 export function getAddressesErrorFallback(err: { message: string }, message: string, propName?: string):Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> {
     return availableAddresses$.pipe(

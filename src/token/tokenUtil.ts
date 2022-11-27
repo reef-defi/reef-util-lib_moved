@@ -1,13 +1,25 @@
-import {utils} from 'ethers';
+import {BigNumber, ContractInterface, utils} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
-import {REEF_ADDRESS, Token, TokenBalance,} from './token';
+import {
+    ContractType, EMPTY_ADDRESS,
+    REEF_ADDRESS,
+    REEF_TOKEN,
+    Token,
+    TokenBalance,
+    TokenPrices,
+    TokenState,
+    TokenWithAmount,
+} from './tokenModel';
 import {Pool} from "./pool";
 import {
     FeedbackDataModel,
     FeedbackStatusCode,
     findMinStatusCode,
     toFeedbackDM
-} from "../appState/model/feedbackDataModel";
+} from "../reefState/model/feedbackDataModel";
+import {ERC20} from "./abi/ERC20";
+import {ERC721Uri} from "./abi/ERC721Uri";
+import {ERC1155Uri} from "./abi/ERC1155Uri";
 
 const {parseUnits, formatEther} = utils;
 
@@ -42,7 +54,7 @@ const getReefTokenPoolReserves = (
 const findReefTokenPool_fbk = (
     pools: FeedbackDataModel<Pool | null>[],
     reefAddress: string,
-    token: Token|TokenBalance,
+    token: Token | TokenBalance,
 ): FeedbackDataModel<Pool | null> | undefined => pools.find(
     (pool_fdm) => {
         if (!pool_fdm?.data) {
@@ -82,7 +94,7 @@ const findReefTokenPool_fbk = (
 };*/
 
 export const calculateTokenPrice_fbk = (
-    token: Token|TokenBalance,
+    token: Token | TokenBalance,
     pools: FeedbackDataModel<Pool | null>[],
     reefPrice: FeedbackDataModel<number>,
 ): FeedbackDataModel<number> => {
@@ -95,7 +107,7 @@ export const calculateTokenPrice_fbk = (
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 
     if (!reefTokenPool || !reefTokenPool.data || minStat < FeedbackStatusCode.COMPLETE_DATA) {
-        if(!reefTokenPool || reefTokenPool.hasStatus(FeedbackStatusCode.ERROR)){
+        if (!reefTokenPool || reefTokenPool.hasStatus(FeedbackStatusCode.ERROR)) {
             return toFeedbackDM(0, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Pool not found.')
         }
         return toFeedbackDM(0, minStat);
@@ -136,3 +148,65 @@ export const toCurrencyFormat = (value: number, options = {}): string => Intl.Nu
 export const normalize = (amount: string | number, decimals: number): BN => new BN(Number.isNaN(amount) ? 0 : amount)
     .div(new BN(10).pow(decimals));
 
+export const getContractTypeAbi = (contractType: ContractType): ContractInterface => {
+    switch (contractType) {
+        case ContractType.ERC20:
+            return ERC20;
+        case ContractType.ERC721:
+            return ERC721Uri;
+        case ContractType.ERC1155:
+            return ERC1155Uri;
+        default:
+            return [] as ContractInterface;
+    }
+};
+
+/*export const defaultTokenState = (index = 0): TokenState => ({
+    index,
+    amount: '',
+    price: 0,
+});*/
+
+export const createEmptyToken = (): Token => ({
+    name: 'Select token',
+    address: EMPTY_ADDRESS,
+    balance: BigNumber.from('0'),
+    decimals: -1,
+    iconUrl: '',
+    symbol: 'Select token',
+});
+
+export const createEmptyTokenWithAmount = (/*isEmpty = true*/): TokenWithAmount => ({
+    ...createEmptyToken(),
+    // isEmpty,
+    price: 0,
+    amount: '',
+});
+
+export const toTokenAmount = (
+    token: Token,
+    state: TokenState,
+): TokenWithAmount => ({
+    ...token,
+    ...state,
+    // isEmpty: false,
+});
+
+export function isNativeTransfer(token: Token) {
+    return token.address === REEF_ADDRESS;
+}
+
+export const reefTokenWithAmount = (): TokenWithAmount => toTokenAmount(
+    REEF_TOKEN,
+    {
+        amount: '',
+        index: -1,
+        price: 0,
+    },
+);
+
+export const getTokenPrice = (address: string, prices: TokenPrices): BN => new BN(prices[address]
+    ? prices[address]
+    : 0);
+
+export const isNativeAddress = (toAddress: string) => toAddress.length === 48 && toAddress[0] === '5';
