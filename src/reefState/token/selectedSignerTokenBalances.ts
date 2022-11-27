@@ -1,9 +1,9 @@
 // TODO replace with our own from lib and remove
-import {REEF_ADDRESS, REEF_TOKEN, reefTokenWithAmount, Token, TokenBalance} from "../../token/token";
+import {REEF_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../../token/tokenModel";
 import {BigNumber} from "ethers";
 import {catchError, defer, from, map, mergeScan, Observable, of, shareReplay, startWith, tap} from "rxjs";
 import {zenToRx} from "../../graphql";
-import {getIconUrl} from "../../utils";
+import {getIconUrl, reefTokenWithAmount} from "../../utils";
 import {sortReefTokenFirst, toPlainString} from "../util/util";
 import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
 import {
@@ -14,7 +14,7 @@ import {
     toFeedbackDM
 } from "../model/feedbackDataModel";
 import {ApolloClient} from "@apollo/client";
-import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../../account/accountModel";
 
 // eslint-disable-next-line camelcase
 const fetchTokensData = (

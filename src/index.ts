@@ -8,8 +8,10 @@ export {signersRegistered$} from "./appState/account/setAccounts";
 */
 
 
-export * as reefState from './appState/util/util';
-export {selectedSignerTokenBalances$} from './appState/tokenState.rx'
-export { selectedSigner$ } from './appState/account/selectedSigner'
+export * as reefState from './reefState';
+export {selectedSignerTokenBalances$} from './reefState/tokenState.rx'
+export { selectedAccount$ } from './reefState/account/selectedAccount'
 export * from './network/network';
 export * from './network/providerUtil'
+export * from './token'
+export * from './account'

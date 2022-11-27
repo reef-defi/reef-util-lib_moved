@@ -7,12 +7,12 @@ import type {
   InjectedAccountWithMeta as InjectedAccountWithMetaReef
 } from '@reef-defi/extension-inject/types';
 import type {InjectedAccount, InjectedAccountWithMeta,} from '@polkadot/extension-inject/types';
-import {REEF_ADDRESS, Token, TokenBalance, TokenWithAmount} from '../../token/token';
+import {REEF_ADDRESS, Token, TokenBalance, TokenWithAmount} from '../../token/tokenModel';
 import {Network,} from '../../network/network';
 import {calculateTokenPrice_fbk} from '../../utils';
 import {apolloClientSubj, setApolloUrls} from '../../graphql';
 import {ipfsUrlResolverFn} from '../../token/nftUtil';
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefSigner} from "../../account/accountModel";
 import {Pool} from "../../token/pool";
 import {
   collectFeedbackDMStatus,
@@ -44,33 +44,6 @@ export const sortReefTokenFirst = (tokens: FeedbackDataModel<Token|TokenBalance>
   }
   return tokens;
 };
-
-/*export const combineTokensDistinct = ([tokens1, tokens2]: [
-  Token[]|null,
-  Token[]
-]): Token[] => {
-  if(!tokens1){
-    tokens1 = [];
-  }
-  const combinedT = [...tokens1];
-  // console.log('COMBINED=', combinedT);
-  tokens2.forEach((vT: Token) => (!combinedT.some((cT) => cT.address === vT.address)
-    ? combinedT.push(vT)
-    : null));
-  // console.log('1111COMBINED=', combinedT);
-  return combinedT;
-};*/
-
-/*export const toTokensWithPrice = ([tokens, reefPrice, pools]: [
-  Token[]|null,
-  number,
-  Pool[]
-]): TokenWithAmount[] => tokens?tokens.map(
-  (token) => ({
-    ...token,
-    price: calculateTokenPrice(token, pools, reefPrice),
-  } as TokenWithAmount),
-):[];*/
 
 export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
   FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>,

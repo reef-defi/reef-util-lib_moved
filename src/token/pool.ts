@@ -1,4 +1,4 @@
-import {ERC20ContractData, Token, TokenBalance} from './token';
+import {Token, TokenBalance} from './tokenModel';
 import {BigNumber} from "ethers";
 
 export interface Pool {

@@ -14,7 +14,7 @@ import { BigNumber } from 'ethers';
 import { AccountJson } from '@reef-defi/extension-base/background/types';
 import { web3FromAddress, web3FromSource } from '@reef-defi/extension-dapp';
 import { ensure, removeUndefinedItem } from '../utils/utils';
-import {ReefAccount, ReefSigner} from "./ReefAccount";
+import {ReefAccount, ReefSigner} from "./accountModel";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 
 const accountSourceSigners = new Map<string, InjectedSigner>();

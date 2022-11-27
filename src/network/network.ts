@@ -1,4 +1,4 @@
-import {REEF_TOKEN, Token} from '../token/token';
+import {REEF_TOKEN, Token} from '../token/tokenModel';
 
 export type AvailableNetworks = 'mainnet' | 'testnet' | 'localhost';
 

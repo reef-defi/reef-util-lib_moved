@@ -10,33 +10,33 @@ import {
     switchMap, tap,
     withLatestFrom,
 } from 'rxjs';
-import {loadAvailablePools, toAvailablePools} from "./token/pools";
-import {NFT, Token, TokenBalance, TokenTransfer, TokenWithAmount} from "../token/token";
+import {loadAvailablePools, toAvailablePools} from "./token/poolUtils";
+import {NFT, Token, TokenBalance, TokenTransfer, TokenWithAmount} from "../token/tokenModel";
 import {toTokensWithPrice_fbk} from "./util/util";
 import {reefPrice_fbk$} from "../token/reefPrice.rx";
 import {loadSignerTokens_fbk, setReefBalanceFromSigner} from "./token/selectedSignerTokenBalances";
 import {apolloClientInstance$} from "../graphql";
-import {selectedSigner$} from "./account/selectedSigner";
+import {selectedAccount$} from "./account/selectedAccount";
 import {currentNetwork$, currentProvider$} from "./providerState";
 import {AvailablePool, Pool} from "../token/pool";
-import {selectedSignerAddressChange$} from "./account/selectedSignerAddressUpdate";
+import {selectedAccountAddressChange$} from "./account/selectedAccountAddressChange";
 import {dexConfig, Network} from "../network/network";
-import {ReefAccount, ReefSigner} from "../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../account/accountModel";
 import {fetchPools$} from "../pools/pools";
 import {collectFeedbackDMStatus, FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "./model/feedbackDataModel";
-import {loadSignerNfts} from "./token/nfts";
+import {loadSignerNfts} from "./token/nftUtils";
 import {loadTransferHistory} from "./token/transferHistory";
-import {getReefAccountSigner} from "../account/accounts";
+import {getReefAccountSigner} from "../account/accountUtils";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 
-const reloadingValues$ = combineLatest([currentNetwork$, selectedSignerAddressChange$]).pipe(shareReplay(1));
+const reloadingValues$ = combineLatest([currentNetwork$, selectedAccountAddressChange$]).pipe(shareReplay(1));
 
 export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>)> = combineLatest([
     apolloClientInstance$,
-    selectedSignerAddressChange$,
+    selectedAccountAddressChange$,
 ]).pipe(
     switchMap(loadSignerTokens_fbk),
-    withLatestFrom(selectedSigner$),
+    withLatestFrom(selectedAccount$),
     map(setReefBalanceFromSigner),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError((err: any) => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
@@ -47,7 +47,7 @@ export const selectedSignerTokenBalances$: Observable<(FeedbackDataModel<Feedbac
 export const selectedSignerPools$: Observable<FeedbackDataModel<FeedbackDataModel<Pool | null>[]>> = combineLatest([
     selectedSignerTokenBalances$,
     currentNetwork$,
-    selectedSignerAddressChange$,
+    selectedAccountAddressChange$,
     currentProvider$
 ]).pipe(
     switchMap((valArr: [(FeedbackDataModel<FeedbackDataModel<Token|TokenBalance>[]>), Network, FeedbackDataModel<ReefAccount>, Provider]) => {
@@ -93,7 +93,7 @@ export const availableReefPools$: Observable<FeedbackDataModel<AvailablePool[]>>
 
 export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> = combineLatest([
     apolloClientInstance$,
-    selectedSignerAddressChange$
+    selectedAccountAddressChange$
 ])
     .pipe(
         switchMap((v)=>loadSignerNfts(v)),
@@ -104,7 +104,7 @@ export const selectedSignerNFTs$: Observable<FeedbackDataModel<FeedbackDataModel
 
 // TODO combine  currentNetwork$ and currentProvider$
 export const transferHistory$: Observable<null | TokenTransfer[]> = combineLatest([
-    apolloClientInstance$, selectedSignerAddressChange$, currentNetwork$, currentProvider$
+    apolloClientInstance$, selectedAccountAddressChange$, currentNetwork$, currentProvider$
 ]).pipe(
     switchMap(loadTransferHistory),
     mergeWith(reloadingValues$.pipe(map(() => null))),

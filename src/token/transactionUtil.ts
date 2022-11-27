@@ -1,7 +1,7 @@
 import { Provider } from '@reef-defi/evm-provider';
 import { BigNumber } from 'ethers';
 import {availableNetworks, Network} from "../network/network";
-import {ReefSigner} from "../account/ReefAccount";
+import {ReefSigner} from "../account/accountModel";
 
 export type TxStatusHandler = (status: TxStatusUpdate) => void;
 

@@ -13,8 +13,9 @@ import {
 import {Contract} from 'ethers';
 import axios from 'axios';
 import {Signer} from '@reef-defi/evm-provider';
-import {getContractTypeAbi, NFT, NFTMetadata} from "./token";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
+import {NFT, NFTMetadata} from "./tokenModel";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/feedbackDataModel";
+import {getContractTypeAbi} from "./tokenUtil";
 
 const extractIpfsHash = (ipfsUri: string): string | null => {
     const ipfsProtocol = 'ipfs://';

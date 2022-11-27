@@ -1,10 +1,10 @@
 import {gql} from "@apollo/client";
 import {catchError, combineLatest, map, Observable, of, scan, shareReplay, startWith, switchMap} from "rxjs";
 import {apolloClientInstance$, zenToRx} from "../../graphql";
-import {signersWithUpdatedChainDataBalances$} from "./signersWithUpdatedChainDataBalances";
-import {ReefAccount} from "../../account/ReefAccount";
-import {signersLocallyUpdatedData$} from "./signersLocallyUpdatedData";
-import {availableAddresses$} from "./signersFromJson";
+import {accountsWithUpdatedChainDataBalances$} from "./accountsWithUpdatedChainDataBalances";
+import {ReefAccount} from "../../account/accountModel";
+import {accountsLocallyUpdatedData$} from "./accountsLocallyUpdatedData";
+import {availableAddresses$} from "./availableAddresses";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 import {getAddressesErrorFallback} from "./errorUtil";
 
@@ -56,9 +56,9 @@ export const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrD
         shareReplay(1)
     );
 
-export const signersWithUpdatedIndexedData$ = combineLatest([
-    signersWithUpdatedChainDataBalances$,
-    signersLocallyUpdatedData$,
+export const accountsWithUpdatedIndexedData$ = combineLatest([
+    accountsWithUpdatedChainDataBalances$,
+    accountsLocallyUpdatedData$,
     indexedAccountValues$,
 ])
     .pipe(

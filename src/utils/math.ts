@@ -1,8 +1,9 @@
 import {BigNumber, utils} from 'ethers';
 import {ensure, MIN_EVM_TX_BALANCE, MIN_NATIVE_TX_BALANCE, toReefBalanceDisplay} from './utils';
-import {isNativeTransfer, REEF_TOKEN, Token, TokenWithAmount} from "../token/token";
+import {REEF_TOKEN, Token, TokenWithAmount} from "../token/tokenModel";
 import {Pool} from "../token/pool";
 import {parseEther} from "ethers/lib/utils";
+import {isNativeTransfer} from "../token/tokenUtil";
 
 const findDecimalPoint = (amount: string): number => {
   const { length } = amount;

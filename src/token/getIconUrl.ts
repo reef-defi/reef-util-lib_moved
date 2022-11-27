@@ -1,4 +1,4 @@
-import {REEF_ADDRESS, REEF_TOKEN} from "./token";
+import {REEF_ADDRESS, REEF_TOKEN} from "./tokenModel";
 import {getHashSumLastNr} from "../utils/math";
 
 const DEFAULT_TOKEN_ICONS: string[] = [

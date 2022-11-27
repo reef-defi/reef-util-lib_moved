@@ -1,6 +1,6 @@
 import {UpdateAction, UpdateDataType} from '../model/updateStateModel';
-import {ReefAccount} from '../../account/ReefAccount';
-import {getReefAccountSigner} from "../../account/accounts";
+import {ReefAccount} from '../../account/accountModel';
+import {getReefAccountSigner} from "../../account/accountUtils";
 import {Provider} from "@reef-defi/evm-provider";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 

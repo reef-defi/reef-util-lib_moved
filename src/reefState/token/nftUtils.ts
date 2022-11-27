@@ -1,10 +1,10 @@
 import {catchError, combineLatest, finalize, from, map, merge, NEVER, Observable, of, switchMap, tap} from "rxjs";
 import {BigNumber} from "ethers";
-import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/token";
+import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/tokenModel";
 import {zenToRx} from "../../graphql";
 import {resolveNftImageLinks$} from "../../token/nftUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "../util/util";
-import {ReefAccount} from "../../account/ReefAccount";
+import {ReefAccount} from "../../account/accountModel";
 import {
     collectFeedbackDMStatus,
     FeedbackDataModel,
@@ -13,7 +13,7 @@ import {
     toFeedbackDM
 } from "../model/feedbackDataModel";
 import {SIGNER_NFTS_GQL} from "../../graphql/signerNfts.gql";
-import {getReefAccountSigner} from "../../account/accounts";
+import {getReefAccountSigner} from "../../account/accountUtils";
 import {Provider} from "@reef-defi/evm-provider";
 import {instantProvider$} from "../providerState";
 

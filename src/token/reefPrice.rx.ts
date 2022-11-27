@@ -1,6 +1,6 @@
 import {map, Observable, shareReplay, startWith, switchMap, timer} from "rxjs";
 import {getTokenPrice, PRICE_REEF_TOKEN_ID, retrieveReefCoingeckoPrice} from "./prices";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../appState/model/feedbackDataModel";
+import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/feedbackDataModel";
 
 export const reefPrice$: Observable<number> = timer(0, 60000).pipe(
     switchMap(retrieveReefCoingeckoPrice),

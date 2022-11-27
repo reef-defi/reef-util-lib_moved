@@ -1,5 +1,5 @@
 import {UpdateDataCtx} from "../model/updateStateModel";
-import {ReefSigner} from "../../account/ReefAccount";
+import {ReefSigner} from "../../account/accountModel";
 import {ReplaySubject, Subject} from "rxjs";
 import type {Signer as InjectedSigningKey} from '@polkadot/api/types';
 import type {InjectedAccountWithMeta} from '@polkadot/extension-inject/types';

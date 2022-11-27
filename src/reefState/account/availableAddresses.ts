@@ -4,7 +4,7 @@ import {
     InjectedAccountWithMeta as InjectedAccountWithMetaReef,
     InjectedAccountWithMeta
 } from "@reef-defi/extension-inject/types";
-import {ReefAccount, ReefSigner} from "../../account/ReefAccount";
+import {ReefAccount, ReefSigner} from "../../account/accountModel";
 import {map, merge, Observable, shareReplay} from "rxjs";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {filter} from "rxjs/operators";
