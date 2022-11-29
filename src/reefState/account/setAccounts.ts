@@ -12,6 +12,6 @@ export const accountsJsonSigningKeySubj = new ReplaySubject<InjectedSigningKey>(
 export const updateSignersSubj = new Subject<UpdateDataCtx<ReefSigner[]>>();
 export const setAccounts = (accounts: AccountJson[]| InjectedAccountWithMeta[] | InjectedAccountWithMetaReef[] | null) => accountsJsonSubj.next(accounts);
 
-export const currentAddressSubj: Subject<string | undefined> = new Subject<string | undefined>();
-export const setCurrentAddress = (address: string|undefined) => currentAddressSubj.next(address);
+export const selectedAddressSubj: Subject<string | undefined> = new Subject<string | undefined>();
+export const setSelectedAddress = (address: string|undefined) => selectedAddressSubj.next(address);
 

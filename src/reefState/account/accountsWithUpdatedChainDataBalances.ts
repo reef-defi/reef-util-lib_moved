@@ -12,7 +12,7 @@ import {
     Subject,
     switchMap, tap
 } from "rxjs";
-import {currentProvider$, instantProvider$} from "../providerState";
+import {selectedProvider$, instantProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {ReefAccount} from "../../account/accountModel";
 import {BigNumber} from "ethers";

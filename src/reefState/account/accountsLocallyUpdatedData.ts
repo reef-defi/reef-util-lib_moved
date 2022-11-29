@@ -4,13 +4,13 @@ import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
 import {updateSignersSubj} from "./setAccounts";
 import {availableAddresses$} from "./availableAddresses";
-import {currentProvider$} from "../providerState";
+import {selectedProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
 
 export const accountsLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = updateSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
-    withLatestFrom(availableAddresses$, currentProvider$),
+    withLatestFrom(availableAddresses$, selectedProvider$),
     mergeScan(
         (
             state: {

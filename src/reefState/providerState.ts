@@ -1,17 +1,17 @@
 import {ReplaySubject, shareReplay, startWith} from 'rxjs';
-import { Provider } from '@reef-defi/evm-provider';
+import {Provider} from '@reef-defi/evm-provider';
 import {Network} from "../network/network";
 
 const providerSubj: ReplaySubject<Provider> = new ReplaySubject<Provider>(1);
 const selectedNetworkSubj: ReplaySubject<Network> = new ReplaySubject<Network>(1);
 
 export const ACTIVE_NETWORK_LS_KEY = 'reef-app-active-network';
-export const currentProvider$ = providerSubj.asObservable().pipe(shareReplay(1));
-export const instantProvider$ = currentProvider$.pipe(startWith(undefined), shareReplay(1));
-export const setCurrentProvider = (provider: Provider): void => providerSubj.next(provider);
+export const selectedProvider$ = providerSubj.asObservable().pipe(shareReplay(1));
+export const instantProvider$ = selectedProvider$.pipe(startWith(undefined), shareReplay(1));
+export const setSelectedProvider = (provider: Provider): void => providerSubj.next(provider);
 
-export const currentNetwork$ = selectedNetworkSubj.asObservable();
-export const setCurrentNetwork = (network: Network): void => {
+export const selectedNetwork$ = selectedNetworkSubj.asObservable();
+export const setSelectedNetwork = (network: Network): void => {
   if (network != null) {
     try {
       localStorage.setItem(ACTIVE_NETWORK_LS_KEY, JSON.stringify(network));
@@ -21,4 +21,4 @@ export const setCurrentNetwork = (network: Network): void => {
   }
   selectedNetworkSubj.next(network);
 };
-currentNetwork$.subscribe((network) => console.log('SELECTED NETWORK=', network.rpcUrl));
+selectedNetwork$.subscribe((network) => console.log('SELECTED NETWORK=', network.rpcUrl));
