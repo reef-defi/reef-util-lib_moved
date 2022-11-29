@@ -4,8 +4,6 @@ import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
 import {updateSignersSubj} from "./setAccounts";
 import {availableAddresses$} from "./availableAddresses";
-import {TxStatusUpdate} from "../../utils";
-import {UpdateAction} from "../model/updateStateModel";
 import {currentProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";

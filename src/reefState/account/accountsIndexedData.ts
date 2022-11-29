@@ -72,24 +72,30 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
                 },
                 [accountsWithChainBalance, locallyUpdated, indexed]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, FeedbackDataModel<AccountEvmAddrData[]>],
             ) => {
+                // TODO https://app.clickup.com/t/37yht4k
                 let updateBindValues: FeedbackDataModel<AccountEvmAddrData>[] = [];
                 if (state.lastlocallyUpdated !== locallyUpdated) {
+                    // locally updated change
                     updateBindValues = locallyUpdated.data.map((updSigner) => toFeedbackDM({
                         address: updSigner.data.address,
                         isEvmClaimed: updSigner.data.isEvmClaimed,
+                        evmAddress: updSigner.data.evmAddress,
                     }, updSigner.getStatusList()));
                 } else if (state.lastIndexed !== indexed) {
+                    // indexed change
                     updateBindValues = indexed.data.map((updSigner: AccountEvmAddrData) => toFeedbackDM({
                         address: updSigner.address,
                         isEvmClaimed: !!updSigner.evm_address,
+                        evmAddress: updSigner.evm_address,
                     }, indexed.getStatusList()));
                 } else {
+                    // balance change
                     updateBindValues = state.lastSigners.data.map((updSigner) => toFeedbackDM({
                         address: updSigner.data.address,
                         isEvmClaimed: updSigner.data.isEvmClaimed,
                     }, updSigner.getStatusList()));
                 }
-                updateBindValues.forEach((updVal: FeedbackDataModel<AccountEvmAddrData>) => {
+                updateBindValues.forEach((updVal: FeedbackDataModel<ReefAccount>) => {
                     const signer = accountsWithChainBalance.data.find((sig) => sig.data.address === updVal.data.address);
                     if (signer) {
                         let isEvmClaimedPropName = 'isEvmClaimed';
@@ -99,6 +105,7 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
                         });
                         if (updVal.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
                             signer.data.isEvmClaimed = !!updVal.data.isEvmClaimed;
+                            signer.data.evmAddress = updVal.data.evmAddress;
                         }
                         signer.setStatus(resetEvmClaimedStat);
                     }
