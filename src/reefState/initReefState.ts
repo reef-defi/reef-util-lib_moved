@@ -1,4 +1,4 @@
-import {currentNetwork$, setCurrentNetwork, setCurrentProvider} from "./providerState";
+import {selectedNetwork$, setSelectedNetwork, setSelectedProvider} from "./providerState";
 import {catchError, defer, finalize, Observable, of, scan, switchMap, tap} from "rxjs";
 import {disconnectProvider, initProvider} from "../utils";
 import {Provider} from "@reef-defi/evm-provider";
@@ -32,7 +32,7 @@ export const initReefState = (
         ipfsHashResolverFn,
     }: StateOptions,
 ): destroyConnection => {
-    const subscription = currentNetwork$.pipe(
+    const subscription = selectedNetwork$.pipe(
         switchMap((network) => initProvider(network.rpcUrl)
             .then((provider) => ({
                 provider,
@@ -45,7 +45,7 @@ export const initReefState = (
             return {provider: newVal.provider, network: newVal.network};
         }, {provider: undefined}),
         tap((p_n: { provider: Provider, network: Network }) => {
-            setCurrentProvider(p_n.provider);
+            setSelectedProvider(p_n.provider);
         }),
         tap((p_n) => {
             initApolloClient(p_n.network, client);
@@ -61,7 +61,7 @@ export const initReefState = (
                 console.log('initReefState ERR=', e);
             },
         });
-    setCurrentNetwork(network || AVAILABLE_NETWORKS.mainnet);
+    setSelectedNetwork(network || AVAILABLE_NETWORKS.mainnet);
     setNftIpfsResolverFn(ipfsHashResolverFn);
     /*if (signers) {
         accountsSubj.next(signers);

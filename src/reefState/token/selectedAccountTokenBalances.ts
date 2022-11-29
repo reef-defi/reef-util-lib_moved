@@ -124,7 +124,7 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[])
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
+export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
@@ -161,7 +161,7 @@ export const loadSignerTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feedb
         ));
 };
 
-export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, FeedbackDataModel<ReefAccount> | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
+export const setReefBalanceFromAccount = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, FeedbackDataModel<ReefAccount> | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
     if (!selSigner) {
         return toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES);
     }
@@ -179,61 +179,3 @@ export const setReefBalanceFromSigner = ([tokens, selSigner]: [FeedbackDataModel
     }
     return toFeedbackDM(signerTkns, tokens.getStatusList());
 };
-
-
-/*
-// adding shareReplay is messing up TypeScriptValidateTypes
-// noinspection TypeScriptValidateTypes
-export const loadSignerTokens = ([apollo, signer, provider]): Token[] | null => (!signer
-    ? []
-    : zenToRx(
-        apollo.subscribe({
-            query: SIGNER_TOKENS_GQL,
-            variables: {accountId: signer.address},
-            fetchPolicy: 'network-only',
-        }),
-    ).pipe(
-        map((res: any) => (res.data && res.data.token_holder
-            ? res.data.token_holder
-            : undefined)),
-        // eslint-disable-next-line camelcase
-        switchMap(
-            async (
-                // eslint-disable-next-line camelcase
-                tokenBalances: { token_address: string; balance: number }[],
-            ) => {
-                const reefTkn = reefTokenWithAmount();
-                const reefTokenResult = tokenBalances.find(
-                    (tb) => tb.token_address === reefTkn.address,
-                );
-
-                const reefBalance = await getReefCoinBalance(
-                    signer.address,
-                    provider as Provider,
-                );
-                if (!reefTokenResult) {
-                    tokenBalances.push({
-                        token_address: reefTkn.address,
-                        balance: parseInt(utils.formatUnits(reefBalance, 'wei'), 10),
-                    });
-                    return Promise.resolve(tokenBalances);
-                }
-
-                reefTokenResult.balance = FixedNumber.fromValue(reefBalance).toUnsafeFloat();
-                return Promise.resolve(tokenBalances);
-            },
-        ),
-        // eslint-disable-next-line camelcase
-        mergeScan(tokenBalancesWithContractDataCache(apollo), {
-            tokens: [],
-            contractData: [reefTokenWithAmount()],
-        }),
-        map((val: { tokens: Token[] }) => val.tokens.map((t) => ({
-            ...t,
-            iconUrl: t.iconUrl || getIconUrl(t.address),
-        }))),
-        map(sortReefTokenFirst),
-        startWith(null)
-    ));
-*/
-

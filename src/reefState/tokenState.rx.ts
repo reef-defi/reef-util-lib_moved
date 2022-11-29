@@ -14,12 +14,12 @@ import {
 import {loadAvailablePools, toAvailablePools} from "./token/poolUtils";
 import {NFT, Token, TokenBalance, TokenTransfer, TokenWithAmount} from "../token/tokenModel";
 import {reefPrice$} from "../token/reefPrice";
-import {loadSignerTokens_fbk, setReefBalanceFromSigner} from "./token/selectedSignerTokenBalances";
+import {loadAccountTokens_fbk, setReefBalanceFromAccount} from "./token/selectedAccountTokenBalances";
 import {apolloClientInstance$} from "../graphql";
-import {currentAccount$} from "./account/currentAccount";
-import {currentNetwork$, currentProvider$} from "./providerState";
+import {selectedAccount$} from "./account/selectedAccount";
+import {selectedNetwork$, selectedProvider$} from "./providerState";
 import {AvailablePool, Pool} from "../token/pool";
-import {currentAccountAddressChange$} from "./account/currentAccountAddressChange";
+import {selectedAccountAddressChange$} from "./account/selectedAccountAddressChange";
 import {Network} from "../network/network";
 import {ReefAccount} from "../account/accountModel";
 import {fetchPools$} from "../pools/pools";
@@ -31,26 +31,26 @@ import {Provider, Signer} from "@reef-defi/evm-provider";
 import {toTokensWithPrice_fbk} from "./token/tokenUtil";
 import {getReefswapNetworkConfig, REEFSWAP_CONFIG} from "../network/dex";
 
-const reloadingValues$ = combineLatest([currentNetwork$, currentAccountAddressChange$]).pipe(shareReplay(1));
+const reloadingValues$ = combineLatest([selectedNetwork$, selectedAccountAddressChange$]).pipe(shareReplay(1));
 
-export const currentTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>)> = combineLatest([
+export const selectedTokenBalances$: Observable<(FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>)> = combineLatest([
     apolloClientInstance$,
-    currentAccountAddressChange$,
+    selectedAccountAddressChange$,
 ]).pipe(
-    switchMap(loadSignerTokens_fbk),
-    withLatestFrom(currentAccount$),
-    map(setReefBalanceFromSigner),
+    switchMap(loadAccountTokens_fbk),
+    withLatestFrom(selectedAccount$),
+    map(setReefBalanceFromAccount),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError((err: any) => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1),
 );
 
-// TODO combine  currentNetwork$ and currentProvider$
-export const currentPools$: Observable<FeedbackDataModel<FeedbackDataModel<Pool | null>[]>> = combineLatest([
-    currentTokenBalances$,
-    currentNetwork$,
-    currentAccountAddressChange$,
-    currentProvider$
+// TODO combine  selectedNetwork$ and selectedProvider$
+export const selectedPools$: Observable<FeedbackDataModel<FeedbackDataModel<Pool | null>[]>> = combineLatest([
+    selectedTokenBalances$,
+    selectedNetwork$,
+    selectedAccountAddressChange$,
+    selectedProvider$
 ]).pipe(
     switchMap((valArr: [(FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>), Network, FeedbackDataModel<ReefAccount>, Provider]) => {
         var [tkns, network, signer, provider] = valArr;
@@ -69,10 +69,10 @@ export const currentPools$: Observable<FeedbackDataModel<FeedbackDataModel<Pool 
 );
 
 // TODO pools and tokens emit events at same time - check how to make 1 event from it
-export const currentTokenPrices$: Observable<FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]>> = combineLatest([
-    currentTokenBalances$,
+export const selectedTokenPrices$: Observable<FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]>> = combineLatest([
+    selectedTokenBalances$,
     reefPrice$,
-    currentPools$,
+    selectedPools$,
 ]).pipe(
     map(toTokensWithPrice_fbk),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
@@ -82,7 +82,7 @@ export const currentTokenPrices$: Observable<FeedbackDataModel<FeedbackDataModel
 
 export const availableReefPools$: Observable<FeedbackDataModel<AvailablePool[]>> = combineLatest([
     apolloClientInstance$,
-    currentProvider$,
+    selectedProvider$,
 ]).pipe(
     switchMap(loadAvailablePools),
     map(toAvailablePools),
@@ -92,9 +92,9 @@ export const availableReefPools$: Observable<FeedbackDataModel<AvailablePool[]>>
     shareReplay(1)
 );
 
-export const currentNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> = combineLatest([
+export const selectedNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> = combineLatest([
     apolloClientInstance$,
-    currentAccountAddressChange$
+    selectedAccountAddressChange$
 ])
     .pipe(
         switchMap((v) => loadSignerNfts(v)),
@@ -103,9 +103,9 @@ export const currentNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]
         shareReplay(1)
     );
 
-// TODO combine  currentNetwork$ and currentProvider$
-export const currentTransactionHistory$: Observable<null | TokenTransfer[]> = combineLatest([
-    apolloClientInstance$, currentAccountAddressChange$, currentNetwork$, currentProvider$
+// TODO combine  selectedNetwork$ and selectedProvider$
+export const selectedTransactionHistory$: Observable<null | TokenTransfer[]> = combineLatest([
+    apolloClientInstance$, selectedAccountAddressChange$, selectedNetwork$, selectedProvider$
 ]).pipe(
     switchMap(loadTransferHistory),
     mergeWith(reloadingValues$.pipe(map(() => null))),
