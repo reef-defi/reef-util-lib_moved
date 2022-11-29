@@ -104,7 +104,7 @@ export const selectedNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[
     );
 
 // TODO combine  selectedNetwork$ and selectedProvider$
-export const currentTransactionHistory$: Observable<null | TokenTransfer[]> = combineLatest([
+export const selectedTransactionHistory$: Observable<null | TokenTransfer[]> = combineLatest([
     apolloClientInstance$, selectedAccountAddressChange$, selectedNetwork$, selectedProvider$
 ]).pipe(
     switchMap(loadTransferHistory),

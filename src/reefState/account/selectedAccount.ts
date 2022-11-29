@@ -4,7 +4,7 @@ import {accounts$} from "./accounts";
 import {selectedAddressSubj, setSelectedAddress} from "./setAccounts";
 import {FeedbackDataModel, toFeedbackDM} from "../model/feedbackDataModel";
 
-export const currentAddress$: Observable<string | undefined> = selectedAddressSubj.asObservable()
+export const selectedAddress$: Observable<string | undefined> = selectedAddressSubj.asObservable()
     .pipe(
         startWith(undefined),
         distinctUntilChanged(),
@@ -12,7 +12,7 @@ export const currentAddress$: Observable<string | undefined> = selectedAddressSu
     );
 
 // setting default signer (when signers exist) if no selected address exists
-combineLatest([accounts$, currentAddress$])
+combineLatest([accounts$, selectedAddress$])
     .pipe(take(1))
     .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string|undefined]) => {
         let saved: string | undefined = address;
@@ -34,7 +34,7 @@ combineLatest([accounts$, currentAddress$])
     });
 
 export const selectedAccount$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
-    currentAddress$,
+    selectedAddress$,
     accounts$,
 ])
     .pipe(
