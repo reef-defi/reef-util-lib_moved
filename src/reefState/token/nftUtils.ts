@@ -85,7 +85,7 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
                         throw new Error('Could not load data.');
                     }
                 ),
-                map((res: VerifiedNft[] | undefined) => parseTokenHolderArray(res || [])),
+                map((res: VerifiedNft[]) => parseTokenHolderArray(res)),
                 switchMap((nftArr: NFT[]) => combineLatest([
                         of(nftArr), instantProvider$
                     ]).pipe(

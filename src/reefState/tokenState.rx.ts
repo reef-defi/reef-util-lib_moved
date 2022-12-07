@@ -8,7 +8,7 @@ import {
     of,
     shareReplay,
     startWith,
-    switchMap,
+    switchMap, tap,
     withLatestFrom,
 } from 'rxjs';
 import {loadAvailablePools, toAvailablePools} from "./token/poolUtils";
@@ -29,7 +29,7 @@ import {loadTransferHistory} from "./token/transferHistory";
 import {getReefAccountSigner} from "../account/accountSignerUtils";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 import {toTokensWithPrice_fbk} from "./token/tokenUtil";
-import {getReefswapNetworkConfig, REEFSWAP_CONFIG} from "../network/dex";
+import {getReefswapNetworkConfig} from "../network/dex";
 
 const reloadingValues$ = combineLatest([selectedNetwork$, selectedAccountAddressChange$]).pipe(shareReplay(1));
 
@@ -104,10 +104,12 @@ export const selectedNFTs$: Observable<FeedbackDataModel<FeedbackDataModel<NFT>[
     );
 
 // TODO combine  selectedNetwork$ and selectedProvider$
-export const selectedTransactionHistory$: Observable<null | TokenTransfer[]> = combineLatest([
+export const selectedTransactionHistory$: Observable<FeedbackDataModel<TokenTransfer[]>> = combineLatest([
     apolloClientInstance$, selectedAccountAddressChange$, selectedNetwork$, selectedProvider$
 ]).pipe(
     switchMap(loadTransferHistory),
-    mergeWith(reloadingValues$.pipe(map(() => null))),
+    map(vArr=> toFeedbackDM(vArr, FeedbackStatusCode.COMPLETE_DATA, 'History loaded')),
+    mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
+    catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1),
 );
