@@ -3,6 +3,7 @@ import type {Signer as InjectedSigner} from '@polkadot/api/types';
 import {web3FromSource} from '@reef-defi/extension-dapp';
 import {ReefAccount} from "./accountModel";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
+import {accountsJsonSigningKeySubj} from "../reefState/account/setAccounts";
 
 const accountSourceSigners = new Map<string, InjectedSigner>();
 const addressSigners = new Map<string, Signer|undefined>();
@@ -25,7 +26,8 @@ const getAccountInjectedSigner = async (
 };
 
 export const getReefAccountSigner = async ({address, source}: ReefAccount, provider: Provider)=>{
-  return getAccountSigner(address, provider, source);
+  const src = accountsJsonSigningKeySubj.getValue()||source;
+  return getAccountSigner(address, provider, src);
 }
 
 export const getAccountSigner = async (
@@ -38,8 +40,9 @@ export const getAccountSigner = async (
   if (!injSignerOrSource || typeof injSignerOrSource === 'string') {
     signingKey =  await getAccountInjectedSigner(injSignerOrSource);
   }
+
   if (!addressSigners.has(address)) {
-    addressSigners.set(address, signingKey ? new Signer(provider, address, signingKey) : undefined);
+    addressSigners.set(address, (signingKey ? (new Signer(provider, address, signingKey)) : undefined));
   }
   return addressSigners.get(address);
 };
