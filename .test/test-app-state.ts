@@ -7,9 +7,10 @@ import {initReefState} from "../src/reefState/initReefState";
 import {
     selectedNFTs$,
     selectedTokenBalances$,
-    selectedTokenPrices$
+    selectedTokenPrices$,
+    selectedTransactionHistory$
 } from "../src/reefState/tokenState.rx";
-import {firstValueFrom, race, skipWhile, tap} from "rxjs";
+import {firstValueFrom, race, skipWhile} from "rxjs";
 import {FeedbackDataModel, FeedbackStatusCode} from "../src/reefState/model/feedbackDataModel";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
@@ -45,6 +46,8 @@ async function testNfts() {
 async function changeSelectedAddress(): Promise<string> {
     const allSig = await firstValueFrom(availableAddresses$);
     console.assert(allSig.length>1, 'Need more than 1 signer.')
+    const currSig0 = await firstValueFrom(selectedAccount$);
+    console.log("changing selected address SSS",currSig0);
     const currSig = await firstValueFrom(selectedAccountAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.data.address);
     setSelectedAddress(newSig?.address);
@@ -127,6 +130,16 @@ async function testBalancesProgressStatus() {
     console.log("END testTokenBalances=", tokensCompl);
 }
 
+async function testTransferHistory() {
+    await changeSelectedAddress();
+    console.log("waiting for history to load");
+    const hist0 = await firstValueFrom(selectedTransactionHistory$);
+    console.assert(hist0.hasStatus(FeedbackStatusCode.LOADING), 'Needs to start with loading status');
+    const hist = await firstValueFrom(selectedTransactionHistory$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
+    console.assert(hist.hasStatus(FeedbackStatusCode.COMPLETE_DATA), 'Needs to end with complete status');
+    console.log("tx history=", hist);
+}
+
 async function testProvider() {
     const provider = await firstValueFrom(selectedProvider$);
     console.log("provider set=", await provider.api.isReadyOrError);
@@ -147,7 +160,7 @@ async function testSigners() {
     console.log("available addr=",sig);
     const indexedSigners = await firstValueFrom(accountsWithUpdatedIndexedData$);
     console.log("sigFromJson=",indexedSigners);
-    accountsWithUpdatedIndexedData$.subscribe(v=>console.log('RESSSS',v))
+    // accountsWithUpdatedIndexedData$.subscribe(v=>console.log('RESSSS',v))
     const sigCompl = await firstValueFrom(accountsWithUpdatedIndexedData$.pipe(
         // tap(v=>console.log('SSSSS', v.getStatusList())),
         skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
@@ -166,17 +179,18 @@ async function initTest() {
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
-    await testSigners();
-    await testProvider();
-    await testInitSelectedAddress();
+    // await testSigners();
+    // await testProvider();
+    // await testInitSelectedAddress();
     setSelectedAddress(TEST_ACCOUNTS[0].address);
-    await testBalancesProgressStatus();
-    await testAppStateSigners(accounts);
-    await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
-    await testAppStateTokens();
-    await testAppStateTokens();
-    await testNfts();
-    await testNfts();
+    // await testBalancesProgressStatus();
+    // await testAppStateSigners(accounts);
+    // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
+    // await testAppStateTokens();
+    // await testAppStateTokens();
+    // await testNfts();
+    // await testNfts();
+    await testTransferHistory();
 
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);

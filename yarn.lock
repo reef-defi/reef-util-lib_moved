@@ -2724,10 +2724,27 @@
     "@reef-defi/util" "^7.8.2"
     "@reef-defi/util-crypto" "^7.8.2"
 
+"@reef-defi/extension-dapp@^1.0.16":
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/@reef-defi/extension-dapp/-/extension-dapp-1.0.16.tgz#5cb3e916747328d43789ed2bd8b8eddff1d365bf"
+  integrity sha512-+wt9dV7uAq512GzGyJUTse387TSero2/mfu5/wAJGS9rPd084rFIB0z5TRcQcEItgRUhLH/QjejChVDnAjqjhA==
+  dependencies:
+    "@babel/runtime" "^7.16.0"
+    "@reef-defi/extension-inject" "^1.0.16"
+    "@reef-defi/util" "^7.8.2"
+    "@reef-defi/util-crypto" "^7.8.2"
+
 "@reef-defi/extension-inject@^1.0.10":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@reef-defi/extension-inject/-/extension-inject-1.0.10.tgz#e7d7ac599eb55a98c04b97edf4bf873f5ac422bc"
   integrity sha512-iNfU0kM9+JPUqRrRRsFIk1BYpQHfvR1UOrqxDmugVXU1TNheiJObmMvobfwSX79sc4D9/a4kxtYeukXHuIk36Q==
+  dependencies:
+    "@babel/runtime" "^7.16.0"
+
+"@reef-defi/extension-inject@^1.0.16":
+  version "1.0.16"
+  resolved "https://registry.yarnpkg.com/@reef-defi/extension-inject/-/extension-inject-1.0.16.tgz#66178e640dc12054c3845d751c6791aa0208be66"
+  integrity sha512-J4tiNCDRkF92vc/Ba67zSa+bV3gSWyT9BcfAhPIb9rHjkBYGj2Rrd6lZFfaRYydSjO+HdLy9c3Zo/B+1nLMLzg==
   dependencies:
     "@babel/runtime" "^7.16.0"
 

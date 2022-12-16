@@ -167,18 +167,9 @@ export const loadTransferHistory = ([apollo, account, network, provider]:[Apollo
             map((resData: any) => toTokenTransfers(resData, account.data, network)),
             switchMap((transfers: TokenTransfer[]): Observable<TokenTransfer[]> => {
                 const tokens = transfers.map((tr: TokenTransfer) => tr.token);
-                ... TODO is timer delayed
-                const signer$ = race(accountsJsonSigningKeySubj.asObservable(), timer(100).pipe(map(()=>null))).pipe(
-                    take(1),
-                    map((sigKey)=>{
-                        if(!sigKey){
-                            return getReefAccountSigner(account.data, provider);
-                        }
-                        return getAccountSigner(account!.data.address, provider, sigKey)
-                    })
-                );
+                const sig$ = from(getReefAccountSigner(account.data, provider));
 
-                return from(signer$)
+                return from(sig$)
                     .pipe(
                         switchMap((sig: Signer|undefined)=>(sig?resolveTransferHistoryNfts(tokens, sig):[])),
                         map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
