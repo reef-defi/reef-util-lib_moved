@@ -13,3 +13,4 @@ export * as network from './network';
 export * as graphql from './graphql';
 export * as tokenUtil from './token'
 export * from './account'
+export * as evm from './evm'
