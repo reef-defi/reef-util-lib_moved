@@ -42,7 +42,7 @@
     "bignumber.js": "^9.1.0",
     "crypto-browserify": "^3.12.0",
     "graphql": "^16.6.0",
-    "subscriptions-transport-ws": "^0.11.0"
+    "graphql-ws": "^5.11.2"
   },
   "peerDependencies": {
     "rxjs": "^7.5.6"
