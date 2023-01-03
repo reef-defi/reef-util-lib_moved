@@ -174,8 +174,17 @@ async function initTest() {
     const accounts = TEST_ACCOUNTS;
     // const accounts = await reefExt.accounts.get();
     // const accountsWMeta = toInjectedAccountsWithMeta(accounts, REEF_EXTENSION_IDENT);
+    const net={
+        name: 'testnet',
+        rpcUrl: 'wss://rpc-testnet.reefscan.com/ws',
+        reefscanUrl: 'https://testnet.reefscan.com',
+        graphqlUrl: 'wss://squid.subsquid.io/reef-explorer/v/v1/graphql',
+        genesisHash: '0x0f89efd7bf650f2d521afef7456ed98dff138f54b5b7915cc9bce437ab728660',
+        reefscanFrontendUrl: 'https://testnet.reefscan.com'
+    }
     await initReefState({
-        network: AVAILABLE_NETWORKS.testnet,
+        network: net,
+        // network: AVAILABLE_NETWORKS.testnet,
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
@@ -183,7 +192,7 @@ async function initTest() {
     // await testProvider();
     // await testInitSelectedAddress();
     setSelectedAddress(TEST_ACCOUNTS[0].address);
-    // await testBalancesProgressStatus();
+    await testBalancesProgressStatus();
     // await testAppStateSigners(accounts);
     // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
     // await testAppStateTokens();
