@@ -51,38 +51,38 @@ const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Ob
         );
 };*/
 
-const toTransferToken = (transfer): Token|NFT => (transfer.token.verified_contract.type === ContractType.ERC20 ? {
-        address: transfer.token_address,
+const toTransferToken = (transfer): Token|NFT => (transfer.token.type === ContractType.ERC20 ? {
+        address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.verified_contract.contract_data.name,
-        symbol: transfer.token.verified_contract.contract_data.symbol,
-        decimals:
-        transfer.token.verified_contract.contract_data.decimals,
+        name: transfer.token.name,
+        symbol: transfer.token.contractData?.symbol,
+        decimals: transfer.token.contractData?.decimals||18,
         iconUrl:
-            transfer.token.verified_contract.contract_data.icon_url
+            transfer.token.contractData?.icon_url
             || getIconUrl(transfer.token_address),
     } as Token
     : {
-        address: transfer.token_address,
+        address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.verified_contract.contract_data.name,
-        symbol: transfer.token.verified_contract.contract_data.symbol,
+        name: transfer.token.name,
+        symbol: '',
         decimals: 0,
         iconUrl: '',
-        nftId: transfer.nft_id,
-        contractType: transfer.token.verified_contract.type,
+        nftId: transfer.nftId,
+        contractType: transfer.token.type,
     } as NFT);
 
 const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
-    from: transferData.from_address,
-    to: transferData.to_address,
+    from: transferData.from.id,
+    to: transferData.to.id,
     inbound:
-        transferData.to_address === signer.evmAddress
-        || transferData.to_address === signer.address,
+        transferData.to.evmAddress === signer.evmAddress
+        || transferData.to.id === signer.address,
     timestamp: transferData.timestamp,
     token: toTransferToken(transferData),
-    url: getExtrinsicUrl(transferData.extrinsic.hash, network),
-    extrinsic: { blockId: transferData.extrinsic.block_id, hash: transferData.extrinsic.hash, index: transferData.extrinsic.index },
+    url: getExtrinsicUrl(transferData.extrinsic.id, network),
+    extrinsic: { blockId: transferData.extrinsic.block.id, blockHeight: transferData.extrinsic.block.height, id: transferData.extrinsic.id, index: transferData.extrinsic.index },
+    success: transferData.success,
 }));
 
 /*export const loadTransferHistory_fdm = ([apollo, signer, network, provider]:[ApolloClient<any>, FeedbackDataModel<ReefAccount>, Network, Provider]): FeedbackDataModel<FeedbackDataModel<TokenTransfer>[]> => (!signer
@@ -158,9 +158,8 @@ export const loadTransferHistory = ([apollo, account, network, provider]:[Apollo
     )
         .pipe(
             map((res: any) => {
-                // res.data && res.data.transfer ? res.data.transfer : undefined
-                if (res?.data?.transfer) {
-                    return res.data.transfer;
+                if (res?.data?.transfers) {
+                    return res.data.transfers;
                 }
                 throw new Error('Could not load data.');
             }),

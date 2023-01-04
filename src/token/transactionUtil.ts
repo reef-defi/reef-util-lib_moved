@@ -101,5 +101,5 @@ export const sendToNativeAddress = (
   return txIdent;
 };
 
-export const getExtrinsicUrl = (hash: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/extrinsic/${hash}`;
+export const getExtrinsicUrl = (id: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/extrinsic/${id}`;
 export const getContractUrl = (address: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/contract/${address}`;

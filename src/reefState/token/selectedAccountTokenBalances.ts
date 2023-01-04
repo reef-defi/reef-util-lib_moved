@@ -34,15 +34,19 @@ const fetchTokensData = (
             variables: {addresses: distinctAddr},
         })
         // eslint-disable-next-line camelcase
-        .then((verContracts) => verContracts.data.verified_contract.map(
+        .then((verContracts) => verContracts.data.verifiedContracts.map(
+
             // eslint-disable-next-line camelcase
-            (vContract: { address: string; contract_data: any }) => ({
-                address: vContract.address,
-                iconUrl: vContract.contract_data.token_icon_url,
-                decimals: vContract.contract_data.decimals,
-                name: vContract.contract_data.name,
-                symbol: vContract.contract_data.symbol,
-            } as Token),
+            (vContract: { id: string; contractData: any }) => {
+                console.log('TODO0000000 verifCtrct=',vContract)
+                return ({
+                address: vContract.id,
+                iconUrl: '',
+                decimals: vContract.contractData?.decimals||18,
+                name: vContract.contractData?.name,
+                symbol: vContract.contractData?.symbol,
+                    balance:BigNumber.from(0)
+            } as Token);},
         ))
 };
 
@@ -135,9 +139,9 @@ export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feed
             }),
         ).pipe(
             map((res: any): TokenBalance[] => {
-                if (res?.data?.token_holder) {
-                    return res.data.token_holder.map(th => ({
-                        address: th.token_address,
+                if (res?.data?.tokenHolders) {
+                    return res.data.tokenHolders.map(th => ({
+                        address: th.token.id,
                         balance: th.balance
                     } as TokenBalance));
                 }
