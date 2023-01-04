@@ -28,10 +28,11 @@ async function testNfts() {
     await changeSelectedAddress();
     let nfts = await firstValueFrom(selectedNFTs$);
     console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().map(v=>v.code))
-    console.log("resolve nft urls");
+    console.log("resolve nft urls", );
     nfts = await firstValueFrom(selectedNFTs$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
-    console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
-
+    if(nfts.data.length) {
+        console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
+    }
     nfts = await firstValueFrom(selectedNFTs$.pipe(
         // tap(v => console.log('Waiting for nft complete data')),
         skipWhile((nfts: FeedbackDataModel<any>) => {
@@ -47,9 +48,9 @@ async function changeSelectedAddress(): Promise<string> {
     const allSig = await firstValueFrom(availableAddresses$);
     console.assert(allSig.length>1, 'Need more than 1 signer.')
     const currSig0 = await firstValueFrom(selectedAccount$);
-    console.log("changing selected address SSS",currSig0);
     const currSig = await firstValueFrom(selectedAccountAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.data.address);
+    console.log("changing selected address to=",newSig.address);
     setSelectedAddress(newSig?.address);
     return newSig?.address!;
 }
@@ -195,10 +196,10 @@ async function initTest() {
     // await testBalancesProgressStatus();
     // await testAppStateSigners(accounts);
     // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
-    await testAppStateTokens();
     // await testAppStateTokens();
-    // await testNfts();
-    // await testNfts();
+    // await testAppStateTokens();
+    await testNfts();
+    await testNfts();
     await testTransferHistory();
 
     console.log("END ALL");

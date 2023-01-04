@@ -1,6 +1,6 @@
 import {catchError, combineLatest, from, map, Observable, of, switchMap} from "rxjs";
 import {BigNumber} from "ethers";
-import {ContractType, ERC1155ContractData, ERC721ContractData, NFT} from "../../token/tokenModel";
+import {ContractType, NFT} from "../../token/tokenModel";
 import {zenToRx} from "../../graphql";
 import {ipfsUrlResolverFn, resolveNftImageLinks$} from "../../token/nftUtil";
 import {ReefAccount} from "../../account/accountModel";
@@ -97,7 +97,11 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
                     }),
                     map((feedbackNfts: FeedbackDataModel<NFT>[]): FeedbackDataModel<FeedbackDataModel<NFT>[]> => {
                         const codes = collectFeedbackDMStatus(feedbackNfts);
-                        const message = codes.some(c => c === FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
+                        let message = codes.some(c => c === FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
+                        if(!feedbackNfts.length){
+                            message='No nfts found';
+                            codes.push(FeedbackStatusCode.COMPLETE_DATA);
+                        }
                         return toFeedbackDM(feedbackNfts, codes, message);
                     })
                     )

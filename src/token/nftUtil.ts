@@ -71,7 +71,6 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
         // throw new Error('Test234')
         const contractTypeAbi = getContractTypeAbi(nft.contractType);
         const contract = new Contract(nft.address, contractTypeAbi, signer);
-        console.log('CCCC', signer.provider.api.genesisHash.toHuman())
         const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
             : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
 
@@ -89,7 +88,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));
 
 export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> | Observable<(FeedbackDataModel<(NFT)>[])> => {
-    if (!nfts || !signer) {
+    if (!nfts || !nfts.length || !signer) {
         return of([]);
     }
     const resolveObsArr: Observable<FeedbackDataModel<NFT | null>>[] = nfts.map(
@@ -103,9 +102,7 @@ export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer
             startWith(toFeedbackDM(nft, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Resolving url.', 'iconUrl'))
         )
     );
-    return combineLatest(
-        resolveObsArr
-    )
+    return combineLatest(resolveObsArr);
     // .pipe(tap(v=>console.log('NFTS TAP', v)));
 };
 
