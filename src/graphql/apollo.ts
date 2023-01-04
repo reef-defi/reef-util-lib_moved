@@ -10,9 +10,13 @@ import {
     distinctUntilChanged,
     map, merge, Observable, of, ReplaySubject, shareReplay,
 } from 'rxjs';
-import {WebSocketLink} from '@apollo/client/link/ws';
+// import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {Observable as ZenObservable} from 'zen-observable-ts';
+
+import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
+import { createClient } from "graphql-ws";
+
 
 const apolloUrlsSubj = new ReplaySubject<{ ws: string; http: string }>(1);
 export const apolloClientSubj = new ReplaySubject<ApolloClient<any>>(1);
@@ -26,12 +30,10 @@ const splitLink$ = apolloUrlsSubj.pipe(
         const httpLink = new HttpLink({
             uri: urls.http,
         });
-        const wsLink = new WebSocketLink({
-            options: {
-                reconnect: true,
-            },
-            uri: urls.ws,
-        });
+        const wsLink = new GraphQLWsLink(createClient({
+                url: urls.ws,
+            })
+        );
         return split(
             ({query}) => {
                 const definition = getMainDefinition(query);

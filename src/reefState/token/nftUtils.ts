@@ -1,6 +1,6 @@
 import {catchError, combineLatest, from, map, Observable, of, switchMap} from "rxjs";
 import {BigNumber} from "ethers";
-import {ERC1155ContractData, ERC721ContractData, NFT} from "../../token/tokenModel";
+import {ContractType, ERC1155ContractData, ERC721ContractData, NFT} from "../../token/tokenModel";
 import {zenToRx} from "../../graphql";
 import {ipfsUrlResolverFn, resolveNftImageLinks$} from "../../token/nftUtil";
 import {ReefAccount} from "../../account/accountModel";
@@ -22,42 +22,30 @@ export const setNftIpfsResolverFn = (val?: ipfsUrlResolverFn) => {
 };
 
 export interface VerifiedNft {
-    token_address: string;
+    token: {
+        id: string;
+        type: ContractType.ERC1155 | ContractType.ERC721;
+    };
     balance: string;
-    nft_id: string;
-    info: { symbol: string };
-    contract: {
-        verified_contract: {
-            type: 'ERC1155' | 'ERC721';
-            contract_data: ERC1155ContractData | ERC721ContractData;
-        }
-    }
+    nftId: string;
 }
 
 const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
     .map(({
               balance,
-              nft_id: nftId,
-              info: {symbol},
-              token_address,
-              contract: {
-                  verified_contract: {
-                      contract_data,
-                      type
-                  }
-              },
+              nftId,
+              token:{id:address, type:contractType},
           }) => {
 
         return ({
-            contractType: type,
+            contractType,
             balance: BigNumber.from(balance),
             nftId,
-            symbol,
+            symbol:'',
             decimals: 0,
-            data: contract_data,
-            address: token_address,
+            address,
             iconUrl: '',
-            name: contract_data.type === 'ERC721' ? contract_data.name : '',
+            name: '',
         } as NFT)
     });
 
@@ -75,8 +63,8 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
         )
             .pipe(
                 map((res: any) => {
-                        if (res?.data?.token_holder) {
-                            return res.data.token_holder as VerifiedNft[];
+                        if (res?.data?.tokenHolders) {
+                            return res.data.tokenHolders as VerifiedNft[];
                         }
 
                         if (isFeedbackDM(res)) {
@@ -85,7 +73,8 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
                         throw new Error('Could not load data.');
                     }
                 ),
-                map((res: VerifiedNft[]) => parseTokenHolderArray(res)),
+                map((res: VerifiedNft[]) =>parseTokenHolderArray(res)),
+                // TODO handle FDM- map((res: VerifiedNft[]|FeedbackDataModel<NFT[]>) => isFeedbackDM(res)?res:parseTokenHolderArray(res)),
                 switchMap((nftArr: NFT[]) => combineLatest([
                         of(nftArr), instantProvider$
                     ]).pipe(

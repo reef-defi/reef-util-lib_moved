@@ -68,7 +68,6 @@ export interface ERC1155ContractData {
 
 export interface NFT extends Token {
     nftId: string;
-    data: ERC1155ContractData | ERC721ContractData;
     contractType: ContractType;
     mimetype?: string;
 }
@@ -83,9 +82,10 @@ export interface NFTMetadata {
 }
 
 export interface TransferExtrinsic {
-    blockId: string;
+    id: string;
     index: number;
-    hash: string;
+    blockId: string;
+    blockHeight: number;
 }
 
 export interface TokenTransfer {
@@ -96,5 +96,6 @@ export interface TokenTransfer {
     token: Token | NFT;
     extrinsic: TransferExtrinsic;
     url: string;
+    success: boolean;
 }
 

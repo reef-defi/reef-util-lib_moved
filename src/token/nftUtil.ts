@@ -71,6 +71,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
         // throw new Error('Test234')
         const contractTypeAbi = getContractTypeAbi(nft.contractType);
         const contract = new Contract(nft.address, contractTypeAbi, signer);
+        console.log('CCCC', signer.provider.api.genesisHash.toHuman())
         const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
             : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
 
