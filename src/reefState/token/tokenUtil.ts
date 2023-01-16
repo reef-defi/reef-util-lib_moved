@@ -29,6 +29,7 @@ export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
     FeedbackDataModel<number>,
     FeedbackDataModel<FeedbackDataModel<Pool | null>[]>
 ]): FeedbackDataModel<FeedbackDataModel<TokenWithAmount>[]> => {
+    console.log("ToOOOOe=",tokens.data.length);
     const tknsWPrice = tokens.data.map(
         (token_fbk) => {
             const returnTkn = toFeedbackDM({...token_fbk.data, price: 0} as TokenWithAmount, token_fbk.getStatusList());

@@ -16,21 +16,21 @@ export type Networks = Record<NetworkName, Network>;
 export const AVAILABLE_NETWORKS: Networks = {
     testnet: {
         name: 'testnet',
-        rpcUrl: 'wss://rpc-testnet.reefscan.com/ws',
-        reefscanUrl: 'https://testnet.reefscan.com',
+        rpcUrl: 'wss://rpc-testnet.reefscan.info/ws',
+        reefscanUrl: 'https://testnet.reefscan.info',
         graphqlUrl: 'wss://squid.subsquid.io/reef-explorer-testnet/graphql',
         // graphqlUrl: 'wss://testnet.reefscan.com/graphql',
         genesisHash: '0x0f89efd7bf650f2d521afef7456ed98dff138f54b5b7915cc9bce437ab728660',
-        reefscanFrontendUrl: 'https://testnet.reefscan.com'
+        reefscanFrontendUrl: 'https://testnet.reefscan.info'
     },
     mainnet: {
         name: 'mainnet',
-        rpcUrl: 'wss://rpc.reefscan.com/ws',
-        reefscanUrl: 'https://reefscan.com',
+        rpcUrl: 'wss://rpc.reefscan.info/ws',
+        reefscanUrl: 'https://reefscan.info',
         graphqlUrl: 'wss://squid.subsquid.io/reef-explorer/graphql',
         // graphqlUrl: 'wss://reefscan.com/graphql',
         genesisHash: '0x7834781d38e4798d548e34ec947d19deea29df148a7bf32484b7b24dacf8d4b7',
-        reefscanFrontendUrl: 'https://reefscan.com',
+        reefscanFrontendUrl: 'https://reefscan.info',
     },
     localhost: {
         name: 'localhost',
