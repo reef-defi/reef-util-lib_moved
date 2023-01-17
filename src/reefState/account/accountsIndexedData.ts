@@ -1,24 +1,12 @@
 import {gql} from "@apollo/client";
 import {catchError, combineLatest, map, Observable, of, scan, shareReplay, startWith, switchMap} from "rxjs";
-import {apolloClientInstance$, zenToRx} from "../../graphql";
+import {apolloClientInstance$, EVM_ADDRESS_UPDATE_GQL, zenToRx} from "../../graphql";
 import {accountsWithUpdatedChainDataBalances$} from "./accountsWithUpdatedChainDataBalances";
 import {ReefAccount} from "../../account/accountModel";
 import {accountsLocallyUpdatedData$} from "./accountsLocallyUpdatedData";
 import {availableAddresses$} from "./availableAddresses";
 import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
 import {getAddressesErrorFallback} from "./errorUtil";
-
-const EVM_ADDRESS_UPDATE_GQL = gql`
-  subscription query($accountIds: [String!]!) {
-    account(
-      where: { address: { _in: $accountIds } }
-      order_by: { timestamp: asc, address: asc }
-    ) {
-      address
-      evm_address
-    }
-  }
-`;
 
 // eslint-disable-next-line camelcase
 interface AccountEvmAddrData {
