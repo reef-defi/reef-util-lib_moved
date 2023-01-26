@@ -2,20 +2,20 @@ import {gql} from "@apollo/client";
 
 export const TRANSFER_HISTORY_GQL = gql`
   subscription query($accountId: String!) {
-    transfers(
-        where: {
-            OR: [
-                {from: {id_eq: $accountId}}, 
-                {to: {id_eq: $accountId}}
-                ]
-        }, limit: 10, orderBy: timestamp_DESC) 
-    {
-        timestamp
-        amount
-        feeAmount
-        fromEvmAddress
-        id
-        nftId
+        transfers(
+            where: {
+                OR: [
+                    {from: {id_eq: $accountId}}, 
+                    {to: {id_eq: $accountId}}
+                    ]
+            }, limit: 15, orderBy: timestamp_DESC) 
+        {
+            timestamp
+            amount
+            feeAmount
+            fromEvmAddress
+            id
+            nftId
         success
         type
         toEvmAddress
