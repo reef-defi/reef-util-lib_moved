@@ -73,7 +73,7 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.type === Contra
     } as NFT);
 
 const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: Network): TokenTransfer[] => resTransferData.map((transferData): TokenTransfer => ({
-    from: transferData.from.id,
+    from: transferData.from?.id,
     to: transferData.to.id,
     inbound:
         transferData.to.evmAddress === signer.evmAddress

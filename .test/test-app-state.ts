@@ -50,7 +50,7 @@ async function changeSelectedAddress(): Promise<string> {
     const currSig0 = await firstValueFrom(selectedAccount$);
     const currSig = await firstValueFrom(selectedAccountAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.data.address);
-    console.log("changing selected address to=",newSig.address);
+    console.log("changing selected address to=",newSig?.address);
     setSelectedAddress(newSig?.address);
     return newSig?.address!;
 }
@@ -137,7 +137,7 @@ async function testTransferHistory() {
     const hist0 = await firstValueFrom(selectedTransactionHistory$);
     console.assert(hist0.hasStatus(FeedbackStatusCode.LOADING), 'Needs to start with loading status');
     const hist = await firstValueFrom(selectedTransactionHistory$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
-    console.assert(hist.hasStatus(FeedbackStatusCode.COMPLETE_DATA), 'Needs to end with complete status');
+    console.assert(hist.hasStatus(FeedbackStatusCode.COMPLETE_DATA), 'History needs to end with complete status');
     console.log("tx history=", hist);
 }
 
@@ -185,7 +185,7 @@ async function initTest() {
     }*/
     await initReefState({
         // network: net,
-        network: AVAILABLE_NETWORKS.testnet,
+        network: AVAILABLE_NETWORKS.mainnet,
         jsonAccounts: {accounts: TEST_ACCOUNTS, injectedSigner: reefExt.signer}
     });
     console.log("START ALL");
@@ -198,7 +198,7 @@ async function initTest() {
     // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
     // await testAppStateTokens();
     // await testAppStateTokens();
-    await testNfts();
+    // await testNfts();
     await testNfts();
     await testTransferHistory();
 
