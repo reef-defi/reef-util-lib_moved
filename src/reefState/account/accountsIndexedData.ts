@@ -16,6 +16,10 @@ interface AccountEvmAddrData {
     isEvmClaimed?: boolean;
 }
 
+function toAccountEvmAddrData(result: any): AccountEvmAddrData[] {
+    return result.data.accounts.map(acc=>({address: acc.id, isEvmClaimed: !!acc.evmAddress, evm_address: acc.evmAddress} as AccountEvmAddrData));
+}
+
 const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
     apolloClientInstance$,
     availableAddresses$,
@@ -31,8 +35,8 @@ const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>>
                 }),
             ))),
         map((result: any): FeedbackDataModel<AccountEvmAddrData[]> => {
-            if (result?.data?.account) {
-                return toFeedbackDM(result.data.account as AccountEvmAddrData[], FeedbackStatusCode.COMPLETE_DATA, 'Indexed evm address loaded');
+            if (result?.data?.accounts) {
+                return toFeedbackDM(toAccountEvmAddrData(result), FeedbackStatusCode.COMPLETE_DATA, 'Indexed evm address loaded');
             }
             if (isFeedbackDM(result)) {
                 return result;
@@ -76,6 +80,8 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
                         isEvmClaimed: !!updSigner.evm_address,
                         evmAddress: updSigner.evm_address,
                     }, indexed.getStatusList()));
+
+                    console.log('UPDDDDDAAAAA', updateBindValues.filter(v=>v.data.isEvmClaimed).length)
                 } else {
                     // balance change
                     updateBindValues = state.lastSigners.data.map((updSigner) => toFeedbackDM({

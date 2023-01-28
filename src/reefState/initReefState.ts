@@ -1,6 +1,5 @@
 import {selectedNetwork$, setSelectedNetwork, setSelectedProvider} from "./providerState";
 import {catchError, defer, finalize, Observable, of, scan, switchMap, tap} from "rxjs";
-import {disconnectProvider, initProvider} from "../utils";
 import {Provider} from "@reef-defi/evm-provider";
 import {AVAILABLE_NETWORKS, Network} from "../network/network";
 import {accountsJsonSigningKeySubj, setAccounts} from "./account/setAccounts";
@@ -13,6 +12,7 @@ import {Signer as InjectedSigningKey} from "@polkadot/api/types";
 import {ipfsUrlResolverFn} from "../token/nftUtil";
 import {getGQLUrls} from "../graphql/gqlUtil";
 import {apolloClientSubj, setApolloUrls} from "../graphql/apollo";
+import {disconnectProvider, initProvider} from "../network";
 
 export interface StateOptions {
     network?: Network;

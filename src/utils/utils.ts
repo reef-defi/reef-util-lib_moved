@@ -1,5 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
-import {REEF_TOKEN} from "../token/tokenModel";
+import {BigNumber, ethers} from 'ethers';
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
@@ -99,6 +98,6 @@ export const dropDuplicatesMultiKey = <Obj, Key extends keyof Obj>(
 export const removeReefSpecificStringFromAddress = (address: string): string => address.replace(REEF_ADDRESS_SPECIFIC_STRING, '').trim();
 export const addReefSpecificStringFromAddress = (address: string): string => `${address}${REEF_ADDRESS_SPECIFIC_STRING}`;
 
-export const showEvmCopyAddressAlert = (): void => {
-  window.alert('ONLY use this address on Reef chain! DO NOT use this Reef EVM address on any other chain!');
-};
+// export const showEvmCopyAddressAlert = (): void => {
+//   window.alert('ONLY use this address on Reef chain! DO NOT use this Reef EVM address on any other chain!');
+// };

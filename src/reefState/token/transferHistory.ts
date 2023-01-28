@@ -1,19 +1,19 @@
 import {ApolloClient} from "@apollo/client";
 import {ContractType, NFT, Token, TokenTransfer} from "../../token/tokenModel";
 import {ReefAccount} from "../../account/accountModel";
-import {firstValueFrom, from, map, Observable, of, race, switchMap, take, tap, timer} from "rxjs";
+import {from, map, Observable, of, switchMap} from "rxjs";
 import {resolveNftImageLinks} from "../../token/nftUtil";
 import {BigNumber} from "ethers";
-import {getExtrinsicUrl, getIconUrl} from "../../utils";
 import {Network} from "../../network/network";
 import {zenToRx} from "../../graphql";
 import {TRANSFER_HISTORY_GQL} from "../../graphql/transferHistory.gql";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
-import {getAccountSigner, getReefAccountSigner} from "../../account/accountSignerUtils";
+import {FeedbackDataModel} from "../model/feedbackDataModel";
+import {getReefAccountSigner} from "../../account/accountSignerUtils";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 import {toPlainString} from "./tokenUtil";
 import {_NFT_IPFS_RESOLVER_FN} from "./nftUtils";
-import {accountsJsonSigningKeySubj} from "../account/setAccounts";
+import {getIconUrl} from "../../token/getIconUrl";
+import {getExtrinsicUrl} from "../../token/transactionUtil";
 
 const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Observable<(Token | NFT)[]> => {
     const nftOrNull: (NFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));

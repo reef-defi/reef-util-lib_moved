@@ -5,10 +5,10 @@ import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 import {availableAddresses$} from "../src/reefState/account/availableAddresses";
 import {initReefState} from "../src/reefState/initReefState";
 import {
-    selectedNFTs$,
-    selectedTokenBalances$,
-    selectedTokenPrices$,
-    selectedTransactionHistory$
+    selectedNFTs_status$,
+    selectedTokenBalances_status$,
+    selectedTokenPrices_status$,
+    selectedTransactionHistory_status$
 } from "../src/reefState/tokenState.rx";
 import {firstValueFrom, race, skipWhile} from "rxjs";
 import {FeedbackDataModel, FeedbackStatusCode} from "../src/reefState/model/feedbackDataModel";
@@ -26,14 +26,14 @@ const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2
 
 async function testNfts() {
     await changeSelectedAddress();
-    let nfts = await firstValueFrom(selectedNFTs$);
+    let nfts = await firstValueFrom(selectedNFTs_status$);
     console.assert(nfts.hasStatus(FeedbackStatusCode.LOADING), 'Nfts not cleared when changing signer stat=' + nfts.getStatus().map(v=>v.code))
     console.log("resolve nft urls", );
-    nfts = await firstValueFrom(selectedNFTs$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
+    nfts = await firstValueFrom(selectedNFTs_status$.pipe(skipWhile((nfts)=>nfts.hasStatus(FeedbackStatusCode.LOADING))));
     if(nfts.data.length) {
         console.assert(nfts.hasStatus(FeedbackStatusCode.PARTIAL_DATA_LOADING), 'Nft data should not be complete yet.')
     }
-    nfts = await firstValueFrom(selectedNFTs$.pipe(
+    nfts = await firstValueFrom(selectedNFTs_status$.pipe(
         // tap(v => console.log('Waiting for nft complete data')),
         skipWhile((nfts: FeedbackDataModel<any>) => {
             return !(nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && nfts.getStatusList().length===1)
@@ -59,11 +59,11 @@ async function testAppStateTokens() {
     const currSig = await firstValueFrom(selectedAccountAddressChange$);
     const address = await changeSelectedAddress();
     console.assert(currSig.data.address !== address, 'Address passed in should be different');
-    let tknsLoading = await firstValueFrom(selectedTokenBalances$);
+    let tknsLoading = await firstValueFrom(selectedTokenBalances_status$);
     console.assert(tknsLoading && tknsLoading.data?.length === 0, 'Tokens balances loading');
     console.assert(tknsLoading.hasStatus(FeedbackStatusCode.LOADING), 'Tokens not cleared when changing signer')
-    let tknsBalsCompl = await firstValueFrom(selectedTokenBalances$.pipe(skipWhile(v => !v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
-    let completePrices$ = selectedTokenPrices$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA)));
+    let tknsBalsCompl = await firstValueFrom(selectedTokenBalances_status$.pipe(skipWhile(v => !v.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    let completePrices$ = selectedTokenPrices_status$.pipe(skipWhile(tkns => !tkns.hasStatus(FeedbackStatusCode.COMPLETE_DATA)));
     const tknPricesCompl = await firstValueFrom(completePrices$);
     console.log(`token bal=`, tknsBalsCompl);
     console.assert(tknsBalsCompl.data.length, 'Tokens should load');
@@ -118,7 +118,7 @@ async function testAppStateSelectedSigner(address1: string, address2: string) {
 async function testBalancesProgressStatus() {
     await changeSelectedAddress();
     console.log("waiting for tokens to load");
-    const tokens = await firstValueFrom(selectedTokenBalances$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
+    const tokens = await firstValueFrom(selectedTokenBalances_status$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
 
     console.assert(tokens.data?.length > 1, 'There should be at least 2 tokens');
@@ -126,7 +126,7 @@ async function testBalancesProgressStatus() {
     console.assert(tokens.data!.find(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))?.data.address === REEF_ADDRESS, 'Reef should be complete at first');
 
     console.log("waiting for tokens to complete");
-    const tokensCompl = await firstValueFrom(selectedTokenBalances$.pipe(skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
+    const tokensCompl = await firstValueFrom(selectedTokenBalances_status$.pipe(skipWhile(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))));
     console.assert(tokensCompl.hasStatus(FeedbackStatusCode.COMPLETE_DATA),'Tokens not complete');
     console.log("END testTokenBalances=", tokensCompl);
 }
@@ -134,9 +134,9 @@ async function testBalancesProgressStatus() {
 async function testTransferHistory() {
     await changeSelectedAddress();
     console.log("waiting for history to load");
-    const hist0 = await firstValueFrom(selectedTransactionHistory$);
+    const hist0 = await firstValueFrom(selectedTransactionHistory_status$);
     console.assert(hist0.hasStatus(FeedbackStatusCode.LOADING), 'Needs to start with loading status');
-    const hist = await firstValueFrom(selectedTransactionHistory$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
+    const hist = await firstValueFrom(selectedTransactionHistory_status$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.assert(hist.hasStatus(FeedbackStatusCode.COMPLETE_DATA), 'History needs to end with complete status');
     console.log("tx history=", hist);
 }

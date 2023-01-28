@@ -6,7 +6,7 @@ import {
 } from "@reef-defi/extension-inject/types";
 import {REEF_EXTENSION_IDENT} from "@reef-defi/extension-inject";
 
-export const accounts$ = accountsWithUpdatedIndexedData$;
+export const accounts_status$ = accountsWithUpdatedIndexedData$;
 
 export const toInjectedAccountsWithMeta = (injAccounts: InjectedAccount[] | InjectedAccountReef[], extensionSourceName: string = REEF_EXTENSION_IDENT   ): InjectedAccountWithMeta[] | InjectedAccountWithMetaReef[]=>{
     return injAccounts.map(acc => ({

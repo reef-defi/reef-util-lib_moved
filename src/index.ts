@@ -14,3 +14,5 @@ export * as graphql from './graphql';
 export * as tokenUtil from './token'
 export * from './account'
 export * as evm from './evm'
+export * as addressUtils from './utils/addressUtils'
+export * as balanceUtils from './utils/balanceUtils'
