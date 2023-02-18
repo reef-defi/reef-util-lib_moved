@@ -31,8 +31,9 @@ export const toTokensWithPrice_sdo = ([tokens, reefPrice, pools]: [
 ]): StatusDataObject<StatusDataObject<TokenWithAmount>[]> => {
     const tknsWPrice = tokens.data.map(
         (token_sdo) => {
-            const returnTkn = toFeedbackDM({...token_sdo.data, price: 0} as TokenWithAmount, token_sdo.getStatusList());
-            if (token_sdo.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+            let isReef = token_sdo.data.address===REEF_ADDRESS;
+            const returnTkn = toFeedbackDM({...token_sdo.data, price: isReef?reefPrice.data:0} as TokenWithAmount, token_sdo.getStatusList());
+            if (!isReef && token_sdo.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
                 const priceSDO = calculateTokenPrice_sdo(token_sdo.data, pools.data, reefPrice);
                 returnTkn.setStatus(priceSDO.getStatus().map(priceStat => ({
                     ...priceStat,

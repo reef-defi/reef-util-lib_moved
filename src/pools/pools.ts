@@ -1,11 +1,11 @@
 import {Signer} from '@reef-defi/evm-provider';
 import {Contract} from 'ethers';
 import {getReefswapFactory} from "../network/rpc";
-import {EMPTY_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../token/tokenModel";
+import {EMPTY_ADDRESS, REEF_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../token/tokenModel";
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
-import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/statusDataObject";
+import {FeedbackStatusCode, StatusDataObject, toFeedbackDM} from "../reefState/model/statusDataObject";
 import {ensure} from "../utils/utils";
 
 const findPoolTokenAddress = async (
@@ -108,7 +108,8 @@ const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: st
 }
 
 export const fetchPools$ = (tokens: StatusDataObject<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(StatusDataObject<Pool | null>[])> => {
-    const poolsArr$: Observable<StatusDataObject<Pool|null>>[] = tokens.map(tkn => {
+    const poolsArr$: Observable<StatusDataObject<Pool|null>>[] = tokens.filter(tkn=>tkn.data.address!==REEF_ADDRESS)
+        .map((tkn:StatusDataObject<Token|TokenBalance>) => {
         if (tkn.hasStatus( FeedbackStatusCode.COMPLETE_DATA)) {
             return getPool$(tkn.data, signer, factoryAddress);
         }
