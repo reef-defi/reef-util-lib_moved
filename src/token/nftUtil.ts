@@ -50,7 +50,6 @@ const resolveUriToUrl = (uri: string, nft: NFT, ipfsUrlResolver?: ipfsUrlResolve
         }
         return uri.replace(idPlaceholder, replaceValue);
     }
-    console.log("RRRRR=",uri);
     return uri;
 };
 
