@@ -1,7 +1,7 @@
 // TODO replace with our own from lib and remove
 import {REEF_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../../token/tokenModel";
 import {BigNumber} from "ethers";
-import {catchError, defer, from, map, mergeScan, Observable, of, shareReplay, startWith} from "rxjs";
+import {catchError, defer, from, map, mergeScan, Observable, of, shareReplay, startWith, take, tap} from "rxjs";
 import {zenToRx} from "../../graphql";
 import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
 import {
@@ -22,33 +22,37 @@ const fetchTokensData = (
     // apollo: ApolloClient<any>,
     apollo: any,
     missingCacheContractDataAddresses: string[],
-): Promise<Token[]> => {
+): Observable<Token[]> => {
     const distinctAddr = missingCacheContractDataAddresses.reduce((distinctAddrList: string[], curr: string) => {
         if (distinctAddrList.indexOf(curr) < 0) {
             distinctAddrList.push(curr);
         }
         return distinctAddrList;
     }, []);
-    return apollo
-        .query({
+    return zenToRx(apollo
+        .subscribe({
             query: CONTRACT_DATA_GQL,
             variables: {addresses: distinctAddr},
+            fetchPolicy: 'network-only',
+        })).pipe(
+            take(1),
+            map((verContracts:any) => verContracts.data.verifiedContracts.map(
+                // eslint-disable-next-line camelcase
+                (vContract: { id: string; contractData: any }) => {
+                    return ({
+                        address: vContract.id,
+                        iconUrl: '',
+                        decimals: vContract.contractData?.decimals||18,
+                        name: vContract.contractData?.name,
+                        symbol: vContract.contractData?.symbol,
+                        balance:BigNumber.from(0)
+                    } as Token);},
+            )),
+        catchError(err => {
+            console.log('fetchTokensData ERROR=', err);
+            return of([]);
         })
-        // eslint-disable-next-line camelcase
-        .then((verContracts) => verContracts.data.verifiedContracts.map(
-
-            // eslint-disable-next-line camelcase
-            (vContract: { id: string; contractData: any }) => {
-                console.log('TODO0000000 verifCtrct=',vContract)
-                return ({
-                address: vContract.id,
-                iconUrl: '',
-                decimals: vContract.contractData?.decimals||18,
-                name: vContract.contractData?.name,
-                symbol: vContract.contractData?.symbol,
-                    balance:BigNumber.from(0)
-            } as Token);},
-        ))
+    )
 };
 
 // eslint-disable-next-line camelcase
@@ -80,13 +84,19 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
             (tb) => !state.contractData.some((cd) => cd.address === tb.address),
         )
         .map((tb) => tb.address);
-    const contractDataPromise = missingCacheContractDataAddresses.length
+    const contractData$ = missingCacheContractDataAddresses.length
         ? fetchTokensData(apollo, missingCacheContractDataAddresses)
-            .then((newTokens) => newTokens.concat(state.contractData))
-        : Promise.resolve(state.contractData);
-    return defer(() => from(contractDataPromise)).pipe(
+            .pipe(map((newTokens) => {
+                return newTokens ? newTokens.concat(state.contractData) : state.contractData})
+            ) : of(state.contractData);
+
+    return contractData$.pipe(
         map((tokenContractData: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokenContractData)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
+        catchError(err => {
+            console.log('tokenBalancesWithContractDataCache_fbk ERROR=', err.message);
+            return of({tokens:[], contractData:state.contractData});
+        }),
         shareReplay(1)
     );
 };
@@ -161,8 +171,10 @@ export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feed
             map(sortReefTokenFirst),
             map((tkns: FeedbackDataModel<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
             catchError(err => {
-                return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))
+                console.log('loadAccountTokens ERROR=', err.message);
+                return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
             }),
+            shareReplay(1)
         ));
 };
 
