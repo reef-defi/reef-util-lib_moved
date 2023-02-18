@@ -2,7 +2,7 @@ import {catchError, combineLatest, distinctUntilChanged, map, Observable, of, sh
 import {ReefAccount} from "../../account/accountModel";
 import {accounts_status$} from "./accounts";
 import {selectedAddressSubj, setSelectedAddress} from "./setAccounts";
-import {FeedbackDataModel, toFeedbackDM} from "../model/feedbackDataModel";
+import {StatusDataObject, toFeedbackDM} from "../model/statusDataObject";
 
 export const selectedAddress$: Observable<string | undefined> = selectedAddressSubj.asObservable()
     .pipe(
@@ -14,7 +14,7 @@ export const selectedAddress$: Observable<string | undefined> = selectedAddressS
 // setting default signer (when signers exist) if no selected address exists
 combineLatest([accounts_status$, selectedAddress$])
     .pipe(take(1))
-    .subscribe(([signers, address]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, string|undefined]) => {
+    .subscribe(([signers, address]: [StatusDataObject<StatusDataObject<ReefAccount>[]>, string|undefined]) => {
         let saved: string | undefined = address;
         try {
             if (!saved) {
@@ -33,22 +33,22 @@ combineLatest([accounts_status$, selectedAddress$])
         }
     });
 
-export const selectedAccount$: Observable<FeedbackDataModel<ReefAccount> | undefined> = combineLatest([
+export const selectedAccount_status$: Observable<StatusDataObject<ReefAccount> | undefined> = combineLatest([
     selectedAddress$,
     accounts_status$,
 ])
     .pipe(
-        map((selectedAddressAndSigners: [string | undefined, FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>]): FeedbackDataModel<ReefAccount>|undefined => {
+        map((selectedAddressAndSigners: [string | undefined, StatusDataObject<StatusDataObject<ReefAccount>[]>]): StatusDataObject<ReefAccount>|undefined => {
             const [selectedAddress, signers] = selectedAddressAndSigners
             if (!selectedAddress || !signers || !signers.data?.length ) {
                 return undefined;
             }
 
-            let foundSigner: FeedbackDataModel<ReefAccount>|undefined = signers.data.find(
-                (signer: FeedbackDataModel<ReefAccount>) => signer.data.address === selectedAddress,
+            let foundSigner: StatusDataObject<ReefAccount>|undefined = signers.data.find(
+                (signer: StatusDataObject<ReefAccount>) => signer.data.address === selectedAddress,
             );
             if (!foundSigner) {
-                foundSigner = signers && signers.data ? signers.data[0] as FeedbackDataModel<ReefAccount> : undefined;
+                foundSigner = signers && signers.data ? signers.data[0] as StatusDataObject<ReefAccount> : undefined;
             }
             try {
                 if (foundSigner) {
@@ -64,7 +64,7 @@ export const selectedAccount$: Observable<FeedbackDataModel<ReefAccount> | undef
             return foundSigner ? toFeedbackDM({...foundSigner.data} as ReefAccount, foundSigner.getStatusList()) : undefined;
         }),
         catchError((err) => {
-            console.log('selectedSigner$ ERROR=', err.message);
+            console.log('selectedAccount_status$ ERROR=', err.message);
             return of(undefined);
         }),
         shareReplay(1)

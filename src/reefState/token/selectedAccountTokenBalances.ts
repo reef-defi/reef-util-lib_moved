@@ -6,11 +6,11 @@ import {zenToRx} from "../../graphql";
 import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
 import {
     collectFeedbackDMStatus,
-    FeedbackDataModel,
+    StatusDataObject,
     FeedbackStatusCode,
     isFeedbackDM,
     toFeedbackDM
-} from "../model/feedbackDataModel";
+} from "../model/statusDataObject";
 import {ApolloClient} from "@apollo/client";
 import {ReefAccount} from "../../account/accountModel";
 import {sortReefTokenFirst, toPlainString} from "./tokenUtil";
@@ -56,9 +56,9 @@ const fetchTokensData = (
 };
 
 // eslint-disable-next-line camelcase
-function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: FeedbackDataModel<Token | TokenBalance>[], contractData: Token[] } {
+function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: StatusDataObject<Token | TokenBalance>[], contractData: Token[] } {
     return (cData: Token[]) => {
-        const tokens: FeedbackDataModel<Token | TokenBalance>[] = tokenBalances
+        const tokens: StatusDataObject<Token | TokenBalance>[] = tokenBalances
             .map((tBalance) => {
                 const cDataTkn = cData.find(
                     (cd) => cd.address === tBalance.address,
@@ -75,10 +75,10 @@ function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token
 }
 
 const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
-    state: { tokens: FeedbackDataModel<Token | TokenBalance>[]; contractData: Token[] },
+    state: { tokens: StatusDataObject<Token | TokenBalance>[]; contractData: Token[] },
     // eslint-disable-next-line camelcase
     tokenBalances: TokenBalance[],
-): Observable<{ tokens: FeedbackDataModel<Token | TokenBalance> [], contractData: Token[] }> => {
+): Observable<{ tokens: StatusDataObject<Token | TokenBalance> [], contractData: Token[] }> => {
     const missingCacheContractDataAddresses = tokenBalances
         .filter(
             (tb) => !state.contractData.some((cd) => cd.address === tb.address),
@@ -126,7 +126,7 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
     return Promise.resolve(tokenBalances);
 };*/
 
-const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[]) =>
+const resolveEmptyIconUrls = (tokens: StatusDataObject<Token | TokenBalance>[]) =>
     tokens.map((tkn) => {
             if (!!tkn.data.iconUrl) {
                 return tkn;
@@ -139,7 +139,7 @@ const resolveEmptyIconUrls = (tokens: FeedbackDataModel<Token | TokenBalance>[])
 
 // adding shareReplay is messing up TypeScriptValidateTypes
 // noinspection TypeScriptValidateTypes
-export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>> => {
+export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, StatusDataObject<ReefAccount>]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
@@ -167,9 +167,9 @@ export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feed
                 tokens: [],
                 contractData: [reefTokenWithAmount()],
             }),
-            map((tokens_cd: { tokens: FeedbackDataModel<Token | TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
+            map((tokens_cd: { tokens: StatusDataObject<Token | TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
             map(sortReefTokenFirst),
-            map((tkns: FeedbackDataModel<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
+            map((tkns: StatusDataObject<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
             catchError(err => {
                 console.log('loadAccountTokens ERROR=', err.message);
                 return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
@@ -178,7 +178,7 @@ export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Feed
         ));
 };
 
-export const setReefBalanceFromAccount = ([tokens, selSigner]: [FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]>, FeedbackDataModel<ReefAccount> | undefined]): FeedbackDataModel<FeedbackDataModel<Token | TokenBalance>[]> => {
+export const setReefBalanceFromAccount = ([tokens, selSigner]: [StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, StatusDataObject<ReefAccount> | undefined]): StatusDataObject<StatusDataObject<Token | TokenBalance>[]> => {
     if (!selSigner) {
         return toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES);
     }

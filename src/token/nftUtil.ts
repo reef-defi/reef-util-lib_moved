@@ -14,7 +14,7 @@ import {Contract} from 'ethers';
 import axios from 'axios';
 import {Signer} from '@reef-defi/evm-provider';
 import {NFT, NFTMetadata} from "./tokenModel";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/statusDataObject";
 import {getContractTypeAbi} from "./tokenUtil";
 
 const extractIpfsHash = (ipfsUri: string): string | null => {
@@ -87,11 +87,11 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
 
 export const resolveNftImageLinks = (nfts: (NFT | null)[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(NFT | null)[]> => (nfts?.length ? forkJoin(nfts.map((nft) => getResolveNftPromise(nft, signer, ipfsUrlResolver))) : of([]));
 
-export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(FeedbackDataModel<(NFT | null)>[])> | Observable<(FeedbackDataModel<(NFT)>[])> => {
+export const resolveNftImageLinks$ = (nfts: (NFT | null)[]|NFT[], signer: Signer, ipfsUrlResolver?: ipfsUrlResolverFn): Observable<(StatusDataObject<(NFT | null)>[])> | Observable<(StatusDataObject<(NFT)>[])> => {
     if (!nfts || !nfts.length || !signer) {
         return of([]);
     }
-    const resolveObsArr: Observable<FeedbackDataModel<NFT | null>>[] = nfts.map(
+    const resolveObsArr: Observable<StatusDataObject<NFT | null>>[] = nfts.map(
         (nft: NFT | null) => of(nft).pipe(
             switchMap((nft: NFT | null) => getResolveNftPromise(nft, signer, ipfsUrlResolver)),
             map((resNft: NFT | null) => toFeedbackDM(resNft, FeedbackStatusCode.COMPLETE_DATA, 'Url resolved')),

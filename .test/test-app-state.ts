@@ -11,13 +11,13 @@ import {
     selectedTransactionHistory_status$
 } from "../src/reefState/tokenState.rx";
 import {firstValueFrom, race, skipWhile} from "rxjs";
-import {FeedbackDataModel, FeedbackStatusCode} from "../src/reefState/model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode} from "../src/reefState/model/statusDataObject";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
 import {selectedAccountAddressChange$} from "../src/reefState/account/selectedAccountAddressChange";
 import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
-import {selectedAccount$} from "../src/reefState";
+import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
@@ -35,7 +35,7 @@ async function testNfts() {
     }
     nfts = await firstValueFrom(selectedNFTs_status$.pipe(
         // tap(v => console.log('Waiting for nft complete data')),
-        skipWhile((nfts: FeedbackDataModel<any>) => {
+        skipWhile((nfts: StatusDataObject<any>) => {
             return !(nfts.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && nfts.getStatusList().length===1)
         }))
     );
@@ -47,7 +47,7 @@ async function testNfts() {
 async function changeSelectedAddress(): Promise<string> {
     const allSig = await firstValueFrom(availableAddresses$);
     console.assert(allSig.length>1, 'Need more than 1 signer.')
-    const currSig0 = await firstValueFrom(selectedAccount$);
+    const currSig0 = await firstValueFrom(selectedAccount_status$);
     const currSig = await firstValueFrom(selectedAccountAddressChange$);
     const newSig = allSig.find(sig => sig.address !== currSig.data.address);
     console.log("changing selected address to=",newSig?.address);
@@ -102,12 +102,12 @@ async function testAppStateSigners(accounts: any) {
 async function testAppStateSelectedSigner(address1: string, address2: string) {
 
     setSelectedAddress(address1);
-    const selSig = await firstValueFrom(selectedAccount$);
+    const selSig = await firstValueFrom(selectedAccount_status$);
     console.assert(selSig?.data.address === address1, 'Selected signer not the same as current address.');
 
     console.assert(address1 !== address2, 'Address not different');
     setSelectedAddress(address2);
-    const selSig1 = await firstValueFrom(selectedAccount$);
+    const selSig1 = await firstValueFrom(selectedAccount_status$);
     const selSigAddrCh = await firstValueFrom(selectedAccountAddressChange$);
     console.assert(selSig1?.data.address === address2, 'Selected signer 2 not the same as current address.');
     console.assert(selSigAddrCh?.data.address === address2, 'Selected signer addr ch. 2 not the same as current address.');
@@ -148,7 +148,7 @@ async function testProvider() {
 
 async function testInitSelectedAddress() {
     const allSig = await firstValueFrom(availableAddresses$);
-    const selSig = await firstValueFrom(selectedAccount$);
+    const selSig = await firstValueFrom(selectedAccount_status$);
     console.assert(allSig.length && selSig?.data.address && allSig[0].address===selSig.data.address, 'TODO First signer should be selected by default');
     // TODO set signer when initializing and remove
     if (!selSig) {

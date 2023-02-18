@@ -21,7 +21,7 @@ export interface FeedbackStatus {
     oldData?: any;
 }
 
-export class FeedbackDataModel<T> {
+export class StatusDataObject<T> {
     data: T;
     private _status: FeedbackStatus[];
 
@@ -92,16 +92,16 @@ function createStatusFromCode(statCode?: FeedbackStatusCode | FeedbackStatusCode
     return status;
 }
 
-export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string): FeedbackDataModel<T> => {
-    return new FeedbackDataModel<T>(data, createStatusFromCode(statCode, message, propName));
+export const toFeedbackDM = <T>(data: T, statCode?: FeedbackStatusCode | FeedbackStatusCode[] | FeedbackStatus[], message?: string, propName?: string): StatusDataObject<T> => {
+    return new StatusDataObject<T>(data, createStatusFromCode(statCode, message, propName));
 };
 
-export const isFeedbackDM = (value: FeedbackDataModel<any> | any): boolean => {
-    return (value instanceof FeedbackDataModel);
+export const isFeedbackDM = (value: StatusDataObject<any> | any): boolean => {
+    return (value instanceof StatusDataObject);
     // return value?.data && value.getStatus() != null && value.getStatus().code != null;
 }
 
-export const collectFeedbackDMStatus = (items: FeedbackDataModel<any>[]): FeedbackStatusCode[] => {
+export const collectFeedbackDMStatus = (items: StatusDataObject<any>[]): FeedbackStatusCode[] => {
     return items.reduce((state: FeedbackStatusCode[], curr) => {
         curr.getStatusList().forEach((stat) => {
             if (state.indexOf(stat.code) < 0) {
@@ -112,10 +112,10 @@ export const collectFeedbackDMStatus = (items: FeedbackDataModel<any>[]): Feedba
     }, [])
 }
 
-export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefined)[]): FeedbackStatusCode => {
-    const statListArr = feedbackDMs.reduce((stListArr: (FeedbackStatus | undefined)[], fdm: FeedbackDataModel<any> | undefined) => {
-        const fdmStats = fdm ? fdm.getStatusList() : [undefined];
-        return stListArr.concat(fdmStats);
+export const findMinStatusCode = (feedbackDMs: (StatusDataObject<any> | undefined)[]): FeedbackStatusCode => {
+    const statListArr = feedbackDMs.reduce((stListArr: (FeedbackStatus | undefined)[], sdo: StatusDataObject<any> | undefined) => {
+        const sdoStats = sdo ? sdo.getStatusList() : [undefined];
+        return stListArr.concat(sdoStats);
     }, []);
 
     const statCodes = statListArr.map(st => st?.code);
@@ -128,6 +128,6 @@ export const findMinStatusCode = (feedbackDMs: (FeedbackDataModel<any> | undefin
     return minStat as FeedbackStatusCode;
 }
 
-export function skipBeforeStatus$ <T>(observable: Observable<FeedbackDataModel<T>>, status: FeedbackStatusCode):Observable<FeedbackDataModel<T>> {
+export function skipBeforeStatus$ <T>(observable: Observable<StatusDataObject<T>>, status: FeedbackStatusCode):Observable<StatusDataObject<T>> {
     return observable.pipe(skipWhile(t => !t.hasStatus(status)));
 }

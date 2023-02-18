@@ -2,7 +2,7 @@ import {UpdateAction, UpdateDataType} from '../model/updateStateModel';
 import {ReefAccount} from '../../account/accountModel';
 import {getReefAccountSigner} from "../../account/accountSignerUtils";
 import {Provider} from "@reef-defi/evm-provider";
-import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/statusDataObject";
 
 const getUpdAddresses = (
   updateType: UpdateDataType,
@@ -35,10 +35,10 @@ export const getSignersToUpdate = (
 };
 
 export const replaceUpdatedSigners = <T>(
-  existingSigners: FeedbackDataModel<ReefAccount>[] = [],
-  updatedSigners?: FeedbackDataModel<ReefAccount>[],
+  existingSigners: StatusDataObject<ReefAccount>[] = [],
+  updatedSigners?: StatusDataObject<ReefAccount>[],
   appendNew?: boolean,
-): FeedbackDataModel<ReefAccount>[] => {
+): StatusDataObject<ReefAccount>[] => {
   if (!appendNew && !existingSigners.length) {
     return existingSigners;
   }
@@ -63,8 +63,8 @@ export const replaceUpdatedSigners = <T>(
 export const updateSignersEvmBindings = (
   updateActions: UpdateAction[],
   provider: Provider,
-  signers: FeedbackDataModel<ReefAccount>[] = [],
-): Promise<FeedbackDataModel<ReefAccount>[]> => {
+  signers: StatusDataObject<ReefAccount>[] = [],
+): Promise<StatusDataObject<ReefAccount>[]> => {
   if (!signers.length) {
     return Promise.resolve([]);
   }
@@ -75,16 +75,16 @@ export const updateSignersEvmBindings = (
   );
 
   return Promise.all(
-    updSigners.map(async (sig: ReefAccount): Promise<(FeedbackDataModel<ReefAccount>|boolean)> => {
+    updSigners.map(async (sig: ReefAccount): Promise<(StatusDataObject<ReefAccount>|boolean)> => {
       let signer = await getReefAccountSigner(sig, provider);
       if (!signer) {
         return toFeedbackDM(sig as ReefAccount, FeedbackStatusCode.MISSING_INPUT_VALUES, 'ERROR: Can not get account signer.');
       }
       return signer.isClaimed();
     }),
-  ).then((claimed: (FeedbackDataModel<ReefAccount>|boolean)[]): FeedbackDataModel<ReefAccount>[] => claimed.map((isEvmClaimed: boolean|FeedbackDataModel<ReefAccount>, i: number) => {
+  ).then((claimed: (StatusDataObject<ReefAccount>|boolean)[]): StatusDataObject<ReefAccount>[] => claimed.map((isEvmClaimed: boolean|StatusDataObject<ReefAccount>, i: number) => {
     if(isFeedbackDM(isEvmClaimed)){
-      return isEvmClaimed as FeedbackDataModel<ReefAccount>;
+      return isEvmClaimed as StatusDataObject<ReefAccount>;
     }
     const sig = updSigners[i] as ReefAccount;
     return  toFeedbackDM({ ...sig, isEvmClaimed } as ReefAccount, FeedbackStatusCode.COMPLETE_DATA);

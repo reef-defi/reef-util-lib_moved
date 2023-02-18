@@ -5,7 +5,7 @@ import {accountsWithUpdatedChainDataBalances$} from "./accountsWithUpdatedChainD
 import {ReefAccount} from "../../account/accountModel";
 import {accountsLocallyUpdatedData$} from "./accountsLocallyUpdatedData";
 import {availableAddresses$} from "./availableAddresses";
-import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/statusDataObject";
 import {getAddressesErrorFallback} from "./errorUtil";
 
 // eslint-disable-next-line camelcase
@@ -20,7 +20,7 @@ function toAccountEvmAddrData(result: any): AccountEvmAddrData[] {
     return result.data.accounts.map(acc=>({address: acc.id, isEvmClaimed: !!acc.evmAddress, evm_address: acc.evmAddress} as AccountEvmAddrData));
 }
 
-const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>> = combineLatest([
+const indexedAccountValues$: Observable<StatusDataObject<AccountEvmAddrData[]>> = combineLatest([
     apolloClientInstance$,
     availableAddresses$,
 ])
@@ -34,7 +34,7 @@ const indexedAccountValues$: Observable<FeedbackDataModel<AccountEvmAddrData[]>>
                     fetchPolicy: 'network-only',
                 }),
             ))),
-        map((result: any): FeedbackDataModel<AccountEvmAddrData[]> => {
+        map((result: any): StatusDataObject<AccountEvmAddrData[]> => {
             if (result?.data?.accounts) {
                 return toFeedbackDM(toAccountEvmAddrData(result), FeedbackStatusCode.COMPLETE_DATA, 'Indexed evm address loaded');
             }
@@ -57,15 +57,14 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
         scan(
             (
                 state: {
-                    lastlocallyUpdated: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
-                    lastIndexed: FeedbackDataModel<AccountEvmAddrData[]>;
-                    lastSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
-                    signers: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
+                    lastlocallyUpdated: StatusDataObject<StatusDataObject<ReefAccount>[]>;
+                    lastIndexed: StatusDataObject<AccountEvmAddrData[]>;
+                    lastSigners: StatusDataObject<StatusDataObject<ReefAccount>[]>;
+                    signers: StatusDataObject<StatusDataObject<ReefAccount>[]>;
                 },
-                [accountsWithChainBalance, locallyUpdated, indexed]: [FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>, FeedbackDataModel<AccountEvmAddrData[]>],
+                [accountsWithChainBalance, locallyUpdated, indexed]: [StatusDataObject<StatusDataObject<ReefAccount>[]>, StatusDataObject<StatusDataObject<ReefAccount>[]>, StatusDataObject<AccountEvmAddrData[]>],
             ) => {
-                // TODO https://app.clickup.com/t/37yht4k
-                let updateBindValues: FeedbackDataModel<AccountEvmAddrData>[] = [];
+                let updateBindValues: StatusDataObject<AccountEvmAddrData>[] = [];
                 if (state.lastlocallyUpdated !== locallyUpdated) {
                     // locally updated change
                     updateBindValues = locallyUpdated.data.map((updSigner) => toFeedbackDM({
@@ -81,15 +80,15 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
                         evmAddress: updSigner.evm_address,
                     }, indexed.getStatusList()));
 
-                    console.log('UPDDDDDAAAAA', updateBindValues.filter(v=>v.data.isEvmClaimed).length)
                 } else {
                     // balance change
                     updateBindValues = state.lastSigners.data.map((updSigner) => toFeedbackDM({
                         address: updSigner.data.address,
                         isEvmClaimed: updSigner.data.isEvmClaimed,
+                        evmAddress: updSigner.data.evmAddress,
                     }, updSigner.getStatusList()));
                 }
-                updateBindValues.forEach((updVal: FeedbackDataModel<ReefAccount>) => {
+                updateBindValues.forEach((updVal: StatusDataObject<ReefAccount>) => {
                     const signer = accountsWithChainBalance.data.find((sig) => sig.data.address === updVal.data.address);
                     if (signer) {
                         let isEvmClaimedPropName = 'isEvmClaimed';
@@ -118,7 +117,7 @@ export const accountsWithUpdatedIndexedData$ = combineLatest([
                 lastSigners: toFeedbackDM([], FeedbackStatusCode.LOADING),
             },
         ),
-        map((values: { signers: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> }) => values.signers),
+        map((values: { signers: StatusDataObject<StatusDataObject<ReefAccount>[]> }) => values.signers),
         catchError(err => getAddressesErrorFallback(err, 'Error signers updated data =')),
         shareReplay(1)
     );

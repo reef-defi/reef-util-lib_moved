@@ -12,11 +12,11 @@ import {
 } from './tokenModel';
 import {Pool} from "./pool";
 import {
-    FeedbackDataModel,
+    StatusDataObject,
     FeedbackStatusCode,
     findMinStatusCode,
     toFeedbackDM
-} from "../reefState/model/feedbackDataModel";
+} from "../reefState/model/statusDataObject";
 import {ERC20} from "./abi/ERC20";
 import {ERC721Uri} from "./abi/ERC721Uri";
 import {ERC1155Uri} from "./abi/ERC1155Uri";
@@ -52,15 +52,15 @@ const getReefTokenPoolReserves = (
 );*/
 
 const findReefTokenPool_fbk = (
-    pools: FeedbackDataModel<Pool | null>[],
+    pools: StatusDataObject<Pool | null>[],
     reefAddress: string,
     token: Token | TokenBalance,
-): FeedbackDataModel<Pool | null> | undefined => pools.find(
-    (pool_fdm) => {
-        if (!pool_fdm?.data) {
+): StatusDataObject<Pool | null> | undefined => pools.find(
+    (pool_sdo) => {
+        if (!pool_sdo?.data) {
             return false;
         }
-        const pool: Pool = pool_fdm.data!;
+        const pool: Pool = pool_sdo.data!;
         return (pool.token1?.address.toLowerCase() === reefAddress.toLowerCase()
             && pool.token2?.address.toLowerCase() === token.address.toLowerCase())
             || (pool.token2?.address.toLowerCase() === reefAddress.toLowerCase()
@@ -95,9 +95,9 @@ const findReefTokenPool_fbk = (
 
 export const calculateTokenPrice_fbk = (
     token: Token | TokenBalance,
-    pools: FeedbackDataModel<Pool | null>[],
-    reefPrice: FeedbackDataModel<number>,
-): FeedbackDataModel<number> => {
+    pools: StatusDataObject<Pool | null>[],
+    reefPrice: StatusDataObject<number>,
+): StatusDataObject<number> => {
     let ratio: number;
     if (token.address.toLowerCase() === REEF_ADDRESS.toLowerCase()) {
         return reefPrice;

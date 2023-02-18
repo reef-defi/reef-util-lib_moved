@@ -7,7 +7,7 @@ import {BigNumber} from "ethers";
 import {Network} from "../../network/network";
 import {zenToRx} from "../../graphql";
 import {TRANSFER_HISTORY_GQL} from "../../graphql/transferHistory.gql";
-import {FeedbackDataModel} from "../model/feedbackDataModel";
+import {StatusDataObject} from "../model/statusDataObject";
 import {getReefAccountSigner} from "../../account/accountSignerUtils";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 import {toPlainString} from "./tokenUtil";
@@ -33,7 +33,7 @@ const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Ob
         );
 };
 
-/*const resolveTransferHistoryNfts_fdm$ = (tokens: (Token | NFT)[], signer: Signer): Observable<FeedbackDataModel<FeedbackDataModel<Token | NFT>[]>> => {
+/*const resolveTransferHistoryNfts_sdo$ = (tokens: (Token | NFT)[], signer: Signer): Observable<FeedbackDataModel<FeedbackDataModel<Token | NFT>[]>> => {
     const nftOrNull: (NFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
     if (!nftOrNull.filter((v) => !!v).length) {
         return of(toFeedbackDM(tokens.map(t=>toFeedbackDM(t, FeedbackStatusCode.COMPLETE_DATA)), FeedbackStatusCode.COMPLETE_DATA, 'No nft tokens'));
@@ -85,7 +85,7 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
     success: transferData.success,
 }));
 
-/*export const loadTransferHistory_fdm = ([apollo, signer, network, provider]:[ApolloClient<any>, FeedbackDataModel<ReefAccount>, Network, Provider]): FeedbackDataModel<FeedbackDataModel<TokenTransfer>[]> => (!signer
+/*export const loadTransferHistory_sdo = ([apollo, signer, network, provider]:[ApolloClient<any>, FeedbackDataModel<ReefAccount>, Network, Provider]): FeedbackDataModel<FeedbackDataModel<TokenTransfer>[]> => (!signer
     ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
     : zenToRx(
         apollo.subscribe({
@@ -111,12 +111,12 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
                         of(transfersArr), instantProvider$
                     ]).pipe(
                     switchMap((transfersAndProvider: [TokenTransfer[]|FeedbackDataModel<any>, Provider | undefined]) => {
-                        const [tokenTransferArrOrFDM, provider] = transfersAndProvider;
+                        const [tokenTransferArrOrSDO, provider] = transfersAndProvider;
 
-                        if (isFeedbackDM(tokenTransferArrOrFDM)) {
-                            return tokenTransferArrOrFDM;
+                        if (isFeedbackDM(tokenTransferArrOrSDO)) {
+                            return tokenTransferArrOrSDO;
                         }
-                        const tokenTransferArr = tokenTransferArrOrFDM as TokenTransfer[];
+                        const tokenTransferArr = tokenTransferArrOrSDO as TokenTransfer[];
 
                         if (!provider) {
                             let tkns = tokenTransferArr.map(nft => toFeedbackDM(nft, FeedbackStatusCode.PARTIAL_DATA_LOADING, 'Provider not connected.'));
@@ -131,7 +131,7 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
                                     return of(toFeedbackDM(tkns, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not created'));
                                 }
                                 const tokens = tokenTransferArr.map((tr: TokenTransfer) => tr.token);
-                                return resolveTransferHistoryNfts_fdm$(tokens, sig);
+                                return resolveTransferHistoryNfts_sdo$(tokens, sig);
                             }),
                             map((resolvedTokens: FeedbackDataModel<FeedbackDataModel<Token | NFT>[]>) => {
                                 return ... TODO return correct type
@@ -147,7 +147,7 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
             catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
         );*/
 
-export const loadTransferHistory = ([apollo, account, network, provider]:[ApolloClient<any>, FeedbackDataModel<ReefAccount>, Network, Provider]): Observable<TokenTransfer[]> => (!account
+export const loadTransferHistory = ([apollo, account, network, provider]:[ApolloClient<any>, StatusDataObject<ReefAccount>, Network, Provider]): Observable<TokenTransfer[]> => (!account
     ? of([])
     : zenToRx(
         apollo.subscribe({

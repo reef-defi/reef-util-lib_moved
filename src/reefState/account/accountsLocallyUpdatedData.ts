@@ -6,17 +6,17 @@ import {updateSignersSubj} from "./setAccounts";
 import {availableAddresses$} from "./availableAddresses";
 import {selectedProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../model/statusDataObject";
 
-export const accountsLocallyUpdatedData$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = updateSignersSubj.pipe(
+export const accountsLocallyUpdatedData$: Observable<StatusDataObject<StatusDataObject<ReefAccount>[]>> = updateSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),
     withLatestFrom(availableAddresses$, selectedProvider$),
     mergeScan(
         (
             state: {
-                all: FeedbackDataModel<ReefAccount>[];
-                allUpdated: FeedbackDataModel<ReefAccount>[];
-                lastUpdated: FeedbackDataModel<ReefAccount>[];
+                all: StatusDataObject<ReefAccount>[];
+                allUpdated: StatusDataObject<ReefAccount>[];
+                lastUpdated: StatusDataObject<ReefAccount>[];
             },
             [updateCtx, signersInjected, provider]: [any, ReefAccount[], Provider],
         ): any => {

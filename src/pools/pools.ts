@@ -5,7 +5,7 @@ import {EMPTY_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../token/tokenMode
 import {Pool} from "../token/pool";
 import {ReefswapPair} from "../token/abi/ReefswapPair";
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
-import {FeedbackDataModel, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/statusDataObject";
 import {ensure} from "../utils/utils";
 
 const findPoolTokenAddress = async (
@@ -79,7 +79,7 @@ export const loadPool = async (
   return pools;
 };*/
 
-const cachePool$: Map<string, Observable<FeedbackDataModel<Pool | null>>> = new Map<string, Observable<FeedbackDataModel<Pool | null>>>();
+const cachePool$: Map<string, Observable<StatusDataObject<Pool | null>>> = new Map<string, Observable<StatusDataObject<Pool | null>>>();
 // TODO listen to pool events and refresh then
 const poolsRefresh$ = timer(0, 420000);
 
@@ -87,7 +87,7 @@ function isPoolCached(token1: Token|TokenBalance, token2: Token|TokenBalance) {
     return (cachePool$.has(`${token1.address}-${token2.address}`) || cachePool$.has(`${token1.address}-${token2.address}`));
 }
 
-const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: string): Observable<FeedbackDataModel<Pool|null>> => {
+const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: string): Observable<StatusDataObject<Pool|null>> => {
     const token2 = REEF_TOKEN;
     if (!isPoolCached(token1, token2)) {
         const pool$ = poolsRefresh$.pipe(
@@ -107,8 +107,8 @@ const getPool$ = (token1: Token|TokenBalance, signer: Signer, factoryAddress: st
     return cachePool$.get(`${token1.address}-${token2.address}`) || cachePool$.get(`${token2.address}-${token1.address}`)!;
 }
 
-export const fetchPools$ = (tokens: FeedbackDataModel<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(FeedbackDataModel<Pool | null>[])> => {
-    const poolsArr$: Observable<FeedbackDataModel<Pool|null>>[] = tokens.map(tkn => {
+export const fetchPools$ = (tokens: StatusDataObject<Token|TokenBalance>[], signer: Signer, factoryAddress: string): Observable<(StatusDataObject<Pool | null>[])> => {
+    const poolsArr$: Observable<StatusDataObject<Pool|null>>[] = tokens.map(tkn => {
         if (tkn.hasStatus( FeedbackStatusCode.COMPLETE_DATA)) {
             return getPool$(tkn.data, signer, factoryAddress);
         }

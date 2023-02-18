@@ -17,11 +17,11 @@ import {Provider} from "@reef-defi/evm-provider";
 import {ReefAccount} from "../../account/accountModel";
 import {BigNumber} from "ethers";
 import {availableAddresses$} from "./availableAddresses";
-import {FeedbackDataModel, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/feedbackDataModel";
+import {StatusDataObject, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/statusDataObject";
 import {getAddressesErrorFallback} from "./errorUtil";
 
 
-const getUpdatedAccountChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
+const getUpdatedAccountChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<StatusDataObject<StatusDataObject<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {
     const signers: ReefAccount[] = providerAndSigners[1];
 
     return of(providerAndSigners).pipe(
@@ -89,18 +89,18 @@ const getUpdatedAccountChainBalances$ = (providerAndSigners: [Provider | undefin
     );
 };
 
-export const accountsWithUpdatedChainDataBalances$: Observable<FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>> = combineLatest([
+export const accountsWithUpdatedChainDataBalances$: Observable<StatusDataObject<StatusDataObject<ReefAccount>[]>> = combineLatest([
     instantProvider$,
     availableAddresses$,
 ])
     .pipe(
         switchMap(getUpdatedAccountChainBalances$),
-        map((balancesAndSigners: FeedbackDataModel<FeedbackDataModel<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
+        map((balancesAndSigners: StatusDataObject<StatusDataObject<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }) => {
                 if (isFeedbackDM(balancesAndSigners)) {
-                    return balancesAndSigners as FeedbackDataModel<FeedbackDataModel<ReefAccount>[]>;
+                    return balancesAndSigners as StatusDataObject<StatusDataObject<ReefAccount>[]>;
                 }
                 const balAndSig = balancesAndSigners as { balances: any[], signers: ReefAccount[] };
-                const balances_fdm: FeedbackDataModel<ReefAccount>[] = balAndSig.signers
+                const balances_sdo: StatusDataObject<ReefAccount>[] = balAndSig.signers
                     .map((sig) => {
                         const bal = balAndSig.balances.find(
                             (b: { address: string; balance: string }) => b.address === sig.address,
@@ -115,7 +115,7 @@ export const accountsWithUpdatedChainDataBalances$: Observable<FeedbackDataModel
                         return sig;
                     })
                     .map(acc => toFeedbackDM(acc, FeedbackStatusCode.COMPLETE_DATA, 'Balance set', 'balance'));
-                return toFeedbackDM(balances_fdm, FeedbackStatusCode.COMPLETE_DATA, 'Balance set');
+                return toFeedbackDM(balances_sdo, FeedbackStatusCode.COMPLETE_DATA, 'Balance set');
             }
         ),
         catchError((err) => getAddressesErrorFallback(err, 'Error chain balance=', 'balance')),

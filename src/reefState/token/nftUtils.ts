@@ -6,11 +6,11 @@ import {ipfsUrlResolverFn, resolveNftImageLinks$} from "../../token/nftUtil";
 import {ReefAccount} from "../../account/accountModel";
 import {
     collectFeedbackDMStatus,
-    FeedbackDataModel,
+    StatusDataObject,
     FeedbackStatusCode,
     isFeedbackDM,
     toFeedbackDM
-} from "../model/feedbackDataModel";
+} from "../model/statusDataObject";
 import {SIGNER_NFTS_GQL} from "../../graphql/signerNfts.gql";
 import {getReefAccountSigner} from "../../account/accountSignerUtils";
 import {Provider} from "@reef-defi/evm-provider";
@@ -49,7 +49,7 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
         } as NFT)
     });
 
-export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAccount>]): Observable<FeedbackDataModel<FeedbackDataModel<NFT>[]>> => (
+export const loadSignerNfts = ([apollo, signer]: [any, StatusDataObject<ReefAccount>]): Observable<StatusDataObject<StatusDataObject<NFT>[]>> => (
     !signer || !apollo
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
@@ -74,7 +74,7 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
                     }
                 ),
                 map((res: VerifiedNft[]) =>parseTokenHolderArray(res)),
-                // TODO handle FDM- map((res: VerifiedNft[]|FeedbackDataModel<NFT[]>) => isFeedbackDM(res)?res:parseTokenHolderArray(res)),
+                // TODO handle SDO- map((res: VerifiedNft[]|FeedbackDataModel<NFT[]>) => isFeedbackDM(res)?res:parseTokenHolderArray(res)),
                 switchMap((nftArr: NFT[]) => combineLatest([
                         of(nftArr), instantProvider$
                     ]).pipe(
@@ -95,7 +95,7 @@ export const loadSignerNfts = ([apollo, signer]: [any, FeedbackDataModel<ReefAcc
                             })
                         );
                     }),
-                    map((feedbackNfts: FeedbackDataModel<NFT>[]): FeedbackDataModel<FeedbackDataModel<NFT>[]> => {
+                    map((feedbackNfts: StatusDataObject<NFT>[]): StatusDataObject<StatusDataObject<NFT>[]> => {
                         const codes = collectFeedbackDMStatus(feedbackNfts);
                         let message = codes.some(c => c === FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
                         if(!feedbackNfts.length){
