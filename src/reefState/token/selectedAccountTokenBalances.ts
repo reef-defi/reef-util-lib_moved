@@ -74,7 +74,7 @@ function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token
     };
 }
 
-const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
+const tokenBalancesWithContractDataCache_sdo = (apollo: any) => (
     state: { tokens: StatusDataObject<Token | TokenBalance>[]; contractData: Token[] },
     // eslint-disable-next-line camelcase
     tokenBalances: TokenBalance[],
@@ -94,7 +94,7 @@ const tokenBalancesWithContractDataCache_fbk = (apollo: any) => (
         map((tokenContractData: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokenContractData)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
         catchError(err => {
-            console.log('tokenBalancesWithContractDataCache_fbk ERROR=', err.message);
+            console.log('tokenBalancesWithContractDataCache_sdo ERROR=', err.message);
             return of({tokens:[], contractData:state.contractData});
         }),
         shareReplay(1)
@@ -138,8 +138,19 @@ const resolveEmptyIconUrls = (tokens: StatusDataObject<Token | TokenBalance>[]) 
     );
 
 // adding shareReplay is messing up TypeScriptValidateTypes
+export const replaceReefBalanceFromAccount=(tokens: StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, accountBalance:  BigNumber|null|undefined) =>{
+    if (!accountBalance || accountBalance.lte(BigNumber.from('0'))) {
+        return tokens;
+    }
+    const reefTkn = tokens.data.find(t => t.data.address === REEF_ADDRESS);
+    if (reefTkn) {
+        reefTkn.data.balance = accountBalance;
+    }
+    return tokens;
+}
+
 // noinspection TypeScriptValidateTypes
-export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, StatusDataObject<ReefAccount>]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
+export const loadAccountTokens_sdo = ([apollo, signer]: [ApolloClient<any>, StatusDataObject<ReefAccount>]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
     return (!signer
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
@@ -163,7 +174,7 @@ export const loadAccountTokens_fbk = ([apollo, signer]: [ApolloClient<any>, Stat
                 throw new Error('No result from SIGNER_TOKENS_GQL');
             }),
             // eslint-disable-next-line camelcase
-            mergeScan(tokenBalancesWithContractDataCache_fbk(apollo), {
+            mergeScan(tokenBalancesWithContractDataCache_sdo(apollo), {
                 tokens: [],
                 contractData: [reefTokenWithAmount()],
             }),

@@ -14,7 +14,11 @@ import {
 import {loadAvailablePools, toAvailablePools} from "./token/poolUtils";
 import {NFT, Token, TokenBalance, TokenTransfer, TokenWithAmount} from "../token/tokenModel";
 import {reefPrice$} from "../token/reefPrice";
-import {loadAccountTokens_fbk, setReefBalanceFromAccount} from "./token/selectedAccountTokenBalances";
+import {
+    loadAccountTokens_sdo,
+    replaceReefBalanceFromAccount,
+    setReefBalanceFromAccount
+} from "./token/selectedAccountTokenBalances";
 import {apolloClientInstance$} from "../graphql";
 import {selectedAccount_status$} from "./account/selectedAccount";
 import {selectedNetwork$, selectedProvider$} from "./providerState";
@@ -28,18 +32,34 @@ import {loadSignerNfts} from "./token/nftUtils";
 import {loadTransferHistory} from "./token/transferHistory";
 import {getReefAccountSigner} from "../account/accountSignerUtils";
 import {Provider, Signer} from "@reef-defi/evm-provider";
-import {toTokensWithPrice_fbk} from "./token/tokenUtil";
+import {toTokensWithPrice_sdo} from "./token/tokenUtil";
 import {getReefswapNetworkConfig} from "../network/dex";
+import {filter} from "rxjs/operators";
+import {BigNumber} from "ethers";
 
 const reloadingValues$ = combineLatest([selectedNetwork$, selectedAccountAddressChange$]).pipe(shareReplay(1));
 
+const selectedAccountReefBalance$ = selectedAccount_status$.pipe(
+    map(acc => {
+        return acc?.data.balance;
+    }),
+    filter(bal => !!bal && bal.gt(BigNumber.from('0'))),
+    startWith(undefined),
+    shareReplay(1)
+);
+
 export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusDataObject<Token | TokenBalance>[]>)> = combineLatest([
     apolloClientInstance$,
-    selectedAccountAddressChange$,
+    selectedAccountAddressChange$
 ]).pipe(
-    switchMap(loadAccountTokens_fbk),
-    withLatestFrom(selectedAccount_status$),
-    map(setReefBalanceFromAccount),
+    switchMap(loadAccountTokens_sdo),
+    // withLatestFrom(selectedAccount_status$),
+    // map(setReefBalanceFromAccount),
+    switchMap((tkns:StatusDataObject<StatusDataObject<Token | TokenBalance>[]>)=>{
+        return combineLatest([ of(tkns), selectedAccountReefBalance$]).pipe(
+            map((arrVal)=>replaceReefBalanceFromAccount(arrVal[0], arrVal[1])),
+        );
+    }),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError((err: any) => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1),
@@ -74,7 +94,7 @@ export const selectedTokenPrices_status$: Observable<StatusDataObject<StatusData
     reefPrice$,
     selectedPools_status$,
 ]).pipe(
-    map(toTokensWithPrice_fbk),
+    map(toTokensWithPrice_sdo),
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
     catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))),
     shareReplay(1)

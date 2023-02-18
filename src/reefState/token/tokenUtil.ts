@@ -7,7 +7,7 @@ import {
 } from "../model/statusDataObject";
 import {REEF_ADDRESS, Token, TokenBalance, TokenWithAmount} from "../../token";
 import {Pool} from "../../token/pool";
-import {calculateTokenPrice_fbk} from "../../token/tokenUtil";
+import {calculateTokenPrice_sdo} from "../../token/tokenUtil";
 
 export const toPlainString = (num: number): string => `${+num}`.replace(
     /(-?)(\d*)\.?(\d*)e([+-]\d+)/,
@@ -24,16 +24,16 @@ export const sortReefTokenFirst = (tokens: StatusDataObject<Token | TokenBalance
     }
     return tokens;
 };
-export const toTokensWithPrice_fbk = ([tokens, reefPrice, pools]: [
+export const toTokensWithPrice_sdo = ([tokens, reefPrice, pools]: [
     StatusDataObject<StatusDataObject<Token | TokenBalance>[]>,
     StatusDataObject<number>,
     StatusDataObject<StatusDataObject<Pool | null>[]>
 ]): StatusDataObject<StatusDataObject<TokenWithAmount>[]> => {
     const tknsWPrice = tokens.data.map(
-        (token_fbk) => {
-            const returnTkn = toFeedbackDM({...token_fbk.data, price: 0} as TokenWithAmount, token_fbk.getStatusList());
-            if (token_fbk.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
-                const priceSDO = calculateTokenPrice_fbk(token_fbk.data, pools.data, reefPrice);
+        (token_sdo) => {
+            const returnTkn = toFeedbackDM({...token_sdo.data, price: 0} as TokenWithAmount, token_sdo.getStatusList());
+            if (token_sdo.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+                const priceSDO = calculateTokenPrice_sdo(token_sdo.data, pools.data, reefPrice);
                 returnTkn.setStatus(priceSDO.getStatus().map(priceStat => ({
                     ...priceStat,
                     propName: 'price',

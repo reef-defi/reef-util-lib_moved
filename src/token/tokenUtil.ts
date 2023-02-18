@@ -51,7 +51,7 @@ const getReefTokenPoolReserves = (
             && pool.token1.address.toLowerCase() === token.address.toLowerCase()),
 );*/
 
-const findReefTokenPool_fbk = (
+const findReefTokenPool_sdo = (
     pools: StatusDataObject<Pool | null>[],
     reefAddress: string,
     token: Token | TokenBalance,
@@ -93,7 +93,7 @@ const findReefTokenPool_fbk = (
     return reefPrice || DataProgress.NO_DATA;
 };*/
 
-export const calculateTokenPrice_fbk = (
+export const calculateTokenPrice_sdo = (
     token: Token | TokenBalance,
     pools: StatusDataObject<Pool | null>[],
     reefPrice: StatusDataObject<number>,
@@ -103,7 +103,7 @@ export const calculateTokenPrice_fbk = (
         return reefPrice;
     }
 
-    const reefTokenPool = findReefTokenPool_fbk(pools, REEF_ADDRESS, token);
+    const reefTokenPool = findReefTokenPool_sdo(pools, REEF_ADDRESS, token);
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 
     if (!reefTokenPool || !reefTokenPool.data || minStat < FeedbackStatusCode.COMPLETE_DATA) {
