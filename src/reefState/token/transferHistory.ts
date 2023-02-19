@@ -58,8 +58,8 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.type === Contra
         symbol: transfer.token.contractData?.symbol,
         decimals: transfer.token.contractData?.decimals||18,
         iconUrl:
-            transfer.token.contractData?.icon_url
-            || getIconUrl(transfer.token_address),
+            transfer.token.contractData?.iconUrl
+            || getIconUrl(transfer.token.id),
     } as Token
     : {
         address: transfer.token.id,
@@ -172,9 +172,10 @@ export const loadTransferHistory = ([apollo, account, network, provider]:[Apollo
                     .pipe(
                         switchMap((sig: Signer|undefined)=>(sig?resolveTransferHistoryNfts(tokens, sig):[])),
                         map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
-                            ...transfers[i],
-                            token: resToken,
-                        }))),
+                                    ...transfers[i],
+                                    token: resToken,
+                                })
+                        )),
                     );
             }),
         ));
