@@ -54,7 +54,7 @@ const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Ob
 const toTransferToken = (transfer): Token|NFT => (transfer.token.type === ContractType.ERC20 ? {
         address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.name,
+        name: transfer.token.contractData?.name||transfer.token.name,
         symbol: transfer.token.contractData?.symbol,
         decimals: transfer.token.contractData?.decimals||18,
         iconUrl:
@@ -64,7 +64,7 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.type === Contra
     : {
         address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.name,
+        name: transfer.token.contractData?.name||transfer.token.name,
         symbol: '',
         decimals: 0,
         iconUrl: '',
