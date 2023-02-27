@@ -1,43 +1,28 @@
-import { Provider } from '@reef-defi/evm-provider';
-import { BigNumber } from 'ethers';
 import {AVAILABLE_NETWORKS, Network} from "../network/network";
 import {ReefSigner} from "../account/accountModel";
+import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "../transaction/txErrorUtil";
 
 export type TxStatusHandler = (status: TxStatusUpdate) => void;
 
-export enum TX_STATUS_ERROR_CODE {
-  ERROR_MIN_BALANCE_AFTER_TX,
-  ERROR_BALANCE_TOO_LOW,
-  ERROR_UNDEFINED,
-}
-
 export interface TxStatusUpdate {
-  txIdent: string;
-  txHash?: string;
-  error?: { message: string; code: TX_STATUS_ERROR_CODE };
-  isInBlock?: boolean;
-  isComplete?: boolean;
-  txTypeEvm?: boolean;
-  url?: string;
-  componentTxType?: string;
-  addresses?: string[];
+    txIdent: string;
+    txHash?: string;
+    error?: { message: string; code: TX_STATUS_ERROR_CODE };
+    isInBlock?: boolean;
+    isComplete?: boolean;
+    txTypeEvm?: boolean;
+    url?: string;
+    componentTxType?: string;
+    addresses?: string[];
 }
 
-export const handleErr = (
-  e: { message: string } | string,
-  txIdent: string,
-  txHash: string,
-  txHandler: TxStatusHandler,
-  signer: ReefSigner,
-): void => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+/*function toTxErrorCodeValue(e: { message: string } | string) {
   let message = e.message || e;
   let code = TX_STATUS_ERROR_CODE.ERROR_UNDEFINED;
   if (
-    message
-    && (message.indexOf('-32603: execution revert: 0x') > -1
-      || message?.indexOf('InsufficientBalance') > -1)
+      message
+      && (message.indexOf('-32603: execution revert: 0x') > -1
+          || message?.indexOf('InsufficientBalance') > -1)
   ) {
     message = 'You must allow minimum 60 REEF on account for Ethereum VM transaction even if transaction fees will be much lower.';
     code = TX_STATUS_ERROR_CODE.ERROR_MIN_BALANCE_AFTER_TX;
@@ -53,14 +38,28 @@ export const handleErr = (
   if (code === TX_STATUS_ERROR_CODE.ERROR_UNDEFINED) {
     message = `Transaction error: ${message}`;
   }
-  txHandler({
-    txIdent,
-    txHash,
-    error: { message, code },
-    addresses: [signer.address],
-  });
+  return {message, code};
+}*/
+
+export const handleErr = (
+    e: { message: string } | string,
+    txIdent: string,
+    txHash: string,
+    txHandler: TxStatusHandler,
+    signer: ReefSigner,
+): void => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    let {message, code} = toTxErrorCodeValue(e);
+    txHandler({
+        txIdent,
+        txHash,
+        error: {message, code},
+        addresses: [signer.address],
+    });
 };
 
+/*
 export const nativeTransfer = async (amount: string, destinationAddress: string, provider: Provider, signer: ReefSigner): Promise<void> => {
   await provider.api.tx.balances
     .transfer(destinationAddress, amount)
@@ -99,7 +98,7 @@ export const sendToNativeAddress = (
   });
 
   return txIdent;
-};
+};*/
 
 export const getExtrinsicUrl = (id: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/extrinsic/${id}`;
 export const getContractUrl = (address: string, network: Network = AVAILABLE_NETWORKS.mainnet): string => `${network.reefscanFrontendUrl}/contract/${address}`;
