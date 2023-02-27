@@ -4,18 +4,23 @@ import {
     parseAndRethrowErrorFromObserver,
     TransactionStatusEvent
 } from "./transactionStatus";
-import {Observable, of, switchMap} from "rxjs";
-import {Provider} from "@reef-defi/evm-provider";
+import {from, Observable, of, switchMap} from "rxjs";
+import {Provider, Signer} from "@reef-defi/evm-provider";
 import type {Signer as SignerInterface} from '@polkadot/api/types';
-import {ReefAccount} from "../account";
 import {BigNumber, Contract} from "ethers";
 import {getEvmAddress} from "../account/addressUtil";
 import {TX_STATUS_ERROR_CODE} from "./txErrorUtil";
 
-export function nativeTransfer$(amount: string, destinationAddress: string, provider: Provider, signer: ReefAccount, signingKey: SignerInterface): Observable<TransactionStatusEvent> {
+export function nativeTransferSigner$(amount: string, signer: Signer, toAddress: string): Observable<TransactionStatusEvent> {
+    return from(signer.getSubstrateAddress()).pipe(
+        switchMap((fromAddr: string) => nativeTransfer$(amount, fromAddr , toAddress, signer.provider, signer.signingKey))
+    );
+}
+
+export function nativeTransfer$(amount: string, fromAddress: string, toAddress: string, provider: Provider, signingKey: SignerInterface): Observable<TransactionStatusEvent> {
     const {status$, handler} = getNativeTransactionStatusHandler$();
 
-    provider.api.query.system.account(signer.address).then((res)=>{
+    provider.api.query.system.account(fromAddress).then((res)=>{
         let fromBalance = res.data.free.toString();
         if(BigNumber.from(amount).gte(fromBalance)){
             status$.error(new Error(TX_STATUS_ERROR_CODE.ERROR_BALANCE_TOO_LOW));
@@ -23,8 +28,8 @@ export function nativeTransfer$(amount: string, destinationAddress: string, prov
         }
 
         provider.api.tx.balances
-            .transfer(destinationAddress, amount)
-            .signAndSend(signer.address, {signer: signingKey}, handler).then((unsub) => {
+            .transfer(toAddress, amount)
+            .signAndSend(fromAddress, {signer: signingKey}, handler).then((unsub) => {
             status$.subscribe(null, null, () => unsub());
         }).catch(parseAndRethrowErrorFromObserver(status$));
 
