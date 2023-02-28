@@ -1,14 +1,23 @@
-import {mergeMap, Observable, scan, shareReplay, Subject} from "rxjs";
-import {TransactionStatusEvent} from "../../transaction";
+import {catchError, map, mergeMap, Observable, of, scan, shareReplay, Subject} from "rxjs";
+import {TransactionStatusEvent, TxStage} from "../../transaction";
 import {merge} from "rxjs/internal/operators/merge";
+import {filter} from "rxjs/operators";
 
 export const addTransactionStatusSubj = new Subject<TransactionStatusEvent>()
 export const attachTxStatusObservableSubj = new Subject<Observable<TransactionStatusEvent>>();
 export const txStatusList$ = attachTxStatusObservableSubj.pipe(
-    mergeMap(status$=>status$),
+    mergeMap(status$ => status$),
     merge(addTransactionStatusSubj),
-    scan((statById:Map<string, TransactionStatusEvent>, newEvent: TransactionStatusEvent)=>{
-        statById.set(newEvent.txIdent, newEvent);
+    catchError((err) => {
+        console.log('ERRRRRR', err);
+        return of({txIdent: err.txIdent, txStage: TxStage.ENDED} as TransactionStatusEvent);
+    }),
+    scan((statById: Map<string, TransactionStatusEvent>, newState: TransactionStatusEvent) => {
+        if (newState.txStage == TxStage.BLOCK_NOT_FINALIZED || newState.txStage == TxStage.BLOCK_FINALIZED || newState.txStage == TxStage.ENDED) {
+            statById.delete(newState.txIdent);
+            return statById;
+        }
+        statById.set(newState.txIdent, newState);
         return statById;
     }, new Map()),
     shareReplay(1)

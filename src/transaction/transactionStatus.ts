@@ -10,6 +10,7 @@ export enum TxStage{
     INCLUDED_IN_BLOCK = 'INCLUDED_IN_BLOCK',
     BLOCK_FINALIZED = 'BLOCK_FINALIZED',
     BLOCK_NOT_FINALIZED = 'BLOCK_NOT_FINALIZED',
+    ENDED='ENDED',
 }
 
 export interface TransactionStatusEvent {

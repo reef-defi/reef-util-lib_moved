@@ -10,6 +10,7 @@ import type {Signer as SignerInterface} from '@polkadot/api/types';
 import {BigNumber, Contract} from "ethers";
 import {getEvmAddress} from "../account/addressUtil";
 import {TX_STATUS_ERROR_CODE} from "./txErrorUtil";
+import {attachTxStatusObservableSubj} from "../reefState/tx/transactionStatus";
 
 export function nativeTransferSigner$(amount: string, signer: Signer, toAddress: string): Observable<TransactionStatusEvent> {
     return from(signer.getSubstrateAddress()).pipe(
@@ -35,7 +36,7 @@ export function nativeTransfer$(amount: string, fromAddress: string, toAddress: 
         }).catch(parseAndRethrowErrorFromObserver(status$, txIdent));
 
     });
-
+    attachTxStatusObservableSubj.next(status$);
     return status$.asObservable();
 }
 
@@ -53,7 +54,8 @@ export function reef20Transfer$(to: string, provider, tokenAmount: string, token
 
             const txPromise = tokenContract.transfer(...ARGS, {
                 customData: {
-                    storageLimit: STORAGE_LIMIT
+                    storageLimit: STORAGE_LIMIT,
+                    txIdent
                 }
             });
             return getEvmTransactionStatus$(txPromise, provider.api, txIdent);
