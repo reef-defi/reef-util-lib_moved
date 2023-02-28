@@ -10,7 +10,7 @@ import {
     selectedTokenPrices_status$,
     selectedTransactionHistory_status$
 } from "../src/reefState/tokenState.rx";
-import {firstValueFrom, race, skipWhile} from "rxjs";
+import {firstValueFrom, race, skipWhile, Subject} from "rxjs";
 import {StatusDataObject, FeedbackStatusCode} from "../src/reefState/model/statusDataObject";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
@@ -24,7 +24,11 @@ import {Contract} from "ethers";
 import {ERC20} from "../src/token/abi/ERC20";
 import {getReefAccountSigner} from "../src";
 import {Signer} from "@reef-defi/evm-provider";
-import {addTransactionStatusSubj, txStatusList$} from "../src/reefState/tx/transactionStatus";
+import {
+    addTransactionStatusSubj,
+    attachTxStatusObservableSubj,
+    txStatusList$
+} from "../src/reefState/tx/transactionStatus";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
@@ -177,6 +181,9 @@ async function testSigners() {
 }
 
 async function testTransfer(){
+    let txIdent = '123';
+    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
+
     let from = TEST_ACCOUNTS.find(a=>a.name==='test1');
     console.assert(!!from?.address, 'No from address to test transfer');
     if (!from?.address) {
@@ -200,17 +207,33 @@ async function testTransfer(){
     console.log('acccccc', selAcc?.data.address, signer)
 
     const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
-    reef20Transfer$(to.address, provider, '1', ctr).subscribe((res)=>{
+    reef20Transfer$(to.address, provider, '1', ctr, txIdent).subscribe((res)=>{
         console.log('TRANSFER=',res);
     });
 }
 
 async function testTxStatus(){
-    txStatusList$.subscribe((v) => console.log('STA TLISt=', v));
-
-    addTransactionStatusSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
+    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
+    const statSubj=new Subject();
+    attachTxStatusObservableSubj.next(statSubj)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
+    }, 3000)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.BLOCK_NOT_FINALIZED, txIdent: '123'});
+    }, 6000)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+    }, 12000)
+    setTimeout(()=>{
+        console.log('iii')
+        statSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+    }, 28000)
     addTransactionStatusSubj.next({txStage: TxStage.BROADCAST, txIdent: '123'});
-    addTransactionStatusSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+
 }
 
 async function initTest() {
@@ -245,8 +268,8 @@ async function initTest() {
     // await testNfts();
     // await testNfts();
     // await testTransferHistory();
-    // await testTransfer();
-await testTxStatus();
+    await testTransfer();
+// await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
 
