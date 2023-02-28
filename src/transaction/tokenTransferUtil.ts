@@ -18,7 +18,7 @@ export function nativeTransferSigner$(amount: string, signer: Signer, toAddress:
 }
 
 export function nativeTransfer$(amount: string, fromAddress: string, toAddress: string, provider: Provider, signingKey: SignerInterface, txIdent:string = Math.random().toString()): Observable<TransactionStatusEvent> {
-    const {status$, handler} = getNativeTransactionStatusHandler$();
+    const {status$, handler} = getNativeTransactionStatusHandler$(txIdent);
 
     provider.api.query.system.account(fromAddress).then((res)=>{
         let fromBalance = res.data.free.toString();

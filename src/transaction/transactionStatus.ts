@@ -62,19 +62,19 @@ export function getEvmTransactionStatus$(evmTxPromise: Promise<any>, rpcApi: Api
     return status$;
 }
 
-export function getNativeTransactionStatusHandler$(): {handler:(result: any) => void, status$: Subject<TransactionStatusEvent> }{
+export function getNativeTransactionStatusHandler$(txIdent: string): {handler:(result: any) => void, status$: Subject<TransactionStatusEvent> }{
     const observer = new Subject<TransactionStatusEvent>();
     return {
         handler:(result) => {
             // console.log(`Current status is ${result.status}`);
             if (result.status.isBroadcast) {
-                observer.next({txStage: TxStage.BROADCAST});
+                observer.next({txStage: TxStage.BROADCAST, txIdent});
             } else if (result.status.isInBlock) {
                 console.log(`Transaction included at blockHash ${result.status.asInBlock}`);
-                observer.next({txStage: TxStage.INCLUDED_IN_BLOCK, txData: {blockHash:result.status.asInBlock.toString()}});
+                observer.next({txStage: TxStage.INCLUDED_IN_BLOCK, txData: {blockHash:result.status.asInBlock.toString()}, txIdent});
             } else if (result.status.isFinalized) {
                 console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-                observer.next({txStage: TxStage.BLOCK_FINALIZED, txData: {blockHash:result.status.asFinalized.toString()}});
+                observer.next({txStage: TxStage.BLOCK_FINALIZED, txData: {blockHash:result.status.asFinalized.toString()}, txIdent});
                 setTimeout(() => {
                     observer.complete();
                 });
