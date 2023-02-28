@@ -3,6 +3,8 @@ import {ApiPromise} from "@polkadot/api";
 import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "./txErrorUtil";
 
 export enum TxStage{
+    SIGNATURE_REQUEST = 'BROADCAST',
+    SIGNED = 'SIGNED',
     BROADCAST = 'BROADCAST',
     INCLUDED_IN_BLOCK = 'INCLUDED_IN_BLOCK',
     BLOCK_FINALIZED = 'BLOCK_FINALIZED',

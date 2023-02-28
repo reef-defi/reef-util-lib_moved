@@ -19,9 +19,15 @@ import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
+import {nativeTransfer$, reef20Transfer$} from "../src/transaction";
+import {Contract} from "ethers";
+import {ERC20} from "../src/token/abi/ERC20";
+import {getReefAccountSigner} from "../src";
+import {Signer} from "@reef-defi/evm-provider";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
-    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"acc2", "meta": {"source": "reef"}}
+    {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
+    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"test1", "meta": {"source": "reef"}}
 ];
 
 async function testNfts() {
@@ -169,6 +175,35 @@ async function testSigners() {
 
 }
 
+async function testTransfer(){
+    let from = TEST_ACCOUNTS.find(a=>a.name==='test1');
+    console.assert(!!from?.address, 'No from address to test transfer');
+    if (!from?.address) {
+        return;
+    }
+    setSelectedAddress(from.address);
+    const to=TEST_ACCOUNTS.find(a=>a.name==='test-mobile')
+    const provider = await firstValueFrom(selectedProvider$);
+    await provider.api.isReadyOrError;
+
+    const selAcc = await firstValueFrom(selectedAccount_status$.pipe());
+    console.assert(!!to?.address, 'No to address to test transfer');
+    if (!to?.address) {
+        return;
+    }
+    console.assert(!!selAcc?.data, 'No account to test transfer');
+    if (!selAcc?.data) {
+        return;
+    }
+    const signer = await getReefAccountSigner(selAcc?.data, provider);
+    console.log('acccccc', selAcc?.data.address, signer)
+
+    const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
+    reef20Transfer$(to.address, provider, '1', ctr).subscribe((res)=>{
+        console.log('TRANSFER=',res);
+    });
+}
+
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
@@ -199,8 +234,9 @@ async function initTest() {
     // await testAppStateTokens();
     // await testAppStateTokens();
     // await testNfts();
-    await testNfts();
-    await testTransferHistory();
+    // await testNfts();
+    // await testTransferHistory();
+    await testTransfer();
 
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
