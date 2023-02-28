@@ -19,11 +19,12 @@ import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
-import {nativeTransfer$, reef20Transfer$} from "../src/transaction";
+import {nativeTransfer$, reef20Transfer$, TxStage} from "../src/transaction";
 import {Contract} from "ethers";
 import {ERC20} from "../src/token/abi/ERC20";
 import {getReefAccountSigner} from "../src";
 import {Signer} from "@reef-defi/evm-provider";
+import {addTransactionStatusSubj, txStatusList$} from "../src/reefState/tx/transactionStatus";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
@@ -204,6 +205,14 @@ async function testTransfer(){
     });
 }
 
+async function testTxStatus(){
+    txStatusList$.subscribe((v) => console.log('STA TLISt=', v));
+
+    addTransactionStatusSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
+    addTransactionStatusSubj.next({txStage: TxStage.BROADCAST, txIdent: '123'});
+    addTransactionStatusSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+}
+
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
@@ -236,8 +245,8 @@ async function initTest() {
     // await testNfts();
     // await testNfts();
     // await testTransferHistory();
-    await testTransfer();
-
+    // await testTransfer();
+await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
 

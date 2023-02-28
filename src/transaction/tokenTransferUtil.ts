@@ -17,13 +17,14 @@ export function nativeTransferSigner$(amount: string, signer: Signer, toAddress:
     );
 }
 
-export function nativeTransfer$(amount: string, fromAddress: string, toAddress: string, provider: Provider, signingKey: SignerInterface): Observable<TransactionStatusEvent> {
+export function nativeTransfer$(amount: string, fromAddress: string, toAddress: string, provider: Provider, signingKey: SignerInterface, txIdent:string = Math.random().toString()): Observable<TransactionStatusEvent> {
     const {status$, handler} = getNativeTransactionStatusHandler$();
 
     provider.api.query.system.account(fromAddress).then((res)=>{
         let fromBalance = res.data.free.toString();
         if(BigNumber.from(amount).gte(fromBalance)){
-            status$.error(new Error(TX_STATUS_ERROR_CODE.ERROR_BALANCE_TOO_LOW));
+            let error = new Error(TX_STATUS_ERROR_CODE.ERROR_BALANCE_TOO_LOW);
+            status$.error({error, txIdent});
             return;
         }
 
@@ -31,14 +32,14 @@ export function nativeTransfer$(amount: string, fromAddress: string, toAddress: 
             .transfer(toAddress, amount)
             .signAndSend(fromAddress, {signer: signingKey}, handler).then((unsub) => {
             status$.subscribe(null, null, () => unsub());
-        }).catch(parseAndRethrowErrorFromObserver(status$));
+        }).catch(parseAndRethrowErrorFromObserver(status$, txIdent));
 
     });
 
     return status$.asObservable();
 }
 
-export function reef20Transfer$(to: string, provider, tokenAmount: string, tokenContract: Contract): Observable<TransactionStatusEvent> {
+export function reef20Transfer$(to: string, provider, tokenAmount: string, tokenContract: Contract, txIdent:string = Math.random().toString()): Observable<TransactionStatusEvent> {
     const STORAGE_LIMIT = 2000;
     return of(to).pipe(
         switchMap(async (toAddress: string) => {
@@ -55,7 +56,7 @@ export function reef20Transfer$(to: string, provider, tokenAmount: string, token
                     storageLimit: STORAGE_LIMIT
                 }
             });
-            return getEvmTransactionStatus$(txPromise, provider.api);
+            return getEvmTransactionStatus$(txPromise, provider.api, txIdent);
         }),
     )
 }
