@@ -1,4 +1,4 @@
-import {catchError, map, mergeMap, Observable, of, scan, shareReplay, Subject} from "rxjs";
+import {catchError, map, mergeMap, Observable, of, scan, shareReplay, Subject, tap} from "rxjs";
 import {TransactionStatusEvent, TxStage} from "../../transaction";
 import {merge} from "rxjs/internal/operators/merge";
 import {filter} from "rxjs/operators";
@@ -20,6 +20,7 @@ export const txStatusList$ = attachTxStatusObservableSubj.pipe(
         statById.set(newState.txIdent, newState);
         return statById;
     }, new Map()),
+    tap((v)=>console.log('new list', Array.from(v.keys()).length)),
     shareReplay(1)
 );
 

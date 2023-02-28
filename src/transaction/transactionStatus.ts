@@ -24,7 +24,7 @@ export function parseAndRethrowErrorFromObserver(observer: Observer<TransactionS
     return (err) => {
         const parsedErr = toTxErrorCodeValue(err);
         let reError = !!parsedErr.code && parsedErr.code != TX_STATUS_ERROR_CODE.ERROR_UNDEFINED ? new Error(parsedErr.code) : err;
-        observer.error({...reError, txIdent})
+        observer.error(new TxStatusError(reError.message, txIdent));
     };
 }
 
@@ -55,7 +55,7 @@ export function getEvmTransactionStatus$(evmTxPromise: Promise<any>, rpcApi: Api
                 }).catch((err) => {
                     console.log('transfer tx.wait ERROR=', err.message)
 
-                    observer.error({...err, txIdent})
+                    observer.error(new TxStatusError(err.message, txIdent));
                 });
             }).catch(parseAndRethrowErrorFromObserver(observer, txIdent));
         }).pipe(shareReplay(1)) as Observable<TransactionStatusEvent>;
@@ -82,5 +82,14 @@ export function getNativeTransactionStatusHandler$(txIdent: string): {handler:(r
             }
         },
         status$: observer
+    }
+}
+
+export class TxStatusError extends Error{
+    txIdent: string;
+    constructor(message: string, txIdent: string) {
+        super();
+        this.txIdent=txIdent;
+        this.message=message;
     }
 }

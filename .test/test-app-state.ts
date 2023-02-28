@@ -209,7 +209,7 @@ async function testTransfer(){
     const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
     reef20Transfer$(to.address, provider, '1', ctr, txIdent).subscribe((res)=>{
         console.log('TRANSFER=',res);
-    });
+    }, (err)=>{console.log('Tx err=', err.message)});
 }
 
 async function testTxStatus(){
