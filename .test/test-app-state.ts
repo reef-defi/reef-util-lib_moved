@@ -20,7 +20,7 @@ import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accounts
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
 import {nativeTransfer$, reef20Transfer$, TxStage} from "../src/transaction";
-import {Contract} from "ethers";
+import {Contract, ethers} from "ethers";
 import {ERC20} from "../src/token/abi/ERC20";
 import {getReefAccountSigner} from "../src";
 import {Signer} from "@reef-defi/evm-provider";
@@ -29,6 +29,8 @@ import {
     attachTxStatusObservableSubj,
     txStatusList$
 } from "../src/reefState/tx/transactionStatus";
+import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
+import {decodePayloadMethod} from "../src/transaction/tx-signature-util";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
@@ -207,6 +209,18 @@ async function testTransfer(){
     console.log('acccccc', selAcc?.data.address, signer)
 
     const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
+
+     const decMethod: any = await decodePayloadMethod(provider, '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000', null);
+    console.log('DEC', decMethod)
+    const methodData = decMethod.args[1];
+    const iface = new ethers.utils.Interface(ERC20);
+    let decodedData = iface.parseTransaction({ data: methodData, value: '0' });
+    console.log('DECOCC MDATA=', decodedData)
+    console.log('AMTT=', decodedData.args.amount.toString());
+
+    return;
+
+
     reef20Transfer$(to.address, provider, '1', ctr, txIdent).subscribe((res)=>{
         console.log('TRANSFER=',res);
     }, (err)=>{console.log('Tx err=', err.message)});

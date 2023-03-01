@@ -4,7 +4,7 @@ import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "./txErrorUtil";
 import {attachTxStatusObservableSubj} from "../reefState/tx/transactionStatus";
 
 export enum TxStage{
-    SIGNATURE_REQUEST = 'BROADCAST',
+    SIGNATURE_REQUEST = 'SIGNATURE_REQUEST',
     SIGNED = 'SIGNED',
     BROADCAST = 'BROADCAST',
     INCLUDED_IN_BLOCK = 'INCLUDED_IN_BLOCK',
