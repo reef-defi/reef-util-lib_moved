@@ -10,7 +10,7 @@ import {
     selectedTokenPrices_status$,
     selectedTransactionHistory_status$
 } from "../src/reefState/tokenState.rx";
-import {firstValueFrom, race, skipWhile} from "rxjs";
+import {firstValueFrom, race, skipWhile, Subject} from "rxjs";
 import {StatusDataObject, FeedbackStatusCode} from "../src/reefState/model/statusDataObject";
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
@@ -19,9 +19,22 @@ import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
+import {nativeTransfer$, reef20Transfer$, TxStage} from "../src/transaction";
+import {Contract, ethers} from "ethers";
+import {ERC20} from "../src/token/abi/ERC20";
+import {getReefAccountSigner} from "../src";
+import {Signer} from "@reef-defi/evm-provider";
+import {
+    addTransactionStatusSubj,
+    attachTxStatusObservableSubj,
+    txStatusList$
+} from "../src/reefState/tx/transactionStatus";
+import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
+import {decodePayloadMethod} from "../src/transaction/tx-signature-util";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
-    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"acc2", "meta": {"source": "reef"}}
+    {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
+    {"address": "5G9f52Dx7bPPYqekh1beQsuvJkhePctWcZvPDDuhWSpDrojN", "name":"test1", "meta": {"source": "reef"}}
 ];
 
 async function testNfts() {
@@ -169,6 +182,90 @@ async function testSigners() {
 
 }
 
+async function testDecodeMethodSignaturePayload(){
+
+    const provider = await firstValueFrom(selectedProvider$);
+    await provider.api.isReadyOrError;
+     const decMethod: any = decodePayloadMethod(provider,
+         '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000',
+         ERC20);
+    console.log('DEC', decMethod)
+    console.assert(decMethod.evm!==null, "evm data should be present")
+    console.assert(decMethod.methodName==='evm.call(target, input, value, gasLimit, storageLimit)', "not evm call")
+    console.assert(decMethod.evm.contractAddress===REEF_ADDRESS, "should be REEF address")
+    console.assert(decMethod.evm.decodedData.name==='transfer', "should be transfer")
+    console.assert(decMethod.evm.decodedData.args.recipient==='0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2', "should be 0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2")
+}
+async function testTransfer(){
+    let txIdent = '123';
+    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
+
+    let from = TEST_ACCOUNTS.find(a=>a.name==='test1');
+    console.assert(!!from?.address, 'No from address to test transfer');
+    if (!from?.address) {
+        return;
+    }
+    setSelectedAddress(from.address);
+    const to=TEST_ACCOUNTS.find(a=>a.name==='test-mobile')
+    const provider = await firstValueFrom(selectedProvider$);
+    await provider.api.isReadyOrError;
+
+    const selAcc = await firstValueFrom(selectedAccount_status$.pipe());
+    console.assert(!!to?.address, 'No to address to test transfer');
+    if (!to?.address) {
+        return;
+    }
+    console.assert(!!selAcc?.data, 'No account to test transfer');
+    if (!selAcc?.data) {
+        return;
+    }
+    const signer = await getReefAccountSigner(selAcc?.data, provider);
+    console.log('acccccc', selAcc?.data.address, signer)
+
+    const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
+
+     const decMethod: any = decodePayloadMethod(provider,
+         '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000',
+         ERC20);
+    console.log('DEC', decMethod)
+    // const methodData = decMethod.args[1];
+    // const iface = new ethers.utils.Interface(ERC20);
+    // let decodedData = iface.parseTransaction({ data: methodData, value: '0' });
+    // console.log('DECOCC MDATA=', decodedData)
+    // console.log('AMTT=', decodedData.args.amount.toString());
+
+    return;
+
+
+    reef20Transfer$(to.address, provider, '1', ctr, txIdent).subscribe((res)=>{
+        console.log('TRANSFER=',res);
+    }, (err)=>{console.log('Tx err=', err.message)});
+}
+
+async function testTxStatus(){
+    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
+    const statSubj=new Subject();
+    attachTxStatusObservableSubj.next(statSubj)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
+    }, 3000)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.BLOCK_NOT_FINALIZED, txIdent: '123'});
+    }, 6000)
+    setTimeout(()=>{
+        console.log('iii')
+        addTransactionStatusSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+    }, 12000)
+    setTimeout(()=>{
+        console.log('iii')
+        statSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+    }, 28000)
+    addTransactionStatusSubj.next({txStage: TxStage.BROADCAST, txIdent: '123'});
+
+}
+
 async function initTest() {
     const extensions: InjectedExtension[] = await web3Enable('Test lib');
     const reefExt = await web3FromSource(REEF_EXTENSION_IDENT);
@@ -199,9 +296,11 @@ async function initTest() {
     // await testAppStateTokens();
     // await testAppStateTokens();
     // await testNfts();
-    await testNfts();
-    await testTransferHistory();
-
+    // await testNfts();
+    // await testTransferHistory();
+    // await testTransfer();
+    await testDecodeMethodSignaturePayload();
+// await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);
 
