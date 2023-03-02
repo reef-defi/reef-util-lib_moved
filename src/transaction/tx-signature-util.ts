@@ -4,7 +4,8 @@ import {Metadata, TypeRegistry} from '@polkadot/types';
 import type {AnyJson} from "@polkadot/types/types";
 import type {Call} from "@polkadot/types/interfaces";
 import {base64Decode, base64Encode} from '@reef-defi/util-crypto';
-import {ContractInterface, ethers} from "ethers";
+import {ethers} from "ethers";
+import {Fragment, JsonFragment} from "@ethersproject/abi"
 
 interface DecodedMethodData {
     methodName: string;
@@ -16,19 +17,20 @@ interface DecodedMethodData {
     };
 }
 
-export function decodePayloadMethod(provider: Provider, methodDataEncoded: string, abi?: ContractInterface, sentValue: string = '0', types?: any): DecodedMethodData | null {
+export function decodePayloadMethod(provider: Provider, methodDataEncoded: string, abi?: string | readonly (string | Fragment | JsonFragment)[], sentValue: string = '0', types?: any): DecodedMethodData | null {
     const api = provider.api;
 
     if (!types) {
         types = getSpecTypes(api.registry, api.runtimeChain.toString(), api.runtimeVersion.specName, api.runtimeVersion.specVersion) as unknown as Record<string, string>;
     }
 
-    let args: AnyJson | null = null;
+    let args: any | null = null;
     let method: Call | null = null;
 
     try {
         const registry = new TypeRegistry();
         registry.register(types);
+        // @ts-ignore
         registry.setChainProperties(registry.createType('ChainProperties', {
             ss58Format: 42,
             tokenDecimals: 18,
@@ -50,9 +52,9 @@ export function decodePayloadMethod(provider: Provider, methodDataEncoded: strin
     const methodParams = method?.meta ? `(${method.meta.args.map(({name}) => name).join(', ')})` : '';
     const methodName = method ? `${method.section}.${method.method}${methodParams}` : '';
     let contractAddress = null;
-    let decodedData = null;
+    let decodedData:any = null;
 
-    if(methodName.startsWith('evm.call') && abi) {
+    if(methodName.startsWith('evm.call') && abi && !!args) {
         contractAddress = args[0];
         const methodArgs = args[1];
         const iface = new ethers.utils.Interface(abi);

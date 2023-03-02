@@ -7,6 +7,7 @@ import {ReefswapPair} from "../token/abi/ReefswapPair";
 import {catchError, combineLatest, map, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
 import {FeedbackStatusCode, StatusDataObject, toFeedbackDM} from "../reefState/model/statusDataObject";
 import {ensure} from "../utils/utils";
+import {Signer as EthersSigner} from "@ethersproject/abstract-signer";
 
 const findPoolTokenAddress = async (
     address1: string,
@@ -32,7 +33,7 @@ export const loadPool = async (
         factoryAddress,
     );
     ensure(address !== EMPTY_ADDRESS, 'Pool does not exist!');
-    const contract = new Contract(address, ReefswapPair, signer);
+    const contract = new Contract(address, ReefswapPair, signer as unknown as EthersSigner);
 
     const decimals = await contract.decimals();
     const reserves = await contract.getReserves();

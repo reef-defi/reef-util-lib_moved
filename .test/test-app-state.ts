@@ -25,10 +25,10 @@ import {ERC20} from "../src/token/abi/ERC20";
 import {getReefAccountSigner} from "../src";
 import {Signer} from "@reef-defi/evm-provider";
 import {
-    addTransactionStatusSubj,
-    attachTxStatusObservableSubj,
-    txStatusList$
-} from "../src/reefState/tx/transactionStatus";
+    addPendingTransactionSubj,
+    attachPendingTxObservableSubj,
+    txPendingList$
+} from "../src/reefState/tx/currentTx.rx";
 import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
 import {decodePayloadMethod} from "../src/transaction/tx-signature-util";
 
@@ -198,7 +198,7 @@ async function testDecodeMethodSignaturePayload(){
 }
 async function testTransfer(){
     let txIdent = '123';
-    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
+    txPendingList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
 
     let from = TEST_ACCOUNTS.find(a=>a.name==='test1');
     console.assert(!!from?.address, 'No from address to test transfer');
@@ -243,26 +243,26 @@ async function testTransfer(){
 }
 
 async function testTxStatus(){
-    txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
+    txPendingList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
     const statSubj=new Subject();
-    attachTxStatusObservableSubj.next(statSubj)
+    attachPendingTxObservableSubj.next(statSubj)
     setTimeout(()=>{
         console.log('iii')
-        addTransactionStatusSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
+        addPendingTransactionSubj.next({txStage: TxStage.SIGNED, txIdent: '123'});
     }, 3000)
     setTimeout(()=>{
         console.log('iii')
-        addTransactionStatusSubj.next({txStage: TxStage.BLOCK_NOT_FINALIZED, txIdent: '123'});
+        addPendingTransactionSubj.next({txStage: TxStage.BLOCK_NOT_FINALIZED, txIdent: '123'});
     }, 6000)
     setTimeout(()=>{
         console.log('iii')
-        addTransactionStatusSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
+        addPendingTransactionSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
     }, 12000)
     setTimeout(()=>{
         console.log('iii')
         statSubj.next({txStage: TxStage.INCLUDED_IN_BLOCK, txIdent: '123'});
     }, 28000)
-    addTransactionStatusSubj.next({txStage: TxStage.BROADCAST, txIdent: '123'});
+    addPendingTransactionSubj.next({txStage: TxStage.BROADCAST, txIdent: '123'});
 
 }
 

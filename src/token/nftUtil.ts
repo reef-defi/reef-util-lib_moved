@@ -16,6 +16,7 @@ import {Signer} from '@reef-defi/evm-provider';
 import {NFT, NFTMetadata} from "./tokenModel";
 import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/statusDataObject";
 import {getContractTypeAbi} from "./tokenUtil";
+import {Signer as EthersSigner} from "@ethersproject/abstract-signer";
 
 const extractIpfsHash = (ipfsUri: string): string | null => {
     const ipfsProtocol = 'ipfs://';
@@ -69,7 +70,7 @@ export const getResolveNftPromise = async (nft: NFT | null, signer: Signer, ipfs
     try {
         // throw new Error('Test234')
         const contractTypeAbi = getContractTypeAbi(nft.contractType);
-        const contract = new Contract(nft.address, contractTypeAbi, signer);
+        const contract = new Contract(nft.address, contractTypeAbi, signer as unknown as EthersSigner);
         const uriPromise = (contractTypeAbi as any).some((fn) => fn.name === 'uri') ? contract.uri(nft.nftId)
             : contract.tokenURI(nft.nftId).catch(reason => console.log('error getting contract uri'));
 
