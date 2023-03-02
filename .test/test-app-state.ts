@@ -182,6 +182,20 @@ async function testSigners() {
 
 }
 
+async function testDecodeMethodSignaturePayload(){
+
+    const provider = await firstValueFrom(selectedProvider$);
+    await provider.api.isReadyOrError;
+     const decMethod: any = decodePayloadMethod(provider,
+         '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000',
+         ERC20);
+    console.log('DEC', decMethod)
+    console.assert(decMethod.evm!==null, "evm data should be present")
+    console.assert(decMethod.methodName==='evm.call(target, input, value, gasLimit, storageLimit)', "not evm call")
+    console.assert(decMethod.evm.contractAddress===REEF_ADDRESS, "should be REEF address")
+    console.assert(decMethod.evm.decodedData.name==='transfer', "should be transfer")
+    console.assert(decMethod.evm.decodedData.args.recipient==='0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2', "should be 0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2")
+}
 async function testTransfer(){
     let txIdent = '123';
     txStatusList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
@@ -210,13 +224,15 @@ async function testTransfer(){
 
     const ctr = new Contract(REEF_ADDRESS, ERC20, signer);
 
-     const decMethod: any = await decodePayloadMethod(provider, '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000', null);
+     const decMethod: any = decodePayloadMethod(provider,
+         '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000',
+         ERC20);
     console.log('DEC', decMethod)
-    const methodData = decMethod.args[1];
-    const iface = new ethers.utils.Interface(ERC20);
-    let decodedData = iface.parseTransaction({ data: methodData, value: '0' });
-    console.log('DECOCC MDATA=', decodedData)
-    console.log('AMTT=', decodedData.args.amount.toString());
+    // const methodData = decMethod.args[1];
+    // const iface = new ethers.utils.Interface(ERC20);
+    // let decodedData = iface.parseTransaction({ data: methodData, value: '0' });
+    // console.log('DECOCC MDATA=', decodedData)
+    // console.log('AMTT=', decodedData.args.amount.toString());
 
     return;
 
@@ -282,7 +298,8 @@ async function initTest() {
     // await testNfts();
     // await testNfts();
     // await testTransferHistory();
-    await testTransfer();
+    // await testTransfer();
+    await testDecodeMethodSignaturePayload();
 // await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);

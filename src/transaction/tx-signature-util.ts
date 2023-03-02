@@ -3,16 +3,24 @@ import {getSpecTypes} from "@polkadot/types-known";
 import {Metadata, TypeRegistry} from '@polkadot/types';
 import type {AnyJson} from "@polkadot/types/types";
 import type {Call} from "@polkadot/types/interfaces";
-import {getSpecTypes} from "@polkadot/types-known";
 import {base64Decode, base64Encode} from '@reef-defi/util-crypto';
-import {isAscii, u8aToString, u8aUnwrapBytes} from '@reef-defi/util';
+import {ContractInterface, ethers} from "ethers";
 
-export async function decodePayloadMethod (provider: Provider, data: string, types?: any)  {
+interface DecodedMethodData {
+    methodName: string;
+    args: string[];
+    info: string;
+    evm: {
+        contractAddress: string|null;
+        decodedData: any|null;
+    };
+}
+
+export function decodePayloadMethod(provider: Provider, methodDataEncoded: string, abi?: ContractInterface, sentValue: string = '0', types?: any): DecodedMethodData | null {
     const api = provider.api;
-    await api.isReady;
 
     if (!types) {
-        types = getSpecTypes(api.registry, api.runtimeChain.toString(), api.runtimeVersion.specName, api.runtimeVersion.specVersion ) as unknown as Record<string, string>;
+        types = getSpecTypes(api.registry, api.runtimeChain.toString(), api.runtimeVersion.specName, api.runtimeVersion.specVersion) as unknown as Record<string, string>;
     }
 
     let args: AnyJson | null = null;
@@ -31,17 +39,30 @@ export async function decodePayloadMethod (provider: Provider, data: string, typ
         const metadata = new Metadata(registry, base64Decode(metaCalls || ''));
         registry.setMetadata(metadata, undefined, undefined);
 
-        method = registry.createType("Call", data);
+        method = registry.createType("Call", methodDataEncoded);
         args = (method.toHuman() as { args: AnyJson }).args;
     } catch (error) {
-        console.log('utils.decodeMethod: ERROR decoding method');
-        args = null;
-        method = null;
+        console.log('decodeMethod: ERROR decoding method');
+        return null;
     }
 
     const info = method?.meta ? method.meta.docs.map((d) => d.toString().trim()).join(' ') : '';
-    const methodParams = method?.meta ? `(${method.meta.args.map(({ name }) => name).join(', ')})` : '';
+    const methodParams = method?.meta ? `(${method.meta.args.map(({name}) => name).join(', ')})` : '';
     const methodName = method ? `${method.section}.${method.method}${methodParams}` : '';
+    let contractAddress = null;
+    let decodedData = null;
 
-    return { methodName, args, info };
+    if(methodName.startsWith('evm.call') && abi) {
+        contractAddress = args[0];
+        const methodArgs = args[1];
+        const iface = new ethers.utils.Interface(abi);
+        decodedData = iface.parseTransaction({data: methodArgs, value: sentValue});
+    }
+
+    return {
+        methodName, args, info,
+        evm: {
+            contractAddress, decodedData
+        }
+    };
 }
