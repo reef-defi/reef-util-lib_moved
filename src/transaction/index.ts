@@ -1,4 +1,6 @@
-export {reef20Transfer$, nativeTransfer$, nativeTransferSigner$} from "./tokenTransferUtil"
+export {reef20Transfer$, nativeTransfer$, nativeTransferSigner$} from "./token-transfer-util"
 export {TX_STATUS_ERROR_CODE} from "./txErrorUtil"
-export {TxStage, TransactionStatusEvent, getEvmTransactionStatus$} from "./transactionStatus"
-export {decodePayloadMethod} from "./tx-signature-util"
+export {getEvmTransactionStatus$} from "./transaction-status-util"
+export {decodePayloadMethod} from "../signature/tx-signature-util"
+export {TransactionStatusEvent} from "./transaction-model";
+export {TxStage} from "./transaction-model";

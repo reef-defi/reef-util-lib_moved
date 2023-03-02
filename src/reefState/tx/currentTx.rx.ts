@@ -1,13 +1,12 @@
-import {catchError, map, mergeMap, Observable, of, scan, shareReplay, Subject, tap} from "rxjs";
-import {TransactionStatusEvent, TxStage} from "../../transaction";
+import {catchError, mergeMap, Observable, of, scan, shareReplay, Subject, tap} from "rxjs";
 import {merge} from "rxjs/internal/operators/merge";
-import {filter} from "rxjs/operators";
+import {TransactionStatusEvent, TxStage} from "../../transaction/transaction-model";
 
-export const addTransactionStatusSubj = new Subject<TransactionStatusEvent>()
-export const attachTxStatusObservableSubj = new Subject<Observable<TransactionStatusEvent>>();
-export const txStatusList$ = attachTxStatusObservableSubj.pipe(
+export const addPendingTransactionSubj = new Subject<TransactionStatusEvent>()
+export const attachPendingTxObservableSubj = new Subject<Observable<TransactionStatusEvent>>();
+export const txPendingList$ = attachPendingTxObservableSubj.pipe(
     mergeMap(status$ => status$),
-    merge(addTransactionStatusSubj),
+    merge(addPendingTransactionSubj),
     catchError((err) => {
         console.log('ERRRRRR', err);
         return of({txIdent: err.txIdent, txStage: TxStage.ENDED} as TransactionStatusEvent);

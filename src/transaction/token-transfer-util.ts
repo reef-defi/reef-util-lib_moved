@@ -1,16 +1,16 @@
 import {
     getEvmTransactionStatus$,
     getNativeTransactionStatusHandler$,
-    parseAndRethrowErrorFromObserver,
-    TransactionStatusEvent, TxStage
-} from "./transactionStatus";
+    parseAndRethrowErrorFromObserver
+} from "./transaction-status-util";
 import {from, Observable, of, switchMap} from "rxjs";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 import type {Signer as SignerInterface} from '@polkadot/api/types';
 import {BigNumber, Contract} from "ethers";
 import {getEvmAddress} from "../account/addressUtil";
 import {TX_STATUS_ERROR_CODE} from "./txErrorUtil";
-import {addTransactionStatusSubj, attachTxStatusObservableSubj} from "../reefState/tx/transactionStatus";
+import {addPendingTransactionSubj, attachPendingTxObservableSubj} from "../reefState/tx/currentTx.rx";
+import {TransactionStatusEvent, TxStage} from "./transaction-model";
 
 export function nativeTransferSigner$(amount: string, signer: Signer, toAddress: string): Observable<TransactionStatusEvent> {
     return from(signer.getSubstrateAddress()).pipe(
@@ -21,7 +21,7 @@ export function nativeTransferSigner$(amount: string, signer: Signer, toAddress:
 export function nativeTransfer$(amount: string, fromAddress: string, toAddress: string, provider: Provider, signingKey: SignerInterface, txIdent:string = Math.random().toString()): Observable<TransactionStatusEvent> {
     const {status$, handler} = getNativeTransactionStatusHandler$(txIdent);
 
-    addTransactionStatusSubj.next({txIdent, txStage: TxStage.SIGNATURE_REQUEST});
+    addPendingTransactionSubj.next({txIdent, txStage: TxStage.SIGNATURE_REQUEST});
     provider.api.query.system.account(fromAddress).then((res)=>{
         let fromBalance = res.data.free.toString();
         if(BigNumber.from(amount).gte(fromBalance)){
@@ -37,7 +37,7 @@ export function nativeTransfer$(amount: string, fromAddress: string, toAddress: 
         }).catch(parseAndRethrowErrorFromObserver(status$, txIdent));
 
     });
-    attachTxStatusObservableSubj.next(status$);
+    attachPendingTxObservableSubj.next(status$);
     return status$.asObservable();
 }
 
@@ -52,7 +52,7 @@ export function reef20Transfer$(to: string, provider, tokenAmount: string, token
             return [toAddr, tokenAmount];
         }),
         switchMap((ARGS) => {
-            addTransactionStatusSubj.next({txIdent, txStage: TxStage.SIGNATURE_REQUEST});
+            addPendingTransactionSubj.next({txIdent, txStage: TxStage.SIGNATURE_REQUEST});
             const txPromise = tokenContract.transfer(...ARGS, {
                 customData: {
                     storageLimit: STORAGE_LIMIT,

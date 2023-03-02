@@ -1,23 +1,9 @@
-import {Observable, Observer, shareReplay, Subject} from "rxjs";
+import {Observable, Observer, Subject} from "rxjs";
+import {shareReplay} from "rxjs/operators";
 import {ApiPromise} from "@polkadot/api";
 import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "./txErrorUtil";
-import {attachTxStatusObservableSubj} from "../reefState/tx/transactionStatus";
-
-export enum TxStage{
-    SIGNATURE_REQUEST = 'SIGNATURE_REQUEST',
-    SIGNED = 'SIGNED',
-    BROADCAST = 'BROADCAST',
-    INCLUDED_IN_BLOCK = 'INCLUDED_IN_BLOCK',
-    BLOCK_FINALIZED = 'BLOCK_FINALIZED',
-    BLOCK_NOT_FINALIZED = 'BLOCK_NOT_FINALIZED',
-    ENDED='ENDED',
-}
-
-export interface TransactionStatusEvent {
-    txStage: TxStage;
-    txData?: any;
-    txIdent: string;
-}
+import {attachPendingTxObservableSubj} from "../reefState/tx/currentTx.rx";
+import {TransactionStatusEvent, TxStage} from "./transaction-model";
 
 
 export function parseAndRethrowErrorFromObserver(observer: Observer<TransactionStatusEvent>, txIdent: string) {
@@ -58,8 +44,11 @@ export function getEvmTransactionStatus$(evmTxPromise: Promise<any>, rpcApi: Api
                     observer.error(new TxStatusError(err.message, txIdent));
                 });
             }).catch(parseAndRethrowErrorFromObserver(observer, txIdent));
-        }).pipe(shareReplay(1)) as Observable<TransactionStatusEvent>;
-    attachTxStatusObservableSubj.next(status$);
+        }).pipe(
+        // @ts-ignore
+        shareReplay(1)
+    ) as Observable<TransactionStatusEvent>;
+    attachPendingTxObservableSubj.next(status$);
     return status$;
 }
 

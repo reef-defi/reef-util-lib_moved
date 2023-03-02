@@ -1,5 +1,5 @@
 import {AVAILABLE_NETWORKS, Network} from "../network/network";
-import {ReefSigner} from "../account/accountModel";
+import {ReefAccount, ReefSigner} from "../account/accountModel";
 import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "../transaction/txErrorUtil";
 
 export type TxStatusHandler = (status: TxStatusUpdate) => void;
@@ -46,7 +46,7 @@ export const handleErr = (
     txIdent: string,
     txHash: string,
     txHandler: TxStatusHandler,
-    signer: ReefSigner,
+    signer: ReefAccount,
 ): void => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
