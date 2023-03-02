@@ -7,7 +7,7 @@ import {base64Decode, base64Encode} from '@reef-defi/util-crypto';
 import {ethers} from "ethers";
 import {Fragment, JsonFragment} from "@ethersproject/abi"
 
-interface DecodedMethodData {
+export interface DecodedMethodData {
     methodName: string;
     args: string[];
     info: string;

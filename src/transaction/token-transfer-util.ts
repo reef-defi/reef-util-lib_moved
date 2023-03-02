@@ -2,7 +2,7 @@ import {
     getEvmTransactionStatus$,
     getNativeTransactionStatusHandler$,
     parseAndRethrowErrorFromObserver
-} from "./transactionStatus";
+} from "./transaction-status-util";
 import {from, Observable, of, switchMap} from "rxjs";
 import {Provider, Signer} from "@reef-defi/evm-provider";
 import type {Signer as SignerInterface} from '@polkadot/api/types';

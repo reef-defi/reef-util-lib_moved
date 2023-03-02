@@ -30,7 +30,7 @@ import {
     txPendingList$
 } from "../src/reefState/tx/currentTx.rx";
 import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
-import {decodePayloadMethod} from "../src/transaction/tx-signature-util";
+import {decodePayloadMethod} from "../src/signature/tx-signature-util";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
