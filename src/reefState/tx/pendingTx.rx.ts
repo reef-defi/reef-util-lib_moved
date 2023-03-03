@@ -4,7 +4,7 @@ import {TransactionStatusEvent, TxStage} from "../../transaction/transaction-mod
 
 export const addPendingTransactionSubj = new Subject<TransactionStatusEvent>()
 export const attachPendingTxObservableSubj = new Subject<Observable<TransactionStatusEvent>>();
-export const txPendingList$ = attachPendingTxObservableSubj.pipe(
+export const pendingTxList$ = attachPendingTxObservableSubj.pipe(
     mergeMap(status$ => status$),
     merge(addPendingTransactionSubj),
     catchError((err) => {

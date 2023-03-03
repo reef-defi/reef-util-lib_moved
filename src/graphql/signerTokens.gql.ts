@@ -33,14 +33,6 @@ export const SIGNER_TOKENS_GQL = gql`
 `;*/
 
 
-export const CONTRACT_DATA_GQL = gql`
-  subscription contract_data_query($addresses: [String!]!) {
-    verifiedContracts(where: {id_in: $addresses}, limit:300) {
-    id
-    contractData
-  }
-  }
-`;
 /*
 export const CONTRACT_DATA_GQL = gql`
   query contract_data_query($addresses: [String!]!) {

@@ -2,7 +2,7 @@ import {Observable, Observer, Subject} from "rxjs";
 import {shareReplay} from "rxjs/operators";
 import {ApiPromise} from "@polkadot/api";
 import {toTxErrorCodeValue, TX_STATUS_ERROR_CODE} from "./txErrorUtil";
-import {attachPendingTxObservableSubj} from "../reefState/tx/currentTx.rx";
+import {attachPendingTxObservableSubj} from "../reefState/tx/pendingTx.rx";
 import {TransactionStatusEvent, TxStage} from "./transaction-model";
 
 

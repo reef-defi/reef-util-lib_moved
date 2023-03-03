@@ -9,7 +9,7 @@ import type {Signer as SignerInterface} from '@polkadot/api/types';
 import {BigNumber, Contract} from "ethers";
 import {getEvmAddress} from "../account/addressUtil";
 import {TX_STATUS_ERROR_CODE} from "./txErrorUtil";
-import {addPendingTransactionSubj, attachPendingTxObservableSubj} from "../reefState/tx/currentTx.rx";
+import {addPendingTransactionSubj, attachPendingTxObservableSubj} from "../reefState/tx/pendingTx.rx";
 import {TransactionStatusEvent, TxStage} from "./transaction-model";
 
 export function nativeTransferSigner$(amount: string, signer: Signer, toAddress: string): Observable<TransactionStatusEvent> {

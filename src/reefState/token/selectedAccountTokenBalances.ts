@@ -2,8 +2,8 @@
 import {REEF_ADDRESS, REEF_TOKEN, Token, TokenBalance} from "../../token/tokenModel";
 import {BigNumber} from "ethers";
 import {catchError, defer, from, map, mergeScan, Observable, of, shareReplay, startWith, take, tap} from "rxjs";
-import {zenToRx} from "../../graphql";
-import {CONTRACT_DATA_GQL, SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
+import {CONTRACT_DATA_GQL, zenToRx} from "../../graphql";
+import {SIGNER_TOKENS_GQL} from "../../graphql/signerTokens.gql";
 import {
     collectFeedbackDMStatus,
     StatusDataObject,

@@ -27,8 +27,8 @@ import {Signer} from "@reef-defi/evm-provider";
 import {
     addPendingTransactionSubj,
     attachPendingTxObservableSubj,
-    txPendingList$
-} from "../src/reefState/tx/currentTx.rx";
+    pendingTxList$
+} from "../src/reefState/tx/pendingTx.rx";
 import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
 import {decodePayloadMethod} from "../src/signature/tx-signature-util";
 
@@ -186,19 +186,19 @@ async function testDecodeMethodSignaturePayload(){
 
     const provider = await firstValueFrom(selectedProvider$);
     await provider.api.isReadyOrError;
-     const decMethod: any = decodePayloadMethod(provider,
+     const decMethod: any = await decodePayloadMethod(provider,
          '0x150000000000000000000000000000000000010000001101a9059cbb0000000000000000000000007ca7886e0b851e6458770bc1d85feb6a5307b9a2000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000cb3c040000000000d0070000',
-         ERC20);
+         );
     console.log('DEC', decMethod)
-    console.assert(decMethod.evm!==null, "evm data should be present")
+    console.assert(decMethod.vm.evm!==null, "evm data should be present")
     console.assert(decMethod.methodName==='evm.call(target, input, value, gasLimit, storageLimit)', "not evm call")
-    console.assert(decMethod.evm.contractAddress===REEF_ADDRESS, "should be REEF address")
-    console.assert(decMethod.evm.decodedData.name==='transfer', "should be transfer")
-    console.assert(decMethod.evm.decodedData.args.recipient==='0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2', "should be 0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2")
+    console.assert(decMethod.vm.evm.contractAddress===REEF_ADDRESS, "should be REEF address")
+    console.assert(decMethod.vm.evm.decodedData.name==='transfer', "should be transfer")
+    console.assert(decMethod.vm.evm.decodedData.args.recipient==='0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2', "should be 0x7Ca7886e0b851e6458770BC1d85Feb6A5307b9a2")
 }
 async function testTransfer(){
     let txIdent = '123';
-    txPendingList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
+    pendingTxList$.subscribe((v) => console.log('STA TLISt=', v.get(txIdent).txStage));
 
     let from = TEST_ACCOUNTS.find(a=>a.name==='test1');
     console.assert(!!from?.address, 'No from address to test transfer');
@@ -243,7 +243,7 @@ async function testTransfer(){
 }
 
 async function testTxStatus(){
-    txPendingList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
+    pendingTxList$.subscribe((v) => console.log('STA TLISt=', v.get('123').txStage));
     const statSubj=new Subject();
     attachPendingTxObservableSubj.next(statSubj)
     setTimeout(()=>{
