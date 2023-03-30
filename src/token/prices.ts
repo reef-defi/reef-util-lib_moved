@@ -27,7 +27,7 @@ const getCoingeckoPrice = (tokenId: string):Promise<number> => coingeckoApi
     .then((res) => res.data[tokenId].usd);
 
 export const getTokenPrice = async (tokenId: string): Promise<number> => {
-  if (tokenId === REEF_TOKEN_ID) {
+  if (tokenId === PRICE_REEF_TOKEN_ID) {
     return explorerApi.get<void, AxiosResponse<any>>(
       '/price/reef',
     ).then((res) => res.data.usd).catch(() => getCoingeckoPrice(tokenId));
