@@ -103,6 +103,8 @@ export const calculateTokenPrice_sdo = (
         return reefPrice;
     }
 
+    console.log('RRRPPPPrice=',reefPrice)
+
     const reefTokenPool = findReefTokenPool_sdo(pools, REEF_ADDRESS, token);
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 

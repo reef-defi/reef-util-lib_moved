@@ -52,7 +52,7 @@ export const initReefState = (
         }),
         finalizeWithValue(((p_n) => p_n?disconnectProvider(p_n.provider):null)),
         catchError((err) => {
-            console.log('initReefState ERROR=', err.message);
+            console.log('initReefState kill$ ERROR=', err.message);
             return of(null);
         }),
     )

@@ -63,6 +63,7 @@ export const loadSignerNfts = ([apollo, signer]: [any, StatusDataObject<ReefAcco
         )
             .pipe(
                 map((res: any) => {
+                    console.log('lib NFT RES', res.data?.length)
                         if (res?.data?.tokenHolders) {
                             return res.data.tokenHolders as VerifiedNft[];
                         }
