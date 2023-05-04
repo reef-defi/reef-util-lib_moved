@@ -288,9 +288,9 @@ async function initTest() {
     console.log("START ALL");
     // await testSigners();
     // await testProvider();
-    // await testInitSelectedAddress();
+    await testInitSelectedAddress();
     setSelectedAddress(TEST_ACCOUNTS[0].address);
-    // await testBalancesProgressStatus();
+    await testBalancesProgressStatus();
     // await testAppStateSigners(accounts);
     // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
     // await testAppStateTokens();
@@ -299,7 +299,7 @@ async function initTest() {
     // await testNfts();
     // await testTransferHistory();
     // await testTransfer();
-    await testDecodeMethodSignaturePayload();
+    // await testDecodeMethodSignaturePayload();
 // await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);

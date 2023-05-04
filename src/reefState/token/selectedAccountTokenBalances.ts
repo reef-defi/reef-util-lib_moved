@@ -151,16 +151,15 @@ export const replaceReefBalanceFromAccount=(tokens: StatusDataObject<StatusDataO
 
 // noinspection TypeScriptValidateTypes
 export const loadAccountTokens_sdo = ([apollo, signer, forceReload]: [ApolloClient<any>, StatusDataObject<ReefAccount>, any]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
-    console.log('loadTTT lib')
-    return (!signer
-        ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
-        : zenToRx(
+    const ttt=!signer? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set')) : zenToRx(
             apollo.subscribe({
                 query: SIGNER_TOKENS_GQL,
                 variables: {accountId: signer.data.address},
                 fetchPolicy: 'network-only',
             }),
-        ).pipe(
+        );
+    console.log('loadTTT lib11', ttt)
+    return ttt.pipe(
             map((res: any): TokenBalance[] => {
                 if (res?.data?.tokenHolders) {
                     return res.data.tokenHolders.map(th => ({
@@ -187,7 +186,7 @@ export const loadAccountTokens_sdo = ([apollo, signer, forceReload]: [ApolloClie
                 return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
             }),
             shareReplay(1)
-        ));
+        );
 };
 
 export const setReefBalanceFromAccount = ([tokens, selSigner]: [StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, StatusDataObject<ReefAccount> | undefined]): StatusDataObject<StatusDataObject<Token | TokenBalance>[]> => {

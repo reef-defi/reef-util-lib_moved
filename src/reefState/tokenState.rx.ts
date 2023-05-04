@@ -1,6 +1,6 @@
 import {
     catchError,
-    combineLatest,
+    combineLatest, debounceTime,
     from,
     map,
     mergeWith,
@@ -39,7 +39,7 @@ import {BigNumber} from "ethers";
 
 export const reloadTokens = () => {forceTokenValuesReloadSubj.next(true); console.log('force lib reload TTT')}
 const forceTokenValuesReloadSubj = new Subject<boolean>();
-export const forceReload$ = forceTokenValuesReloadSubj.pipe(throttleTime(3000), startWith(true))
+export const forceReload$ = forceTokenValuesReloadSubj.pipe(debounceTime(3000), startWith(true))
 const reloadingValues$ = combineLatest([selectedNetwork$, selectedAccountAddressChange$, forceReload$]).pipe(shareReplay(1));
 
 const selectedAccountReefBalance$ = selectedAccount_status$.pipe(
@@ -50,7 +50,7 @@ const selectedAccountReefBalance$ = selectedAccount_status$.pipe(
     startWith(undefined),
     shareReplay(1)
 );
-
+selectedAccountAddressChange$.subscribe(v=>console.log('TTEEESSS',v))
 export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusDataObject<Token | TokenBalance>[]>)> = combineLatest([
     apolloClientInstance$,
     selectedAccountAddressChange$,
@@ -59,13 +59,13 @@ export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusD
     switchMap((vals)=> {
         return loadAccountTokens_sdo(vals).pipe(
             switchMap((tkns:StatusDataObject<StatusDataObject<Token | TokenBalance>[]>)=>{
-                console.log('TTT ress', tkns);
+                console.log('TTT ress', tkns, selectedAccountReefBalance$);
                 return combineLatest([ of(tkns), selectedAccountReefBalance$]).pipe(
                     map((arrVal)=>replaceReefBalanceFromAccount(arrVal[0], arrVal[1])),
                 );
             }),
             catchError((err: any) => {
-                console.log('ERROR selectedTokenBalances_status$=',err.message)
+                console.log('ERROR0 selectedTokenBalances_status$=',err.message)
                 return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message))
             })
         )
@@ -74,10 +74,10 @@ export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusD
     // map(setReefBalanceFromAccount),
 
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
-    catchError((err: any) => {
-        console.log('ERROR selectedTokenBalances_status$=', err.message);
+    /*catchError((err: any) => {
+        console.log('ERROR1 selectedTokenBalances_status$=', err.message);
         return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
-    }),
+    }),*/
     shareReplay(1),
 );
 
