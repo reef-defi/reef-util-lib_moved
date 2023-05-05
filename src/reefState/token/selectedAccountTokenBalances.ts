@@ -35,19 +35,20 @@ const fetchTokensData = (
             variables: {addresses: distinctAddr},
             fetchPolicy: 'network-only',
         })).pipe(
-            take(1),
-            map((verContracts:any) => verContracts.data.verifiedContracts.map(
-                // eslint-disable-next-line camelcase
-                (vContract: { id: string; contractData: any }) => {
-                    return ({
-                        address: vContract.id,
-                        iconUrl: '',
-                        decimals: vContract.contractData?.decimals||18,
-                        name: vContract.contractData?.name,
-                        symbol: vContract.contractData?.symbol,
-                        balance:BigNumber.from(0)
-                    } as Token);},
-            )),
+        take(1),
+        map((verContracts: any) => verContracts.data.verifiedContracts.map(
+            // eslint-disable-next-line camelcase
+            (vContract: { id: string; contractData: any }) => {
+                return ({
+                    address: vContract.id,
+                    iconUrl: '',
+                    decimals: vContract.contractData?.decimals || 18,
+                    name: vContract.contractData?.name,
+                    symbol: vContract.contractData?.symbol,
+                    balance: BigNumber.from(0)
+                } as Token);
+            },
+        )),
         catchError(err => {
             console.log('fetchTokensData ERROR=', err);
             return of([]);
@@ -56,7 +57,10 @@ const fetchTokensData = (
 };
 
 // eslint-disable-next-line camelcase
-function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => { tokens: StatusDataObject<Token | TokenBalance>[], contractData: Token[] } {
+function toTokensWithContractDataFn(tokenBalances: TokenBalance[]): (tkns: Token[]) => {
+    tokens: StatusDataObject<Token | TokenBalance>[],
+    contractData: Token[]
+} {
     return (cData: Token[]) => {
         const tokens: StatusDataObject<Token | TokenBalance>[] = tokenBalances
             .map((tBalance) => {
@@ -87,15 +91,17 @@ const tokenBalancesWithContractDataCache_sdo = (apollo: any) => (
     const contractData$ = missingCacheContractDataAddresses.length
         ? fetchTokensData(apollo, missingCacheContractDataAddresses)
             .pipe(map((newTokens) => {
-                return newTokens ? newTokens.concat(state.contractData) : state.contractData})
+                    return newTokens ? newTokens.concat(state.contractData) : state.contractData
+                })
             ) : of(state.contractData);
 
     return contractData$.pipe(
         map((tokenContractData: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokenContractData)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
+        tap(v => console.log('tokenBalancesWithContractDataCache_sdo = ', v)),
         catchError(err => {
             console.log('tokenBalancesWithContractDataCache_sdo ERROR=', err.message);
-            return of({tokens:[], contractData:state.contractData});
+            return of({tokens: [], contractData: state.contractData});
         }),
         shareReplay(1)
     );
@@ -138,7 +144,7 @@ const resolveEmptyIconUrls = (tokens: StatusDataObject<Token | TokenBalance>[]) 
     );
 
 // adding shareReplay is messing up TypeScriptValidateTypes
-export const replaceReefBalanceFromAccount=(tokens: StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, accountBalance:  BigNumber|null|undefined) =>{
+export const replaceReefBalanceFromAccount = (tokens: StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, accountBalance: BigNumber | null | undefined) => {
     if (!accountBalance || accountBalance.lte(BigNumber.from('0'))) {
         return tokens;
     }
@@ -151,42 +157,47 @@ export const replaceReefBalanceFromAccount=(tokens: StatusDataObject<StatusDataO
 
 // noinspection TypeScriptValidateTypes
 export const loadAccountTokens_sdo = ([apollo, signer, forceReload]: [ApolloClient<any>, StatusDataObject<ReefAccount>, any]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
-    const ttt=!signer? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set')) : zenToRx(
-            apollo.subscribe({
-                query: SIGNER_TOKENS_GQL,
-                variables: {accountId: signer.data.address},
-                fetchPolicy: 'network-only',
-            }),
-        );
-    console.log('loadTTT lib11', ttt)
-    return ttt.pipe(
-            map((res: any): TokenBalance[] => {
-                if (res?.data?.tokenHolders) {
-                    return res.data.tokenHolders.map(th => ({
-                        address: th.token.id,
-                        balance: th.balance
-                    } as TokenBalance));
-                }
+    console.log('INFO loadAccountTokens_sdo=', apollo, signer, forceReload);
+    const gqlTokens = !signer ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
+        : zenToRx(
+        apollo.subscribe({
+            query: SIGNER_TOKENS_GQL,
+            variables: {accountId: signer.data.address},
+            fetchPolicy: 'network-only',
+            errorPolicy: 'all'
+        }),
+    );
+    return gqlTokens.pipe(
+        map((res: any): TokenBalance[] => {
+            console.log('got gql tokens=', res);
+            if (res?.data?.tokenHolders) {
+                return res.data.tokenHolders.map(th => ({
+                    address: th.token.id,
+                    balance: th.balance
+                } as TokenBalance));
+            }
 
-                if(isFeedbackDM(res)){
-                    return res;
-                }
-                throw new Error('No result from SIGNER_TOKENS_GQL');
-            }),
-            // eslint-disable-next-line camelcase
-            mergeScan(tokenBalancesWithContractDataCache_sdo(apollo), {
-                tokens: [],
-                contractData: [reefTokenWithAmount()],
-            }),
-            map((tokens_cd: { tokens: StatusDataObject<Token | TokenBalance>[] }) => resolveEmptyIconUrls(tokens_cd.tokens)),
-            map(sortReefTokenFirst),
-            map((tkns: StatusDataObject<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
-            catchError(err => {
-                console.log('loadAccountTokens ERROR=', err.message);
-                return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
-            }),
-            shareReplay(1)
-        );
+            if (isFeedbackDM(res)) {
+                return res;
+            }
+            throw new Error('No result from SIGNER_TOKENS_GQL');
+        }),
+        // eslint-disable-next-line camelcase
+        mergeScan(tokenBalancesWithContractDataCache_sdo(apollo), {
+            tokens: [],
+            contractData: [reefTokenWithAmount()],
+        }),
+        map((tokens_cd: {
+            tokens: StatusDataObject<Token | TokenBalance>[]
+        }) => resolveEmptyIconUrls(tokens_cd.tokens)),
+        map(sortReefTokenFirst),
+        map((tkns: StatusDataObject<Token | TokenBalance>[]) => toFeedbackDM(tkns, collectFeedbackDMStatus(tkns))),
+        catchError(err => {
+            console.log('loadAccountTokens 1 ERROR=', err);
+            return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
+        }),
+        shareReplay(1)
+    );
 };
 
 export const setReefBalanceFromAccount = ([tokens, selSigner]: [StatusDataObject<StatusDataObject<Token | TokenBalance>[]>, StatusDataObject<ReefAccount> | undefined]): StatusDataObject<StatusDataObject<Token | TokenBalance>[]> => {

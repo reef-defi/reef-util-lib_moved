@@ -12,13 +12,13 @@ import {
     Subject,
     switchMap, tap
 } from "rxjs";
-import {selectedProvider$, instantProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {ReefAccount} from "../../account/accountModel";
 import {BigNumber} from "ethers";
 import {availableAddresses$} from "./availableAddresses";
 import {StatusDataObject, FeedbackStatusCode, isFeedbackDM, toFeedbackDM} from "../model/statusDataObject";
 import {getAddressesErrorFallback} from "./errorUtil";
+import {instantProvider$} from "../providerState";
 
 
 const getUpdatedAccountChainBalances$ = (providerAndSigners: [Provider | undefined, ReefAccount[]]): Observable<StatusDataObject<StatusDataObject<ReefAccount>[]> | { balances: any; signers: ReefAccount[] }> => {

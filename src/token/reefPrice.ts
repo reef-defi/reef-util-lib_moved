@@ -1,7 +1,7 @@
 import {catchError, map, mergeWith, Observable, of, shareReplay, startWith, switchMap, timer} from "rxjs";
 import {getTokenPrice, PRICE_REEF_TOKEN_ID, retrieveReefCoingeckoPrice} from "./prices";
 import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../reefState/model/statusDataObject";
-import {forceReload$} from "../reefState/tokenState.rx";
+import {forceReloadTokens$} from "../reefState/token/reloadTokenState";
 /*
 export const reefPrice$: Observable<number> = timer(0, 60000).pipe(
     switchMap(retrieveReefCoingeckoPrice),
@@ -9,7 +9,7 @@ export const reefPrice$: Observable<number> = timer(0, 60000).pipe(
 );*/
 
 export const reefPrice$: Observable<StatusDataObject<number>> = timer(0, 60000).pipe(
-    mergeWith(forceReload$),
+    mergeWith(forceReloadTokens$),
     switchMap(async ()=> {
         try {
             const price = await getTokenPrice(PRICE_REEF_TOKEN_ID);

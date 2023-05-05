@@ -1,4 +1,4 @@
-import {selectedNetwork$, setSelectedNetwork} from "./providerState";
+import {selectedNetwork$, setSelectedNetwork} from "./networkState";
 import {catchError, of, tap} from "rxjs";
 import {AVAILABLE_NETWORKS, Network} from "../network/network";
 import {accountsJsonSigningKeySubj, setAccounts} from "./account/setAccounts";

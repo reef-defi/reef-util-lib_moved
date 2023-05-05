@@ -33,14 +33,18 @@ export const toTokensWithPrice_sdo = ([tokens, reefPrice, pools]: [
         (token_sdo) => {
             let isReef = token_sdo.data.address===REEF_ADDRESS;
             const returnTkn = toFeedbackDM({...token_sdo.data, price: isReef?reefPrice.data:0} as TokenWithAmount, token_sdo.getStatusList());
-            if (!isReef && token_sdo.hasStatus(FeedbackStatusCode.COMPLETE_DATA) && pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)) {
+            if (!isReef && token_sdo.hasStatus(FeedbackStatusCode.COMPLETE_DATA) /*&& pools.hasStatus(FeedbackStatusCode.COMPLETE_DATA)*/) {
                 const priceSDO = calculateTokenPrice_sdo(token_sdo.data, pools.data, reefPrice);
-                returnTkn.setStatus(priceSDO.getStatus().map(priceStat => ({
-                    ...priceStat,
-                    propName: 'price',
-                    message: 'Price set'
-                } as FeedbackStatus)));
-                returnTkn.data.price = priceSDO.data;
+                if (priceSDO) {
+                    returnTkn.setStatus(priceSDO.getStatus().map(priceStat => ({
+                        ...priceStat,
+                        propName: 'price'
+                    } as FeedbackStatus)));
+                    returnTkn.data.price = priceSDO.data;
+                }
+                if ('0x9250BA0e7616357D6d98825186CF7723D38D8B23' === token_sdo.data.address) {
+                    console.log('PROIIII=',returnTkn.getStatusList(), ' pools stat=',pools.getStatusList())
+                }
             }
             return returnTkn;
         }

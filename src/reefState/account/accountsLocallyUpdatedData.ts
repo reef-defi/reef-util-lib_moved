@@ -4,9 +4,9 @@ import {filter} from "rxjs/operators";
 import {replaceUpdatedSigners, updateSignersEvmBindings} from "./accountStateUtil";
 import {updateSignersSubj} from "./setAccounts";
 import {availableAddresses$} from "./availableAddresses";
-import {selectedProvider$} from "../providerState";
 import {Provider} from "@reef-defi/evm-provider";
 import {StatusDataObject, FeedbackStatusCode, toFeedbackDM} from "../model/statusDataObject";
+import {selectedProvider$} from "../providerState";
 
 export const accountsLocallyUpdatedData$: Observable<StatusDataObject<StatusDataObject<ReefAccount>[]>> = updateSignersSubj.pipe(
     filter((reloadCtx: any) => !!reloadCtx.updateActions.length),

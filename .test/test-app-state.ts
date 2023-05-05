@@ -15,7 +15,6 @@ import {StatusDataObject, FeedbackStatusCode} from "../src/reefState/model/statu
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
 import {selectedAccountAddressChange$} from "../src/reefState/account/selectedAccountAddressChange";
-import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
@@ -31,6 +30,8 @@ import {
 } from "../src/reefState/tx/pendingTx.rx";
 import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
 import {decodePayloadMethod} from "../src/signature/tx-signature-util";
+import {selectedNetwork$} from "../src/reefState/networkState";
+import {selectedProvider$} from "../src/reefState/providerState";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},

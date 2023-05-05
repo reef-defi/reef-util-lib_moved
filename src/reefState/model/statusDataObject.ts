@@ -104,7 +104,7 @@ export const isFeedbackDM = (value: StatusDataObject<any> | any): boolean => {
 export const collectFeedbackDMStatus = (items: StatusDataObject<any>[]): FeedbackStatusCode[] => {
     return items.reduce((state: FeedbackStatusCode[], curr) => {
         curr.getStatusList().forEach((stat) => {
-            if (state.indexOf(stat.code) < 0) {
+            if (!stat.propName && state.indexOf(stat.code) < 0) {
                 state.push(stat.code);
             }
         });
