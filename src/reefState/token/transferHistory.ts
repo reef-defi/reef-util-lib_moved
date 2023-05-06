@@ -16,13 +16,13 @@ import {getIconUrl} from "../../token/getIconUrl";
 import {getExtrinsicUrl} from "../../token/transactionUtil";
 
 const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Observable<(Token | NFT)[]> => {
-    const nftOrNull: (NFT|null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
+    const nftOrNull: (NFT | null)[] = tokens.map((tr) => ('contractType' in tr && (tr.contractType === ContractType.ERC1155 || tr.contractType === ContractType.ERC721) ? tr : null));
     if (!nftOrNull.filter((v) => !!v).length) {
         return of(tokens);
     }
     return of(nftOrNull)
         .pipe(
-            switchMap((nfts:(NFT | null)[]) => resolveNftImageLinks(nfts, signer, _NFT_IPFS_RESOLVER_FN)),
+            switchMap((nfts: (NFT | null)[]) => resolveNftImageLinks(nfts, signer, _NFT_IPFS_RESOLVER_FN)),
             map((nftOrNullResolved: (NFT | null)[]) => {
                 const resolvedNftTransfers: (Token | NFT)[] = [];
                 nftOrNullResolved.forEach((nftOrN, i) => {
@@ -51,12 +51,12 @@ const resolveTransferHistoryNfts = (tokens: (Token | NFT)[], signer: Signer): Ob
         );
 };*/
 
-const toTransferToken = (transfer): Token|NFT => (transfer.token.type === ContractType.ERC20 ? {
+const toTransferToken = (transfer): Token | NFT => (transfer.token.type === ContractType.ERC20 ? {
         address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.contractData?.name||transfer.token.name,
+        name: transfer.token.contractData?.name || transfer.token.name,
         symbol: transfer.token.contractData?.symbol,
-        decimals: transfer.token.contractData?.decimals||18,
+        decimals: transfer.token.contractData?.decimals || 18,
         iconUrl:
             transfer.token.contractData?.iconUrl
             || getIconUrl(transfer.token.id),
@@ -64,7 +64,7 @@ const toTransferToken = (transfer): Token|NFT => (transfer.token.type === Contra
     : {
         address: transfer.token.id,
         balance: BigNumber.from(toPlainString(transfer.amount)),
-        name: transfer.token.contractData?.name||transfer.token.name,
+        name: transfer.token.contractData?.name || transfer.token.name,
         symbol: '',
         decimals: 0,
         iconUrl: '',
@@ -81,7 +81,12 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
     timestamp: transferData.timestamp,
     token: toTransferToken(transferData),
     url: getExtrinsicUrl(transferData.extrinsic.id, network),
-    extrinsic: { blockId: transferData.extrinsic.block.id, blockHeight: transferData.extrinsic.block.height, id: transferData.extrinsic.id, index: transferData.extrinsic.index },
+    extrinsic: {
+        blockId: transferData.extrinsic.block.id,
+        blockHeight: transferData.extrinsic.block.height,
+        id: transferData.extrinsic.id,
+        index: transferData.extrinsic.index
+    },
     success: transferData.success,
 }));
 
@@ -147,35 +152,34 @@ const toTokenTransfers = (resTransferData: any[], signer: ReefAccount, network: 
             catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
         );*/
 
-export const loadTransferHistory = ([apollo, account, network, provider]:[ApolloClient<any>, StatusDataObject<ReefAccount>, Network, Provider]): Observable<TokenTransfer[]> => (!account
+export const loadTransferHistory = ([apollo, account, network, provider, forceReload]: [ApolloClient<any>, StatusDataObject<ReefAccount>, Network, Provider, boolean]): Observable<TokenTransfer[]> => (!account
     ? of([])
     : zenToRx(
         apollo.subscribe({
             query: TRANSFER_HISTORY_GQL,
-            variables: { accountId: account.data.address },
+            variables: {accountId: account.data.address},
             fetchPolicy: 'network-only',
         }),
-    )
-        .pipe(
-            map((res: any) => {
-                if (res?.data?.transfers) {
-                    return res.data.transfers;
-                }
-                throw new Error('Could not load data.');
-            }),
-            map((resData: any) => toTokenTransfers(resData, account.data, network)),
-            switchMap((transfers: TokenTransfer[]): Observable<TokenTransfer[]> => {
-                const tokens = transfers.map((tr: TokenTransfer) => tr.token);
-                const sig$ = from(getReefAccountSigner(account.data, provider));
+    ).pipe(
+        map((res: any) => {
+            if (res?.data?.transfers) {
+                return res.data.transfers;
+            }
+            throw new Error('Could not load data.');
+        }),
+        map((resData: any) => toTokenTransfers(resData, account.data, network)),
+        switchMap((transfers: TokenTransfer[]): Observable<TokenTransfer[]> => {
+            const tokens = transfers.map((tr: TokenTransfer) => tr.token);
+            const sig$ = from(getReefAccountSigner(account.data, provider));
 
-                return from(sig$)
-                    .pipe(
-                        switchMap((sig: Signer|undefined)=>(sig?resolveTransferHistoryNfts(tokens, sig):[])),
-                        map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
-                                    ...transfers[i],
-                                    token: resToken,
-                                })
-                        )),
-                    );
-            }),
-        ));
+            return from(sig$)
+                .pipe(
+                    switchMap((sig: Signer | undefined) => (sig ? resolveTransferHistoryNfts(tokens, sig) : [])),
+                    map((resolvedTokens: (Token | NFT)[]) => resolvedTokens.map((resToken: Token | NFT, i) => ({
+                            ...transfers[i],
+                            token: resToken,
+                        })
+                    )),
+                );
+        }),
+    ));

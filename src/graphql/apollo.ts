@@ -16,6 +16,8 @@ import {Observable as ZenObservable} from 'zen-observable-ts';
 
 import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
 import { createClient } from "graphql-ws";
+import {onError} from "@apollo/client/link/error";
+import {RetryLink} from "@apollo/client/link/retry";
 
 
 const apolloUrlsSubj = new ReplaySubject<{ ws: string; http: string }>(1);
@@ -24,6 +26,19 @@ export const apolloClientSubj = new ReplaySubject<ApolloClient<any>>(1);
 export const setApolloUrls = (urls: { ws: string; http: string }): void => {
     apolloUrlsSubj.next(urls);
 };
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors)
+        graphQLErrors.forEach(({ message, locations, path }) =>
+            console.log(
+                `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+            )
+        );
+    if (networkError) {
+        console.log(`[ApolloGQL Network error]: ${networkError}`);
+    }
+});
+
+const retryLink = new RetryLink();
 
 const splitLink$ = apolloUrlsSubj.pipe(
     map((urls: { ws: string; http: string }) => {
@@ -34,6 +49,8 @@ const splitLink$ = apolloUrlsSubj.pipe(
                 url: urls.ws,
             })
         );
+
+
         return split(
             ({query}) => {
                 const definition = getMainDefinition(query);
@@ -44,7 +61,7 @@ const splitLink$ = apolloUrlsSubj.pipe(
                 );
             },
             wsLink,
-            httpLink,
+            httpLink
         );
     }),
     shareReplay(1),
@@ -53,7 +70,7 @@ const apolloLinksClientInstance$: Observable<ApolloClient<any>> = splitLink$.pip
     map(
         (splitLink) => new ApolloClient({
             cache: new InMemoryCache(),
-            link: ApolloLink.from([splitLink]),
+            link: ApolloLink.from([retryLink, errorLink, splitLink]),
         }),
     ),
     shareReplay(1),
@@ -63,4 +80,4 @@ export const apolloClientInstance$: Observable<ApolloClient<any>> = merge(apollo
     shareReplay(1),
 );
 
-export const zenToRx = <T>(zenObservable: ZenObservable<T>): Observable<T> => new Observable((observer) => zenObservable.subscribe(observer));
+export const zenToRx = <T>(zenObservable: ZenObservable<T>): Observable<T> => new Observable((observer) => zenObservable.subscribe((v)=>observer.next(v), (err)=>console.log('Apollo subscribe ERR=',err)));

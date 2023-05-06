@@ -1,5 +1,6 @@
 import { Provider } from '@reef-defi/evm-provider';
 import { WsProvider } from '@polkadot/api';
+import {Subject} from "rxjs";
 
 export async function initProvider(providerUrl: string) {
   const newProvider = new Provider({
@@ -15,5 +16,10 @@ export async function initProvider(providerUrl: string) {
 }
 
 export async function disconnectProvider(provider: Provider) {
-  await provider.api.disconnect();
+  try {
+    await provider.api.isReadyOrError;
+    await provider.api.disconnect();
+  }catch (e:any) {
+    console.log('Provider disconnect err=', e.message);
+  }
 }

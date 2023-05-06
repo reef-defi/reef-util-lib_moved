@@ -15,7 +15,6 @@ import {StatusDataObject, FeedbackStatusCode} from "../src/reefState/model/statu
 import {fetchPools$} from "../src/pools/pools";
 import {REEF_ADDRESS} from "../src/token/tokenModel";
 import {selectedAccountAddressChange$} from "../src/reefState/account/selectedAccountAddressChange";
-import {selectedProvider$} from "../src/reefState/providerState";
 import {accountsWithUpdatedIndexedData$} from "../src/reefState/account/accountsIndexedData";
 import {selectedAccount_status$} from "../src/reefState";
 import {AVAILABLE_NETWORKS} from "../src/network";
@@ -31,6 +30,8 @@ import {
 } from "../src/reefState/tx/pendingTx.rx";
 import {ReefSigningKeyWrapper} from "../src/account/accountSignerUtils";
 import {decodePayloadMethod} from "../src/signature/tx-signature-util";
+import {selectedNetwork$} from "../src/reefState/networkState";
+import {selectedProvider$} from "../src/reefState/providerState";
 
 const TEST_ACCOUNTS = [{"address": "5GKKbUJx6DQ4rbTWavaNttanWAw86KrQeojgMNovy8m2QoXn", "name":"acc1", "meta": {"source": "reef"}},
     {"address": "5EnY9eFwEDcEJ62dJWrTXhTucJ4pzGym4WZ2xcDKiT3eJecP", "name":"test-mobile", "meta": {"source": "reef"}},
@@ -133,6 +134,12 @@ async function testBalancesProgressStatus() {
     console.log("waiting for tokens to load");
     const tokens = await firstValueFrom(selectedTokenBalances_status$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
+
+    // selectedTokenPrices_status$.subscribe((v)=>{
+    //     const tkn= v.data.find(t=>t.data.address==='0x9250BA0e7616357D6d98825186CF7723D38D8B23')
+    //
+    //     console.log('PPP=', tkn?.getStatusList().map(s=>s.code+(s.propName||'')))
+    // })
 
     console.assert(tokens.data?.length > 1, 'There should be at least 2 tokens');
     console.assert(tokens.data.some(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
@@ -288,9 +295,9 @@ async function initTest() {
     console.log("START ALL");
     // await testSigners();
     // await testProvider();
-    // await testInitSelectedAddress();
+    await testInitSelectedAddress();
     setSelectedAddress(TEST_ACCOUNTS[0].address);
-    // await testBalancesProgressStatus();
+    await testBalancesProgressStatus();
     // await testAppStateSigners(accounts);
     // await testAppStateSelectedSigner(accounts[0].address, accounts[1].address);
     // await testAppStateTokens();
@@ -299,7 +306,7 @@ async function initTest() {
     // await testNfts();
     // await testTransferHistory();
     // await testTransfer();
-    await testDecodeMethodSignaturePayload();
+    // await testDecodeMethodSignaturePayload();
 // await testTxStatus();
     console.log("END ALL");
     // await testAvailablePools(tokens, signer, dexConfig.testnet.factoryAddress);

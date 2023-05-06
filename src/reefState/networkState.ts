@@ -1,22 +1,26 @@
-import {
-    combineLatestWith, defer,
-    distinctUntilChanged,
-    finalize,
-    map,
-    mergeScan,
-    Observable,
-    shareReplay,
-    startWith,
-    tap
-} from "rxjs";
-import {Provider} from "@reef-defi/evm-provider";
-import {disconnectProvider, initProvider, Network} from "../network";
-import {filter} from "rxjs/operators";
-import {selectedNetwork$} from "./networkState";
-import {forceReloadTokens$} from "./token/reloadTokenState";
+import {ReplaySubject} from 'rxjs';
+import {Network} from "../network/network";
+
+// const providerSubj: ReplaySubject<Provider> = new ReplaySubject<Provider>(1);
+const selectedNetworkSubj: ReplaySubject<Network> = new ReplaySubject<Network>(1);
+
+export const ACTIVE_NETWORK_LS_KEY = 'reef-app-active-network';
+export const selectedNetwork$ = selectedNetworkSubj.asObservable();
+export const setSelectedNetwork = (network: Network): void => {
+    if (network != null) {
+        try {
+            localStorage.setItem(ACTIVE_NETWORK_LS_KEY, JSON.stringify(network));
+        } catch (e) {
+            // when cookies disabled localStorage can throw
+        }
+    }
+    selectedNetworkSubj.next(network);
+};
+selectedNetwork$.subscribe((network) => console.log('SELECTED NETWORK=', network.rpcUrl));
+/*
 
 export const selectedNetworkProvider$: Observable<{ provider: Provider, network: Network; }> = selectedNetwork$.pipe(
-    combineLatestWith(forceReloadTokens$),
+    combineLatestWith(forceReload$),
     mergeScan((pr_url: {
         provider: Provider | undefined,
         network: Network | undefined
@@ -28,14 +32,12 @@ export const selectedNetworkProvider$: Observable<{ provider: Provider, network:
             if (pr_url.provider) {
                 try {
                     await disconnectProvider(pr_url.provider);
-                    console.log('PROVIDER DISCONNECTED')
                 } catch (e: any) {
                     console.log('Error disconnecting provider=', e.message);
                 }
             }
             try {
                 const pr: Provider = await initProvider(currNet.rpcUrl);
-                console.log('PROVIDER CONNECTED');
                 resolve({provider: pr, network: currNet});
             } catch (err) {
                 resolve({provider: undefined, network: currNet});
@@ -45,9 +47,9 @@ export const selectedNetworkProvider$: Observable<{ provider: Provider, network:
     }, {provider: undefined, network: undefined}),
     filter((p_n) => !!p_n.provider && !!p_n.network),
     map(p_n => p_n as { provider: Provider, network: Network }),
-    distinctUntilChanged((v1,v2)=>v1.network.rpcUrl===v2.network.rpcUrl),
+    tap(v=>console.log('PPPP',v)),
     // TODO check if it's called on last unsubscribe
-     finalizeWithValue(((n_p) => n_p?disconnectProvider(n_p.provider):null)),
+    //  finalizeWithValue(((n_p) => n_p?disconnectProvider(n_p.provider):null)),
     shareReplay(1)
 );
 
@@ -59,7 +61,9 @@ export const selectedProvider$ = selectedNetworkProvider$.pipe(
 export const instantProvider$ = selectedProvider$.pipe(startWith(undefined), shareReplay(1));
 // export const setSelectedProvider = (provider: Provider): void => providerSubj.next(provider);
 
-function finalizeWithValue<T>(callback: (value: T) => void) {
+*/
+
+/*function finalizeWithValue<T>(callback: (value: T) => void) {
     return (source: Observable<T>) => defer(() => {
         let lastValue: T;
         return source.pipe(
@@ -67,4 +71,4 @@ function finalizeWithValue<T>(callback: (value: T) => void) {
             finalize(() => callback(lastValue)),
         );
     });
-}
+}*/
