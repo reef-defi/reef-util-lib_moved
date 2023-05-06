@@ -98,7 +98,7 @@ const tokenBalancesWithContractDataCache_sdo = (apollo: any) => (
     return contractData$.pipe(
         map((tokenContractData: Token[]) => toTokensWithContractDataFn(tokenBalances)(tokenContractData)),
         startWith(toTokensWithContractDataFn(tokenBalances)(state.contractData)),
-        tap(v => console.log('tokenBalancesWithContractDataCache_sdo = ', v)),
+        // tap(v => console.log('tokenBalancesWithContractDataCache_sdo = ', v)),
         catchError(err => {
             console.log('tokenBalancesWithContractDataCache_sdo ERROR=', err.message);
             return of({tokens: [], contractData: state.contractData});
@@ -157,8 +157,8 @@ export const replaceReefBalanceFromAccount = (tokens: StatusDataObject<StatusDat
 
 // noinspection TypeScriptValidateTypes
 export const loadAccountTokens_sdo = ([apollo, signer, forceReload]: [ApolloClient<any>, StatusDataObject<ReefAccount>, any]): Observable<StatusDataObject<StatusDataObject<Token | TokenBalance>[]>> => {
-    console.log('INFO loadAccountTokens_sdo=', apollo, signer, forceReload);
-    const gqlTokens = !signer ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
+    // TODO check the status of signer - could be loading?
+    return !signer ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
         apollo.subscribe({
             query: SIGNER_TOKENS_GQL,
@@ -166,10 +166,8 @@ export const loadAccountTokens_sdo = ([apollo, signer, forceReload]: [ApolloClie
             fetchPolicy: 'network-only',
             errorPolicy: 'all'
         }),
-    );
-    return gqlTokens.pipe(
+    ).pipe(
         map((res: any): TokenBalance[] => {
-            console.log('got gql tokens=', res);
             if (res?.data?.tokenHolders) {
                 return res.data.tokenHolders.map(th => ({
                     address: th.token.id,

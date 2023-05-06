@@ -58,12 +58,6 @@ export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusD
     switchMap((vals)=> {
         return loadAccountTokens_sdo(vals).pipe(
             switchMap((tkns:StatusDataObject<StatusDataObject<Token | TokenBalance>[]>)=>{
-                console.log('TTT ress', tkns.data.length, selectedAccountReefBalance$);
-                selectedAccountReefBalance$.subscribe(
-                    (v)=>console.log('TESTTT555',v),
-                    (e)=>console.log('ERR5555',e),
-                    ()=>console.log('COMPL555')
-                )
                 return combineLatest([ of(tkns), selectedAccountReefBalance$]).pipe(
                     map((arrVal)=>replaceReefBalanceFromAccount(arrVal[0], arrVal[1])),
                 );
@@ -74,14 +68,11 @@ export const selectedTokenBalances_status$: Observable<(StatusDataObject<StatusD
             })
         )
     }),
-    // old- withLatestFrom(selectedAccount_status$),
-    // old- map(setReefBalanceFromAccount),
-
     mergeWith(reloadingValues$.pipe(map(() => toFeedbackDM([], FeedbackStatusCode.LOADING)))),
-    /* TODO catchError((err: any) => {
+    catchError((err: any) => {
         console.log('ERROR1 selectedTokenBalances_status$=', err.message);
         return of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message));
-    }),*/
+    }),
     shareReplay(1),
 );
 
@@ -134,7 +125,8 @@ export const availableReefPools_status$: Observable<StatusDataObject<AvailablePo
 
 export const selectedNFTs_status$: Observable<StatusDataObject<StatusDataObject<NFT>[]>> = combineLatest([
     apolloClientInstance$,
-    selectedAccountAddressChange$
+    selectedAccountAddressChange$,
+    forceReloadTokens$
 ])
     .pipe(
         switchMap((v) => loadSignerNfts(v)),
@@ -146,7 +138,7 @@ export const selectedNFTs_status$: Observable<StatusDataObject<StatusDataObject<
 
 // TODO combine  selectedNetwork$ and selectedProvider$
 export const selectedTransactionHistory_status$: Observable<StatusDataObject<TokenTransfer[]>> = combineLatest([
-    apolloClientInstance$, selectedAccountAddressChange$, selectedNetwork$, selectedProvider$
+    apolloClientInstance$, selectedAccountAddressChange$, selectedNetwork$, selectedProvider$, forceReloadTokens$
 ]).pipe(
     switchMap(loadTransferHistory),
     map(vArr=> toFeedbackDM(vArr, FeedbackStatusCode.COMPLETE_DATA, 'History loaded')),

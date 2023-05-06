@@ -34,14 +34,14 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
     .map(({
               balance,
               nftId,
-              token:{id:address, type:contractType},
+              token: {id: address, type: contractType},
           }) => {
 
         return ({
             contractType,
             balance: BigNumber.from(balance),
             nftId,
-            symbol:'',
+            symbol: '',
             decimals: 0,
             address,
             iconUrl: '',
@@ -49,36 +49,34 @@ const parseTokenHolderArray = (resArr: VerifiedNft[]): NFT[] => resArr
         } as NFT)
     });
 
-export const loadSignerNfts = ([apollo, signer]: [any, StatusDataObject<ReefAccount>]): Observable<StatusDataObject<StatusDataObject<NFT>[]>> => (
+export const loadSignerNfts = ([apollo, signer, forceReload]: [any, StatusDataObject<ReefAccount>, boolean]): Observable<StatusDataObject<StatusDataObject<NFT>[]>> => (
     !signer || !apollo
         ? of(toFeedbackDM([], FeedbackStatusCode.MISSING_INPUT_VALUES, 'Signer not set'))
         : zenToRx(
-        apollo.subscribe({
-            query: SIGNER_NFTS_GQL,
-            variables: {
-                accountId: (signer.data as ReefAccount).address,
-            },
-            fetchPolicy: 'network-only',
-        }),
-        )
-            .pipe(
-                map((res: any) => {
-                    console.log('lib NFT RES', res.data?.length)
-                        if (res?.data?.tokenHolders) {
-                            return res.data.tokenHolders as VerifiedNft[];
-                        }
-
-                        if (isFeedbackDM(res)) {
-                            return res;
-                        }
-                        throw new Error('Could not load data.');
+            apollo.subscribe({
+                query: SIGNER_NFTS_GQL,
+                variables: {
+                    accountId: (signer.data as ReefAccount).address,
+                },
+                fetchPolicy: 'network-only',
+            }),
+        ).pipe(
+            map((res: any) => {
+                    if (res?.data?.tokenHolders) {
+                        return res.data.tokenHolders as VerifiedNft[];
                     }
-                ),
-                map((res: VerifiedNft[]) =>parseTokenHolderArray(res)),
-                // TODO handle SDO- map((res: VerifiedNft[]|FeedbackDataModel<NFT[]>) => isFeedbackDM(res)?res:parseTokenHolderArray(res)),
-                switchMap((nftArr: NFT[]) => combineLatest([
-                        of(nftArr), instantProvider$
-                    ]).pipe(
+
+                    if (isFeedbackDM(res)) {
+                        return res;
+                    }
+                    throw new Error('Could not load data.');
+                }
+            ),
+            map((res: VerifiedNft[]) => parseTokenHolderArray(res)),
+            // TODO handle SDO- map((res: VerifiedNft[]|FeedbackDataModel<NFT[]>) => isFeedbackDM(res)?res:parseTokenHolderArray(res)),
+            switchMap((nftArr: NFT[]) => combineLatest([
+                    of(nftArr), instantProvider$
+                ]).pipe(
                     switchMap((nftsAndProvider: [(NFT | null)[] | NFT[], Provider | undefined]) => {
                         const [nfts, provider] = nftsAndProvider;
 
@@ -99,13 +97,13 @@ export const loadSignerNfts = ([apollo, signer]: [any, StatusDataObject<ReefAcco
                     map((feedbackNfts: StatusDataObject<NFT>[]): StatusDataObject<StatusDataObject<NFT>[]> => {
                         const codes = collectFeedbackDMStatus(feedbackNfts);
                         let message = codes.some(c => c === FeedbackStatusCode.PARTIAL_DATA_LOADING) ? 'Resolving nft urls.' : '';
-                        if(!feedbackNfts.length){
-                            message='No nfts found';
+                        if (!feedbackNfts.length) {
+                            message = 'No nfts found';
                             codes.push(FeedbackStatusCode.COMPLETE_DATA);
                         }
                         return toFeedbackDM(feedbackNfts, codes, message);
                     })
-                    )
-                ),
-                catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
-            ));
+                )
+            ),
+            catchError(err => of(toFeedbackDM([], FeedbackStatusCode.ERROR, err.message)))
+        ));

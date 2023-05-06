@@ -1,7 +1,8 @@
 import {BigNumber, ContractInterface, utils} from 'ethers';
 import {BigNumber as BN} from 'bignumber.js';
 import {
-    ContractType, EMPTY_ADDRESS,
+    ContractType,
+    EMPTY_ADDRESS,
     REEF_ADDRESS,
     REEF_TOKEN,
     Token,
@@ -12,9 +13,9 @@ import {
 } from './tokenModel';
 import {Pool} from "./pool";
 import {
-    StatusDataObject,
     FeedbackStatusCode,
     findMinStatusCode,
+    StatusDataObject,
     toFeedbackDM
 } from "../reefState/model/statusDataObject";
 import {ERC20} from "./abi/ERC20";
@@ -95,7 +96,7 @@ const findReefTokenPool_sdo = (
 
 export const calculateTokenPrice_sdo = (
     token: Token | TokenBalance,
-    pools: StatusDataObject<Pool | null>[],
+    pools: StatusDataObject<StatusDataObject<Pool | null>[]>,
     reefPrice: StatusDataObject<number>,
 ): StatusDataObject<number> => {
     let ratio: number;
@@ -103,10 +104,13 @@ export const calculateTokenPrice_sdo = (
         return reefPrice;
     }
 
-    const reefTokenPool = findReefTokenPool_sdo(pools, REEF_ADDRESS, token);
+    const reefTokenPool = findReefTokenPool_sdo(pools.data, REEF_ADDRESS, token);
     const minStat = findMinStatusCode([reefTokenPool, reefPrice])
 
     if (!reefTokenPool || !reefTokenPool.data || minStat < FeedbackStatusCode.COMPLETE_DATA) {
+        if (pools.hasStatus(FeedbackStatusCode.LOADING)) {
+            return toFeedbackDM(0, FeedbackStatusCode.LOADING);
+        }
         if (!reefTokenPool || reefTokenPool.hasStatus(FeedbackStatusCode.ERROR)) {
             return toFeedbackDM(0, FeedbackStatusCode.MISSING_INPUT_VALUES, 'Pool not found.')
         }

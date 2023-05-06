@@ -135,6 +135,12 @@ async function testBalancesProgressStatus() {
     const tokens = await firstValueFrom(selectedTokenBalances_status$.pipe(skipWhile(t => t.hasStatus(FeedbackStatusCode.LOADING))));
     console.log("token balances=", tokens);
 
+    // selectedTokenPrices_status$.subscribe((v)=>{
+    //     const tkn= v.data.find(t=>t.data.address==='0x9250BA0e7616357D6d98825186CF7723D38D8B23')
+    //
+    //     console.log('PPP=', tkn?.getStatusList().map(s=>s.code+(s.propName||'')))
+    // })
+
     console.assert(tokens.data?.length > 1, 'There should be at least 2 tokens');
     console.assert(tokens.data.some(t => !t.hasStatus(FeedbackStatusCode.COMPLETE_DATA)), 'Not all tokens should have complete data');
     console.assert(tokens.data!.find(t => t.hasStatus(FeedbackStatusCode.COMPLETE_DATA))?.data.address === REEF_ADDRESS, 'Reef should be complete at first');
