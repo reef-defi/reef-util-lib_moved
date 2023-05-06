@@ -1,18 +1,5 @@
-import {
-    combineLatest,
-    combineLatestWith, defer, finalize, map,
-    mergeScan,
-    Observable,
-    ReplaySubject,
-    shareReplay,
-    startWith,
-    switchMap, tap
-} from 'rxjs';
-import {Provider} from '@reef-defi/evm-provider';
+import {ReplaySubject} from 'rxjs';
 import {Network} from "../network/network";
-import {disconnectProvider, initProvider} from "../network";
-import {forceReloadTokens$} from "./tokenState.rx";
-import {filter} from "rxjs/operators";
 
 // const providerSubj: ReplaySubject<Provider> = new ReplaySubject<Provider>(1);
 const selectedNetworkSubj: ReplaySubject<Network> = new ReplaySubject<Network>(1);

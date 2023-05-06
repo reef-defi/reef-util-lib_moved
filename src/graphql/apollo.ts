@@ -80,4 +80,4 @@ export const apolloClientInstance$: Observable<ApolloClient<any>> = merge(apollo
     shareReplay(1),
 );
 
-export const zenToRx = <T>(zenObservable: ZenObservable<T>): Observable<T> => new Observable((observer) => zenObservable.subscribe(observer, (err)=>console.log('Apollo subscribe ERR=',err)));
+export const zenToRx = <T>(zenObservable: ZenObservable<T>): Observable<T> => new Observable((observer) => zenObservable.subscribe((v)=>observer.next(v), (err)=>console.log('Apollo subscribe ERR=',err)));
