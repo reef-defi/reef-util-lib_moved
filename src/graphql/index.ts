@@ -1,4 +1,4 @@
-export {apolloClientInstance$, zenToRx} from './apollo';
+export {apolloClientInstance$, zenToRx, apolloClientWsConnState$} from './apollo';
 export {SIGNER_TOKENS_GQL} from './signerTokens.gql';
 export {SIGNER_NFTS_GQL} from './signerNfts.gql';
 export {TRANSFER_HISTORY_GQL} from './transferHistory.gql';
