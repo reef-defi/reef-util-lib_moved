@@ -4,9 +4,9 @@ import {
     finalize,
     map,
     mergeScan,
-    Observable,
+    Observable, scan,
     shareReplay,
-    startWith,
+    startWith, Subject,
     tap
 } from "rxjs";
 import {Provider} from "@reef-defi/evm-provider";
@@ -15,13 +15,22 @@ import {filter} from "rxjs/operators";
 import {selectedNetwork$} from "./networkState";
 import {forceReloadTokens$} from "./token/reloadTokenState";
 
+const providerConnStateSubj = new Subject<{value:string, timestamp:number}>();
+export const providerConnState$ = providerConnStateSubj.pipe(
+    scan((state, curr)=>{
+        return curr.value==='error'?{...state, err:curr, data:''}: {...curr, err:state.err, data: ''};
+    }, {err:{}}),
+    startWith('starting provider api ws state'),
+    shareReplay(1)
+);
+
 export const selectedNetworkProvider$: Observable<{ provider: Provider, network: Network; }> = selectedNetwork$.pipe(
     combineLatestWith(forceReloadTokens$),
     mergeScan((pr_url: {
         provider: Provider | undefined,
         network: Network | undefined
     }, [currNet, _]: [Network, any]) => {
-        if (pr_url.network?.rpcUrl === currNet.rpcUrl && !!pr_url.provider) {
+        if (pr_url.network?.rpcUrl === currNet.rpcUrl && !!pr_url.provider && pr_url.provider.api.isConnected) {
             return Promise.resolve(pr_url);
         }
         return new Promise<{ provider: Provider | undefined, network: Network }>(async (resolve, reject) => {
@@ -34,7 +43,7 @@ export const selectedNetworkProvider$: Observable<{ provider: Provider, network:
                 }
             }
             try {
-                const pr: Provider = await initProvider(currNet.rpcUrl);
+                const pr: Provider = await initProvider(currNet.rpcUrl, providerConnStateSubj);
                 console.log('PROVIDER CONNECTED');
                 resolve({provider: pr, network: currNet});
             } catch (err) {
