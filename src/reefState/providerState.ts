@@ -1,12 +1,14 @@
 import {
-    combineLatestWith, defer,
+    combineLatestWith,
+    defer,
     distinctUntilChanged,
     finalize,
     map,
     mergeScan,
-    Observable, scan,
+    Observable,
     shareReplay,
-    startWith, Subject,
+    startWith,
+    Subject,
     tap
 } from "rxjs";
 import {Provider} from "@reef-defi/evm-provider";
@@ -14,15 +16,11 @@ import {disconnectProvider, initProvider, Network} from "../network";
 import {filter} from "rxjs/operators";
 import {selectedNetwork$} from "./networkState";
 import {forceReloadTokens$} from "./token/reloadTokenState";
+import {getCollectedWsStateValue$, WsConnectionState} from "./ws-connection-state";
 
-const providerConnStateSubj = new Subject<{value:string, timestamp:number}>();
-export const providerConnState$ = providerConnStateSubj.pipe(
-    scan((state, curr)=>{
-        return curr.value==='error'?{...state, err:curr, data:''}: {...curr, err:state.err, data: ''};
-    }, {err:{}}),
-    startWith('starting provider api ws state'),
-    shareReplay(1)
-);
+const providerConnStateSubj = new Subject<WsConnectionState>();
+export const providerConnState$: Observable<WsConnectionState> = getCollectedWsStateValue$(providerConnStateSubj);
+
 
 export const selectedNetworkProvider$: Observable<{ provider: Provider, network: Network; }> = selectedNetwork$.pipe(
     combineLatestWith(forceReloadTokens$),
@@ -33,7 +31,7 @@ export const selectedNetworkProvider$: Observable<{ provider: Provider, network:
         if (pr_url.network?.rpcUrl === currNet.rpcUrl && !!pr_url.provider && pr_url.provider.api.isConnected) {
             return Promise.resolve(pr_url);
         }
-        return new Promise<{ provider: Provider | undefined, network: Network }>(async (resolve, reject) => {
+        return new Promise<{ provider: Provider | undefined, network: Network }>(async (resolve, _reject) => {
             if (pr_url.provider) {
                 try {
                     await disconnectProvider(pr_url.provider);
@@ -54,18 +52,19 @@ export const selectedNetworkProvider$: Observable<{ provider: Provider, network:
     }, {provider: undefined, network: undefined}),
     filter((p_n) => !!p_n.provider && !!p_n.network),
     map(p_n => p_n as { provider: Provider, network: Network }),
-    distinctUntilChanged((v1,v2)=>v1.network.rpcUrl===v2.network.rpcUrl),
+    distinctUntilChanged((v1, v2) => v1.network.rpcUrl === v2.network.rpcUrl),
     // TODO check if it's called on last unsubscribe
-     finalizeWithValue(((n_p) => n_p?disconnectProvider(n_p.provider):null)),
+    finalizeWithValue(((n_p) => n_p ? disconnectProvider(n_p.provider) : null)),
     shareReplay(1)
 );
 
 
 export const selectedProvider$ = selectedNetworkProvider$.pipe(
-    map(n_p=>n_p.provider),
+    map(n_p => n_p.provider),
     shareReplay(1)
 );
 export const instantProvider$ = selectedProvider$.pipe(startWith(undefined), shareReplay(1));
+
 // export const setSelectedProvider = (provider: Provider): void => providerSubj.next(provider);
 
 function finalizeWithValue<T>(callback: (value: T) => void) {
