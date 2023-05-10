@@ -58,7 +58,7 @@ const splitLink$ = apolloUrlsSubj.pipe(
         wsClient.on("connecting", () => {
             console.log('GQL WS CONNECTING');
             apolloWsConnStateSubj.next({
-                isConnected: false,
+                isConnected: true,
                 status: {value: 'connecting', timestamp: (new Date()).getTime(), data: undefined}
             });
         });
